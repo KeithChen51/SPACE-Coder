@@ -1,0 +1,166 @@
+# REST API 接口设计规范
+
+> 来源：项目实际技术栈 + 团队约定 + PRD/API 契约收口结果
+> 适用：设计新接口、修改已有接口
+> 优先级：若通用 REST 习惯与本项目既有契约冲突，以本文件为准
+
+---
+
+## 1. 定位与使用方式
+
+1. 【强制】本文件同时承载两层规则：
+   - 通用 REST 设计原则
+   - Prime-Trace 项目级接口口径
+2. 【强制】设计/修改接口时，先按本文件判断：
+   - 路径、方法、字段命名、分页、错误码是否符合项目统一规则
+   - 当前接口是否属于固定行配置接口、列表接口、聚合接口
+3. 【强制】若任务还给出了 PRD/fixtures，则本文件管“怎么设计”，PRD/fixtures 管“这个接口具体该长什么样”。
+
+## 2. 路径规范
+
+1. 【强制】C 端接口：`/api/xxx`，如 `/api/vehicles`、`/api/basic-info`、`/api/orders`。
+2. 【强制】管理台接口：`/api/admin/xxx`，如 `/api/admin/status-config`、`/api/admin/vehicle-list`。
+3. 【强制】路径全小写，多单词用连字符 `-` 分隔，如 `/api/admin/sync-logs`。
+4. 【强制】资源名优先使用名词，禁止动词式路径，如 `/api/getOrders`。
+5. 【推荐】集合资源使用复数，如 `/api/orders`；固定语义配置接口可按现有项目口径保留，如 `/api/admin/status-config`。
+
+## 3. HTTP 方法
+
+| 方法 | 语义 | 适用场景 |
+|------|------|---------|
+| `GET` | 查询 | 获取资源，无副作用 |
+| `POST` | 新增 / 触发 | 创建资源、触发任务 |
+| `PUT` | 全量更新 | 配置保存、整体替换 |
+| `DELETE` | 删除 | 删除单条资源 |
+
+1. 【强制】`GET` 请求禁止修改数据。
+2. 【强制】固定行配置表默认只提供 `GET + PUT`，不提供 `POST/DELETE`。
+3. 【强制】可增删资源才使用 `POST / PUT / DELETE` 组合。
+
+## 4. 统一响应格式
+
+1. 【强制】所有接口返回统一包装结构：
+
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": { }
+}
+```
+
+2. 【强制】项目冻结对象是 `data` 内业务字段；`code/msg` 为统一包装字段。
+3. 【强制】项目现阶段成功态允许 `code = 0` 或 `code = 200`，但单个接口不得混用两套字段名。
+4. 【强制】本项目统一使用 `msg`，不再新增 `message` 作为标准成功字段。
+5. 【强制】错误响应保持相同包装结构，`data` 为 `null` 或空对象。
+
+## 5. 字段契约规则
+
+1. 【强制】请求字段优先定义为：必填 / 非必填。
+2. 【强制】响应字段优先定义为：必返 / 可空，避免“字段可能不存在”。
+3. 【强制】无数据列表返回 `[]`，不返回 `null`。
+4. 【强制】对象字段如业务上存在但暂时无值，返回 `null`，不要省略字段。
+5. 【推荐】优先使用“必返 + 可空”或“必返 + 空数组”，减少前端分支判断。
+
+## 6. JSON 与命名风格
+
+1. 【强制】请求参数、响应 JSON 字段统一使用 `camelCase`，如 `maintenanceCount`、`primaryLabel`、`pageSize`。
+2. 【强制】数据库 `snake_case` 与 JSON `camelCase` 的映射由后端处理，不暴露给前端。
+3. 【强制】枚举值使用 `UPPER_SNAKE_CASE`，如 `NOT_DUE`、`IN_SERVICE`。
+4. 【允许】层级型枚举/条件键使用点号表达，如 `TRAVEL.CHAUFFEUR`、`MAINT.FREE.EV`。
+5. 【推荐】颜色值使用 HEX，如 `#722ED1`；语义色名仅在主题色场景使用，如 `green`、`gold`、`red`。
+
+## 7. 分页约定
+
+1. 【强制】分页请求参数使用 `page` + `pageSize`，不要使用 `size`。
+2. 【强制】`page` 从 `1` 开始，`pageSize` 默认 `10`，建议范围 `1~50`。
+3. 【强制】分页响应至少包含：
+
+```json
+{
+  "list": [],
+  "total": 0,
+  "page": 1,
+  "pageSize": 10
+}
+```
+
+4. 【允许】C 端滚动加载接口额外返回 `hasMore`。
+5. 【强制】无数据时直接返回空列表，不因空数据改变结构。
+
+## 8. 错误码与异常
+
+1. 【强制】参数缺失/格式非法使用明确业务错误码，如 `40001`。
+2. 【强制】枚举值非法使用独立错误码，如 `40002`。
+3. 【强制】资源不存在使用明确错误码，如 `40404`。
+4. 【强制】服务内部异常统一经全局异常处理，不在 Controller 中手工拼错误响应。
+5. 【推荐】下游失败但主链路可降级时，使用可识别错误码并保留主响应可用性。
+
+## 9. 入参与安全
+
+1. 【强制】Controller 层使用 `@Valid`、`@NotNull`、`@NotBlank` 等做入参校验。
+2. 【强制】批量接口需限制单次操作量，避免无边界请求。
+3. 【强制】敏感信息按场景脱敏，前端展示手机号等字段时不要直接暴露全量。
+4. 【强制】SQL 参数必须绑定，禁止字符串拼接。
+5. 【推荐】`POST` 触发类接口考虑幂等性，避免重复提交。
+
+## 10. 项目级配置接口模式
+
+### 10.1 固定行配置
+
+1. 【强制】以下配置接口按“固定行、全量覆盖保存”设计：
+   - `/api/admin/status-config`
+   - `/api/admin/badge-strategies`
+   - `/api/admin/primary-labels`
+   - `/api/admin/detail-buttons`
+   - `/api/admin/benefit-text-config`
+   - `/api/admin/maintenance-benefits`
+2. 【强制】固定行配置用 `GET/PUT`，`PUT` 请求体传完整数组或完整配置对象。
+3. 【强制】固定行配置不提供创建、删除路由。
+
+### 10.2 可增删配置
+
+1. 【强制】以下接口按可增删资源设计：
+   - `/api/admin/button-strategies`
+   - `/api/admin/order-benefits`
+2. 【强制】这类接口可使用 `POST / PUT / DELETE`。
+
+### 10.3 阈值嵌入
+
+1. 【强制】全局阈值就近挂载到最相关的配置接口，不单独新建阈值接口。
+2. 【强制】当前项目口径：
+   - `dueDays` / `dueMileage` 嵌入 `status-config`
+   - `maintenanceIntervalMonths` 嵌入 `badge-strategies`
+
+## 11. 当前项目接口清单
+
+### 11.1 C 端接口
+
+- `GET /api/vehicles`
+- `GET /api/basic-info`
+- `GET /api/orders`
+- `GET /api/orders/types`
+
+### 11.2 管理台配置接口
+
+- `GET/PUT /api/admin/status-config`
+- `GET/PUT /api/admin/badge-strategies`
+- `GET/PUT /api/admin/button-strategies`
+- `GET/PUT /api/admin/benefit-text-config`
+- `GET/PUT /api/admin/maintenance-benefits`
+- `GET/PUT /api/admin/primary-labels`
+- `CRUD /api/admin/order-benefits`
+- `GET/PUT /api/admin/detail-buttons`
+
+### 11.3 管理台数据接口
+
+- `GET /api/admin/vehicle-list`
+- `GET /api/admin/vehicle-detail`
+- `GET /api/admin/sync-logs`
+- `POST /api/admin/sync/trigger`
+
+## 12. 实施提醒
+
+1. 【强制】若你改了路径、分页参数、响应包装、字段命名，必须同步检查前端调用、测试、PRD、fixtures。
+2. 【强制】若项目已有 PRD fixtures、接口总览文档或前端子项目 API 文档，修改接口时要核对是否需要同步更新。
+3. 【推荐】新增接口前，先判断能否复用既有资源命名和现有配置接口模式，避免继续扩散风格。
