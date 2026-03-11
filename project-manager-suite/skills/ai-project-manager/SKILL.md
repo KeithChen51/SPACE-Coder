@@ -31,22 +31,13 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 - 当前轮最小交付物是什么
 - 结果应写回哪个全局文件
 
-## 运行基线
-
-主入口运行流程、默认调用路径、缺失补齐规则、`solo / 团队协作` 处理和回写规则，以以下文件为准：
-
-- `references/entry-runtime-model.md`
-
-不要在本 `SKILL.md` 中重复维护 runtime 主流程；这里只保留主入口自己的资源入口和局部约束。
-
 ## 资源入口
 
-- 仅在关键 `用户确认` 信息缺失时，读取 `references/interview-starter.md`
-- 仅在阶段仍不明确时，读取 `references/stage-router.md`
-- 仅在需要收口当前轮最小交付物时，读取 `references/default-delivery-flow.md`
-- 需要决定进入哪个能力时，读取 `references/entry-routing-conditions.md`
-- 需要补齐宿主项目目录和文件骨架时，读取 `references/project-scaffold.md`
-- 仅在宿主项目缺少对应全局文件时，读取 `../../skills/ai-project-manager/assets/global-files/*.md` 作为默认模板来源
+- 主入口运行流程、访谈规则与交付判断：`references/runtime.md`
+- 全局文件 4 类角色模型与读写协议：`references/global-files-protocol.md`
+- 路由条件、能力映射与脚手架骨架规则：`references/routing.md`
+- 技术栈约束：`references/tech.md`
+- 极少情况在宿主项目缺少全局文件且不便映射时，读取默认模板：`../../skills/ai-project-manager/assets/global-files/*.md`
 
 ## 补充约束
 
