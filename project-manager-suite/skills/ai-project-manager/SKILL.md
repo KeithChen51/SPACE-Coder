@@ -38,17 +38,19 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 ## 资源入口
 
 - 主入口运行流程、访谈规则与交付判断：`references/runtime.md`
-- 全局文件 4 类角色模型与读写协议：`references/global-files-protocol.md`
+- 3 类全局文件与 `project-devlog` 状态回写协议：`references/global-files-protocol.md`
 - 路由条件、能力映射与脚手架骨架规则：`references/routing.md`
 - 技术栈约束：`references/tech.md`
-- 极少情况在宿主项目缺少全局文件且不便映射时，读取默认模板：`../../skills/ai-project-manager/assets/global-files/*.md`
+- 模板文件处理遵循两段逻辑：宿主项目存在可用全局文件时，模板文件只作为指向目标；宿主项目不存在对应全局文件时，才基于模板新建文件：`../../skills/ai-project-manager/assets/global-files/*.md`
 
 ## 补充红线约束
 
 - **【访谈必做】一旦发现 `project-profile.md` 缺失，你的动作只能是：向用户提问！** 问题清单必须从 `references/runtime.md` 的“首轮极简访谈”里选，每次问最核心的，并附 1 条 `参考回答`。
 - **【严禁编造】** 项目画像更新必须使用用户的真实回答。在没有拿到用户业务输入前，宁可停机等待，也绝不允许把主观猜测写成既定事实。
 - 只有在拿到了确切反馈后，才能开始处理 `references/routing.md` 中的物理目录骨架补齐。
-- 仅在宿主项目缺少对应角色文件且已访谈完毕时，才使用模板（`../../skills/ai-project-manager/assets/global-files/*.md`）生成文件。
+- 若宿主项目已有对应角色的全局文件，后续能力应直接指向该模板文件，不重复新建。
+- 若宿主项目没有对应角色的全局文件，且已完成必要访谈，才使用模板（`../../skills/ai-project-manager/assets/global-files/*.md`）新建文件。
+- 状态回写类任务默认应调用 `project-devlog`，由其在宿主日志目录或默认 `logs/` 下创建日志文件完成回写，不创建 `project-status.md`。
 - 能从 runtime 或现有全局文件恢复的信息，不向用户重复追问。
 - 没有最小交付物标准的能力，不应直接进入默认路由链路。
 

@@ -18,19 +18,18 @@
 
 ## 包含内容
 
-当前 starter pack 包含 4 类全局文件的默认载体：
+当前 starter pack 包含 3 类全局文件模板；状态回写默认由 `project-devlog` 在 `logs/` 下生成日志文件承接：
 
 - `project-rules.md`
 - `project-profile.md`
 - `execution-plan.md`
-- `project-status.md`
 
-这 4 个文件分别回答：
+这组模板分别回答：
 
 1. 项目怎么运行
 2. 项目当前是什么
 3. 现在做什么
-4. 最近发生了什么
+4. 最近发生了什么（默认由 `project-devlog` 沉淀到日志文件）
 
 其中前两类文件的边界应特别明确：
 
@@ -63,25 +62,25 @@
 1. 先补 `project-profile.md`
 2. 再确认 `project-rules.md`
 3. 进入推进阶段后维护 `execution-plan.md`
-4. 每轮结束回写 `project-status.md`
+4. 每轮结束默认调用 `project-devlog` 回写日志文件
 
 其中：
 
 - `project-profile.md` 是启动阶段最关键的文件
 - `execution-plan.md` 不必在项目最初就写得很完整
-- `project-status.md` 必须在每轮推进后更新
+- `project-devlog` 必须在每轮推进后承接状态回写，并默认写入 `logs/` 下的日志文件
 
 ---
 
 ## 与主入口的关系
 
-`ai-project-manager` 应围绕这 4 个文件工作：
+`ai-project-manager` 应围绕这 3 类全局文件和 `project-devlog` 的状态回写能力工作：
 
 - 先识别是否已存在
 - 再读取最小必要上下文
 - 再判断当前阶段与缺口
 - 再决定是否进入某个子能力
-- 最后将结果回写到对应文件
+- 最后将结果回写到对应文件，或调用 `project-devlog` 写入日志文件
 
 因此，这套 starter pack 是主入口的运行骨架，不是附属模板集合。
 
@@ -91,7 +90,7 @@
 
 开源版第一批交付时，建议优先保证：
 
-- 这 4 个文件模板可直接复制使用
+- 3 类全局文件模板可直接复制使用
 - 文档明确每个文件的职责与边界
 - 至少有一个真实项目示例能跑通初始化和回写
 
