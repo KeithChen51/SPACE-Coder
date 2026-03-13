@@ -43,6 +43,14 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 - 技术栈约束：`references/tech.md`
 - 模板文件处理遵循两段逻辑：宿主项目存在可用全局文件时，模板文件只作为指向目标；宿主项目不存在对应全局文件时，才基于模板新建文件：`../../skills/ai-project-manager/assets/global-files/*.md`
 
+## 维护约定
+
+- `references/global-files-protocol.md` 是字段合同唯一来源；凡是字段名、字段来源、字段是否必填发生变化，先改这里。
+- `assets/global-files/project-profile.md` 只负责模板外形与长期记忆展示；允许调整分组和顺序，但不单独发明字段语义。
+- `references/runtime.md` 只依赖协议中的字段包决定访谈、补齐和路由；只有当字段包变化时才需要同步修改。
+- `references/routing.md` 只负责能力映射和骨架规则；字段变更默认不改，除非影响路由条件或目录约定。
+- 推荐修改顺序：先改协议，再改模板，再按需改 runtime，最后仅在必要时改 routing。
+
 ## 补充红线约束
 
 - **【访谈必做】一旦发现 `project-profile.md` 缺失，你的动作只能是：向用户提问！** 问题清单必须从 `references/runtime.md` 的“首轮极简访谈”里选，每次问最核心的，并附 1 条 `参考回答`。
