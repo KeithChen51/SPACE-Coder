@@ -49,6 +49,7 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 - `assets/global-files/project-profile.md` 只负责模板外形与长期记忆展示；允许调整分组和顺序，但不单独发明字段语义。
 - `references/runtime.md` 只依赖协议中的字段包决定访谈、补齐和路由；只有当字段包变化时才需要同步修改。
 - `references/routing.md` 只负责能力映射和骨架规则；字段变更默认不改，除非影响路由条件或目录约定。
+- 阶段只定义“最小交付物”和目标 skill；具体模板、references 与生成工作流由目标 skill 内部定义，主入口不重复维护模板路径。
 - 推荐修改顺序：先改协议，再改模板，再按需改 runtime，最后仅在必要时改 routing。
 
 ## 补充红线约束
