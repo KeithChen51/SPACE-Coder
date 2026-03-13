@@ -9,6 +9,11 @@ Use this skill as the entry point for Prime-Trace engineering rules. Do not inve
 
 The authority source is this skill's private reference library under `references/`. This skill routes Claude to the right document inside the skill package.
 
+Current scope note:
+- The repository currently contains **9 active standards documents**: `01` to `09`.
+- `10-testing.md` and `11-test-case-design.md` are **not currently present** under `references/`.
+- For test-related work, first check whether those files have been added later; if not, do not pretend they exist.
+
 ## What to do
 
 1. Identify the main task type before editing files.
@@ -30,8 +35,8 @@ The authority source is this skill's private reference library under `references
 | Vue 3 component, page, frontend interaction | `references/07-vue-frontend.md` |
 | Layering, package structure, domain model, module boundaries | `references/08-engineering.md` |
 | REST endpoint design, request or response schema, pagination | `references/09-api-design.md` |
-| Unit tests, integration tests, automated test code | `references/10-testing.md` |
-| Test case document, acceptance matrix, regression case maintenance | `references/11-test-case-design.md` |
+| Unit tests, integration tests, automated test code | `Not currently available in references/; check before loading` |
+| Test case document, acceptance matrix, regression case maintenance | `Not currently available in references/; check before loading` |
 
 ## Multi-area selection rules
 
@@ -50,8 +55,8 @@ Use these combinations as defaults:
 - New table plus SQL changes: `05-mysql-table.md` and `06-mysql-sql-orm.md`
 - REST API change with backend implementation: `09-api-design.md`, plus the main Java rule document that matches the implementation
 - Vue page plus backend API integration: `07-vue-frontend.md`, plus `09-api-design.md` if the API contract also changes
-- Feature delivery with tests: load the main implementation document first, then `10-testing.md`
-- Automated tests plus test case document update: `10-testing.md` and `11-test-case-design.md`
+- Feature delivery with tests: load the main implementation document first, then check whether `10-testing.md` exists before loading it
+- Automated tests plus test case document update: first check whether `10-testing.md` and `11-test-case-design.md` exist; if not, do not route to missing files
 
 ## Operating rules
 
@@ -60,6 +65,7 @@ Use these combinations as defaults:
 - Do not treat this router as the source of truth; the source of truth is the referenced document.
 - If you need a full index inside this skill, start from `references/README.md`.
 - Treat any duplicate copy under project `docs/` as a human-facing mirror, not the primary source for this skill.
+- Do not route to `10-testing.md` or `11-test-case-design.md` unless those files actually exist in `references/`.
 
 ## Quick examples
 
@@ -70,4 +76,4 @@ Example: "Refactor this Vue page and keep the request and response fields consis
 Load `07-vue-frontend.md`. If the task changes the backend contract, also load `09-api-design.md`.
 
 Example: "补单测并补充测试用例文档。"
-Load `10-testing.md` and `11-test-case-design.md`.
+Check whether `10-testing.md` and `11-test-case-design.md` exist first. If they do not exist, fall back to the closest active standards file and explicitly note the gap.
