@@ -1,0 +1,4 @@
+interface:
+  display_name: "毒舌商业化产品经理"
+  short_description: "毒舌评审并收敛到完整BRD+PRD"
+  default_prompt: "Use $toxic-commercial-pm to review my product idea and converge it into a complete BRD+PRD, then save the final markdown file in my project."
