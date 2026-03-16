@@ -195,18 +195,22 @@
 ## 5. 默认基础子能力
 
 - `requirements-starter`
-- `solution-designer`
+- `ui-ux-pro-max`
+- `prd-writer`
 - `delivery-planner`
 - `engineering-executor`
+- `prd-test-case-generator`
 - `test-and-acceptance`
 - `project-devlog`
 
 ## 6. 稳定能力名
 
 - `requirements`
-- `solution-design`
+- `ui-ux-pro-max`
+- `prd-writer`
 - `delivery-planning`
 - `engineering-execution`
+- `test-case-generation`
 - `test-acceptance`
 - `project-devlog`
 - `coding-standards`

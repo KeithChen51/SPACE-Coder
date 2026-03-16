@@ -108,11 +108,13 @@
 | 文件 | 建议分层 | 说明 |
 |---|---|---|
 | `skills/requirements-starter/SKILL.md` | A | 基础需求整理能力，属于公开版闭环实物 |
-| `skills/solution-designer/SKILL.md` | A | 基础方案设计能力入口，当前属于公开版能力骨架 |
+| `skills/ui-ux-pro-max/SKILL.md` | A | 全局伴随的页面原型能力，当前属于公开版能力骨架 |
+| `skills/prd-writer/SKILL.md` | A | 页面确认后的完整版 PRD 反推能力，当前属于公开版能力骨架 |
 | `skills/delivery-planner/SKILL.md` | A | 基础计划拆解能力入口，当前属于公开版能力骨架 |
 | `skills/engineering-executor/SKILL.md` | A | 基础工程执行能力入口，当前属于公开版能力骨架 |
-| `skills/test-and-acceptance/SKILL.md` | A | 基础测试与验收能力入口，当前属于公开版能力骨架 |
-| `skills/project-devlog/SKILL.md` | A | 基础状态回写能力，属于公开版闭环实物 |
+| `skills/prd-test-case-generator/SKILL.md` | A | 基础测试用例生成入口，当前属于公开版能力骨架 |
+| `skills/test-and-acceptance/SKILL.md` | A | 基础测试执行与验收能力入口，当前属于公开版能力骨架 |
+| `skills/project-devlog/SKILL.md` | A | 全局伴随的基础状态回写能力，属于公开版闭环实物 |
 
 ### 3.7 当前待补的公开低配实物
 
@@ -120,9 +122,11 @@
 |---|---|---|
 | `skills/requirements-starter/assets/*` | B | 需求整理模板与局部参考资料尚未补齐到当前目录结构中 |
 | `skills/project-devlog/assets/*` | B | 状态回写模板与局部参考资料尚未补齐到当前目录结构中 |
-| `skills/solution-designer/assets/*` | B | 方案设计低配模板仍待补齐 |
+| `skills/ui-ux-pro-max/assets/*` | B | 页面设计低配模板仍待补齐 |
+| `skills/prd-writer/assets/*` | B | PRD低配模板仍待补齐 |
 | `skills/delivery-planner/assets/*` | B | 计划拆解低配模板仍待补齐 |
 | `skills/engineering-executor/assets/*` | B | 执行阶段低配模板仍待补齐 |
+| `skills/prd-test-case-generator/assets/*` | B | 测试用例低配模板仍待补齐 |
 | `skills/test-and-acceptance/assets/*` | B | 测试验收低配模板仍待补齐 |
 
 ---
@@ -172,9 +176,11 @@
 
 以下内容重要，但可以不作为第一批公开版阻塞项：
 
-- `solution-designer` 完整基础版
+- `ui-ux-pro-max` 完整基础版
+- `prd-writer` 完整基础版
 - `delivery-planner` 完整基础版
 - `engineering-executor` 完整基础版
+- `prd-test-case-generator` 完整基础版
 - `test-and-acceptance` 完整基础版
 - 多行业案例
 - 高质量示例集

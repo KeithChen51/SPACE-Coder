@@ -138,34 +138,46 @@ flowchart TD
     R2 --> J
 
     J{当前阶段判断}
-    J --> S0[S0 想法澄清]
-    J --> S1A[S1 方案成型]
-    J --> S2A[S2 研发拆解]
-    J --> S3A[S3 开发执行]
-    J --> S4A[S4 验收收口]
+    J --> S0B[S0 需求调研]
+    J --> S1B[S1 业务需求文档]
+    J --> S2B[S2 页面构建与完整版 PRD]
+    J --> S3B[S3 任务拆解与开发计划]
+    J --> S4B[S4 开发执行]
+    J --> S5B[S5 测试用例生成]
+    J --> S6B[S6 测试执行]
+    J --> S7B[S7 人工点检准备]
+    J --> S8B[S8 点检结果回写与收口]
 
-    S0 --> O[输出当前轮最小交付物]
-    S1A --> O
-    S2A --> O
-    S3A --> O
-    S4A --> O
+    S0B --> O
+    S1B --> O
+    S2B --> O
+    S3B --> O
+    S4B --> O
+    S5B --> O
+    S6B --> O
+    S7B --> O
+    S8B --> O[输出当前轮最小交付物]
 
     O --> L{是否必须进入子 skill}
     L -- 否 --> W[停留在主入口继续推进]
-    L -- 是 --> M[按需路由到子 skill]
+    L -- 是 --> M[按需路由到子 skill\n(或者随阶段唤起全局伴随能力)]
 
     M --> RS[requirements-starter\n需求整理]
-    M --> SD[solution-designer\n方案整理]
+    M --> UX[ui-ux-pro-max\n页面原型]
+    M --> PW[prd-writer\n完整版 PRD]
     M --> DP[delivery-planner\n任务拆解]
     M --> EE[engineering-executor\n开发执行]
-    M --> TA[test-and-acceptance\n测试验收]
+    M --> TC[prd-test-case-generator\n测试用例]
+    M --> TA[test-and-acceptance\n测试验收与收口]
     M --> DL[project-devlog\n状态回写]
 
     W --> X[按职责回写全局文件]
     RS --> X
-    SD --> X
+    UX --> X
+    PW --> X
     DP --> X
     EE --> X
+    TC --> X
     TA --> X
     DL --> X
 
