@@ -86,7 +86,7 @@
 - `project-rules.md`
 - `project-profile.md`
 - `execution-plan.md`
-- `project-status.md`
+- `project-status.md`（仅兼容性废弃说明，不再作为默认状态回写模板）
 - 解释这些模板如何使用的目录说明
 
 不应放入：
@@ -142,8 +142,8 @@
 
 正例：
 
-- `skills/ai-project-manager/references/global-files-readwrite-protocol.md`
-  - 它规定谁先读什么、谁能写什么、什么时候补默认文件、什么时候必须回写
+- `skills/ai-project-manager/references/global-files-protocol.md`
+  - 它规定全局文件职责、字段合同、谁先读什么、谁能写什么、什么时候补默认文件、什么时候必须回写
   - 主入口围绕它做判断，其它默认能力也会遵循这个骨架，所以它属于套件级规范
 
 反例：
@@ -236,21 +236,21 @@
 
 模型定义见：
 
-- `skills/ai-project-manager/references/global-files-model.md`
-- `skills/ai-project-manager/references/global-files-readwrite-protocol.md`
+- `skills/ai-project-manager/references/global-files-protocol.md`
 
 约束：
 
 1. 先按职责识别宿主项目现有文件，再做映射
 2. 若宿主项目缺少某类全局文件，再由套件补默认文件
 3. 子 skill 不得自行扩张全局文件定义
-4. 4 类全局文件模板属于主入口默认路由骨架的一部分
+4. 3 类全局文件模板属于主入口默认路由骨架的一部分，状态回写默认由 `project-devlog` 承接
 
 ## 9. 主入口运行模型
 
 `ai-project-manager` 的运行协议见：
 
-- `skills/ai-project-manager/references/entry-runtime-model.md`
+- `skills/ai-project-manager/references/runtime.md`
+- `skills/ai-project-manager/references/routing.md`
 
 约束：
 

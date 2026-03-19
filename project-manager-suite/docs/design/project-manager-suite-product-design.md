@@ -35,10 +35,10 @@
 
 `docs/design/` 应以本文作为主文件进入，其他设计文档只作为专题补充，从这里统一分流：
 
-- [README.md](./README.md)
-  - 目录级索引说明，负责告诉读者 design 层怎么读，但不替代本文
+- [../../README.md](../../README.md)
+  - 套件总入口说明，负责告诉读者整体产品形态、目录结构与阅读顺序
 - [global-files-architecture.md](./global-files-architecture.md)
-  - 补充说明 4 类全局文件为什么是产品骨架，以及它们之间如何协同
+  - 补充说明 3 类全局文件与 1 类状态回写能力为什么是产品骨架，以及它们之间如何协同
 - [project-progression-workflow.md](./project-progression-workflow.md)
   - 用工作流视角解释项目从主入口进入后如何推进、路由和回写
 - [open-core-strategy.md](./open-core-strategy.md)
@@ -47,8 +47,8 @@
   - 盘点哪些内容应公开、哪些内容应保留，以及发布前必备清单
 - [package-conventions.md](./package-conventions.md)
   - 固定套件目录、文档分层、模板来源和命名约束
-- [project-scaffold-design.md](./project-scaffold-design.md)
-  - 讨论宿主项目目录脚手架如何规划与补齐，属于后续能力专题设计
+- [../../skills/ai-project-manager/references/routing.md](../../skills/ai-project-manager/references/routing.md)
+  - 说明主入口的宿主项目骨架补齐与路由规则
 
 如果只看一份文档，优先看本文；如果需要专题展开，再从以上链接进入对应文件。
 
@@ -189,7 +189,7 @@
 开源版 1.0 的范围聚焦于：
 
 - 一个稳定的总入口：`ai-project-manager`
-- 一套统一的 4 类全局文件骨架
+- 一套统一的 3 类全局文件与 1 类状态回写能力骨架
 - 一组最小基础子能力
 - 一套最小可用的运行协议与回写闭环
 - 一套清楚的公开版 / 增强版边界
@@ -288,22 +288,22 @@
 - 再补当前最小缺口
 - 最后才决定是否进入具体子 skill
 
-### 3.4 为什么采用 4 类全局文件
+### 3.4 为什么采用 3 类全局文件 + 1 类状态回写能力
 
 判断结论：
 
-- 当前采用 4 类全局文件，是产品目标下的最小稳定答案
+- 当前采用“3 类全局文件 + 1 类状态回写能力”，是产品目标下的最小稳定答案
 
-4 类文件分别回答：
+3 类全局文件与 1 类状态回写能力分别回答：
 
 - 全局规则文件：项目怎么运行
 - 项目画像文件：项目当前是什么
 - 当前执行计划文件：现在做什么
-- 项目状态回写文件：最近发生了什么
+- 状态回写能力（默认由 `project-devlog` 承接）：最近发生了什么
 
 原因：
 
-- 这 4 类刚好覆盖主入口最稳定的读、判、路由、回写需求
+- 这组 3+1 角色刚好覆盖主入口最稳定的读、判、路由、回写需求
 - 再往上拆会增加复杂度，不适合目标用户
 - 再往下压缩会导致职责混写，不利于判断与回写
 
@@ -311,7 +311,7 @@
 
 - 全局文件体系成为产品最小路由骨架
 - 模型不仅要定义“文件角色”（存哪），还要定义“字段来源”（谁定），分为`用户确认`、`系统推断`与`主入口判断回写`
-- 模板层和协议层都必须以这 4 类角色和 3 类字段源约束保持一致
+- 模板层和协议层都必须以这组 3+1 角色和 3 类字段源约束保持一致
 
 ### 3.5 为什么采用渐进式披露
 
@@ -346,7 +346,7 @@
 
 对结构的影响：
 
-- 4 类全局文件必须共享同一套角色模型和最小公共协议
+- 3 类全局文件与状态回写能力必须共享同一套角色模型和最小公共协议
 - 差异应收敛到 heuristics、模板质量、案例密度和增强子 skill
 - 开源 / 私有边界应通过内容分层管理，而不是通过分裂骨架来实现
 
@@ -391,7 +391,7 @@
   - 负责建立上下文、判断阶段、决定下一步能力、触发回写
 
 - 项目全局文件层
-  - 由 4 类全局文件构成统一项目骨架
+  - 由 3 类全局文件与 1 类状态回写能力构成统一项目骨架
   - 为主入口和子 skill 提供共同上下文
 
 - 基础子能力层
@@ -420,12 +420,12 @@
 
 ### 4.4 全局文件体系与 role
 
-全局文件体系当前按 4 类定义：
+全局文件体系当前按“3 类全局文件 + 1 类状态回写能力”定义：
 
 1. 全局规则文件
 2. 项目画像文件
 3. 当前执行计划文件
-4. 项目状态回写文件
+4. 状态回写能力
 
 它们共同构成：
 
@@ -441,10 +441,9 @@
 
 详细模型与协议不在本文件重复展开，统一索引到：
 
-- `../../skills/ai-project-manager/references/global-files-model.md`
-- `../../skills/ai-project-manager/references/global-files-minimum-shared-protocol.md`
-- `../../skills/ai-project-manager/references/global-files-readwrite-protocol.md`
-- `../../skills/ai-project-manager/references/entry-runtime-model.md`
+- `../../skills/ai-project-manager/references/global-files-protocol.md`
+- `../../skills/ai-project-manager/references/runtime.md`
+- `../../skills/ai-project-manager/references/routing.md`
 
 ### 4.5 开源 / 私有分层原则
 
@@ -530,7 +529,7 @@
 
 - 保持产品定位稳定
 - 保持 design / references / templates / skills 的边界稳定
-- 保持 4 类全局文件骨架稳定
+- 保持“3 类全局文件 + 1 类状态回写能力”骨架稳定
 - 继续验证基础版最小闭环是否真实成立
 
 ### 5.4 当前最需要评审的议题
@@ -590,7 +589,7 @@
 1. `project-manager-suite` 到底是 skill 集合，还是产品化能力包
 2. 主入口为什么必须围绕全局文件体系设计
 3. 为什么不先堆 skill，而先做路由骨架
-4. 为什么全局文件体系采用 4 类角色
+4. 为什么全局文件体系采用 3+1 角色
 5. 开源版 / 增强版为什么采用“统一骨架，能力分层”
 6. 为什么模型应理解为“岗位能力 + 交付标准 + 项目骨架”
 7. 为什么这套模型具备“项目级持久化记忆系统”雏形
@@ -629,7 +628,7 @@
 - 收敛原因：
   - 没有统一骨架，skill 无法形成持续推进闭环
 - 影响：
-  - 先建立 4 类全局文件体系
+  - 先建立 3 类全局文件与状态回写能力体系
   - 先建立主入口运行协议
   - 实施顺序转向原则、边界、协议、模板、职责收紧
 - 剩余开放问题：
@@ -647,7 +646,7 @@
 - 收敛原因：
   - 分裂文件体系会导致主入口判断口径和回写目标分叉
 - 影响：
-  - 4 类全局文件必须定义最小公共协议
+  - 3 类全局文件与状态回写能力必须定义最小公共协议
   - 增强版差异收敛到 heuristics、模板、案例和增强子 skill
 - 剩余开放问题：
   - 哪些字段应进入最小公共协议，哪些增强内容允许灰度开放
@@ -739,7 +738,7 @@
 
 ## 附录 A：文档分工地图
 
-- [README.md](./README.md)
+- [../../README.md](../../README.md)
   - 套件总览入口
   - 说明产品形态、目录结构与阅读顺序
 
@@ -762,8 +761,8 @@
 - [project-progression-workflow.md](./project-progression-workflow.md)
   - 面向人理解的项目推进工作流解释图
 
-- [project-scaffold-design.md](./project-scaffold-design.md)
-  - 宿主项目目录脚手架的专题设计讨论
+- [../../skills/ai-project-manager/references/routing.md](../../skills/ai-project-manager/references/routing.md)
+  - 主入口的宿主项目骨架补齐与路由规则
 
 - `../../skills/ai-project-manager/references/*`
   - 主入口引用的规则与协议层
@@ -785,7 +784,7 @@
   - `skills/` 负责具体能力入口、资源和模板
 
 - 与 `assets/global-files/` 的关系：
-  - 本文档解释 4 类全局文件为什么存在
+  - 本文档解释 3 类全局文件与状态回写能力为什么存在
   - 模板层负责提供默认载体，不重复设计判断
 
 ---

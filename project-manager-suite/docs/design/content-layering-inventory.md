@@ -65,24 +65,20 @@
 
 | 文件 | 建议分层 | 说明 |
 |---|---|---|
-| `docs/design/README.md` | A | design 层索引入口说明，适合公开 |
 | `docs/design/project-progression-workflow.md` | A | 项目推进工作流图，适合公开解释运行方式 |
 | `docs/design/package-conventions.md` | C | 套件设计约定，属于内部设计定义层 |
 | `docs/design/open-core-strategy.md` | C | 开源策略与商业化边界，属于内部设计定义层 |
 | `docs/design/content-layering-inventory.md` | C | 分层与发布前必备清单，属于内部设计定义层 |
 | `docs/design/project-manager-suite-product-design.md` | C | 套件唯一设计主文档，承载产品定位、设计思路、实施策略和关键演进摘要 |
 | `docs/design/global-files-architecture.md` | C | 全局文件总体架构说明，属于内部设计定义层 |
-| `docs/design/project-scaffold-design.md` | C | 宿主项目脚手架专题设计，属于后续能力设计讨论 |
 
 ### 3.3 主入口 references
 
 | 文件 | 建议分层 | 说明 |
 |---|---|---|
-| `skills/ai-project-manager/references/global-files-model.md` | A | 项目全局文件模型，属于公开运行骨架 |
-| `skills/ai-project-manager/references/global-files-readwrite-protocol.md` | A | 全局文件读写协议，属于公开运行骨架 |
-| `skills/ai-project-manager/references/global-files-minimum-shared-protocol.md` | A | 最小公共字段协议，属于公开运行骨架 |
-| `skills/ai-project-manager/references/entry-runtime-model.md` | A | 主入口运行模型，属于公开运行骨架 |
-| `skills/ai-project-manager/references/entry-routing-conditions.md` | A | 主入口路由条件，属于公开运行骨架 |
+| `skills/ai-project-manager/references/global-files-protocol.md` | A | 全局文件职责、字段合同与读写协议，属于公开运行骨架 |
+| `skills/ai-project-manager/references/runtime.md` | A | 主入口运行协议，属于公开运行骨架 |
+| `skills/ai-project-manager/references/routing.md` | A | 主入口路由条件与项目骨架规则，属于公开运行骨架 |
 
 ### 3.4 主入口 `ai-project-manager`
 
@@ -98,10 +94,9 @@
 | `skills/ai-project-manager/assets/global-files/project-profile.md` | B | 基础项目画像模板，适合公开；未来可有私有增强版 |
 | `skills/ai-project-manager/assets/global-files/project-rules.md` | B | 最小全局规则模板，适合公开；未来可有私有增强版 |
 | `skills/ai-project-manager/assets/global-files/execution-plan.md` | B | 最小计划载体模板，适合公开；未来可有私有增强版 |
-| `skills/ai-project-manager/assets/global-files/project-status.md` | B | 最小状态回写模板，适合公开；未来可有私有增强版 |
-| `skills/ai-project-manager/references/default-delivery-flow.md` | B | 基础交付链路，当前适合公开低配版 |
-| `skills/ai-project-manager/references/interview-starter.md` | B | 基础首轮访谈，当前适合公开低配版；未来增强追问逻辑应私有 |
-| `skills/ai-project-manager/references/stage-router.md` | B | 基础阶段判断，当前适合公开低配版；精细 heuristics 应私有 |
+| `skills/ai-project-manager/assets/global-files/project-status.md` | B | 废弃兼容说明文件，用于明确不再默认创建状态文件 |
+| `skills/ai-project-manager/assets/global-files/README.md` | B | starter pack 使用说明，适合公开 |
+| `skills/ai-project-manager/references/tech.md` | B | 默认技术约束说明，当前属于公开低配约束层 |
 
 ### 3.6 当前基础子 skill 文件
 
@@ -142,7 +137,7 @@
 - 全局规则模板
 - 项目画像模板
 - 最小计划载体模板
-- 最小状态回写模板
+- 状态回写兼容说明或默认日志回写说明
 - 基础需求摘要模板
 - 套件 README
 - 全局文件模型
@@ -151,7 +146,7 @@
 
 当前状态判断：
 
-- 已具备：主入口基础版、套件级核心文档、全局规则模板、项目画像模板、最小计划载体模板、最小状态回写模板、基础需求摘要模板、至少 1 个可运行基础子 skill 实物
+- 已具备：主入口基础版、套件级核心文档、全局规则模板、项目画像模板、最小计划载体模板、状态回写兼容说明、基础需求摘要模板、至少 1 个可运行基础子 skill 实物
 - 未具备：无
 
 ### 4.2 首个公开版建议最低交付组合
@@ -163,7 +158,7 @@
 - `skills/project-devlog/`
 - `skills/ai-project-manager/assets/global-files/project-profile.md`
 - 最小计划载体模板
-- 最小状态回写模板
+- 状态回写兼容说明
 
 原因：
 
@@ -251,7 +246,7 @@
 
 以下文件目前虽然归在公开层或灰度公开层，但后续迭代时最容易被写进私有逻辑：
 
-### 风险文件 1：`interview-starter.md`
+### 风险文件 1：`runtime.md`
 
 风险：
 
@@ -262,7 +257,7 @@
 - 公开版只保留基础首轮访谈
 - 动态追问规则另行进入私有层
 
-### 风险文件 2：`stage-router.md`
+### 风险文件 2：`routing.md`
 
 风险：
 
@@ -305,7 +300,7 @@
 2. 优先实现 `requirements-starter` 与 `project-devlog` 的最小可运行版本
 3. 同步补齐最小计划载体模板与最小状态回写模板
 4. 后续新增文件时，先判断属于 A / B / C / D 哪一类再落盘
-5. 对 `interview-starter.md`、`stage-router.md` 和各基础子 skill `SKILL.md` 重点设边界，避免它们自然长成私有层
+5. 对 `runtime.md`、`routing.md` 和各基础子 skill `SKILL.md` 重点设边界，避免它们自然长成私有层
 
 ---
 

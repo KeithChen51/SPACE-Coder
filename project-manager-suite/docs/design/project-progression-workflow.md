@@ -17,7 +17,7 @@
 flowchart TD
     U[业务方提出想法 / 提供现有材料] --> A[ai-project-manager]
 
-    A --> B[识别 4 类全局文件]
+    A --> B[识别 3 类全局文件与状态回写入口]
     B --> C[读取最小必要上下文]
     C --> D{关键上下文够不够}
 
@@ -70,7 +70,7 @@ flowchart TD
     K --> TA[test-and-acceptance]
     K --> DL[project-devlog]
 
-    W --> X[按职责回写 4 类全局文件]
+    W --> X[按职责回写 3 类全局文件并触发状态回写]
     RS --> X
     UX --> X
     PW --> X

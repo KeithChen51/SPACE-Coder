@@ -171,6 +171,94 @@ src/
 - 启动初始化时就应补齐 `.agent/` 与 `.agent/skills/`，避免宿主项目后续落地本地能力时没有稳定挂载位
 - 不要求首次就把所有 skill 子目录建满；该目录先作为宿主增强能力和本地覆写的统一入口
 
+## 合并后的完整工程目录参考
+
+以下目录树用于回答“当三层目录都已按阶段补齐后，完整工程目录长什么样”。
+
+注意：
+
+- 这是合并视角的完整参考树
+- 不是运行时默认一次性创建口径
+- 实际执行时仍应遵循“先识别，再按阶段补最小缺口”
+
+完整参考树如下：
+
+```text
+<项目名称>/
+├── project-profile.md
+├── project-rules.md
+├── docs/
+│   ├── plans/
+│   │   └── execution-plan.md
+│   ├── rules/
+│   ├── prd/
+│   ├── decisions/
+│   ├── test-case/
+│   └── architecture.md
+├── logs/
+├── src/
+│   ├── <项目名>-Toc/
+│   │   ├── frontend/
+│   │   └── backend/
+│   ├── <项目名>-Config/
+│   │   ├── frontend/
+│   │   └── backend/
+│   └── shared/
+├── tools/
+└── .agent/
+    └── skills/
+```
+
+各层在完整工程目录中的位置对应如下：
+
+### 第一层：启动必建骨架
+
+```text
+<项目名称>/
+├── project-profile.md
+├── project-rules.md
+├── docs/
+│   ├── plans/
+│   │   └── execution-plan.md
+│   └── rules/
+├── logs/
+└── .agent/
+    └── skills/
+```
+
+### 第二层：阶段触发目录
+
+```text
+docs/
+├── prd/
+├── decisions/
+├── test-case/
+└── architecture.md
+```
+
+### 第三层：实现触发目录
+
+```text
+src/
+├── <项目名>-Toc/
+│   ├── frontend/
+│   └── backend/
+├── <项目名>-Config/
+│   ├── frontend/
+│   └── backend/
+└── shared/
+
+tools/
+```
+
+推荐把这棵“完整工程目录参考树”理解为：
+
+- 第一层回答“项目怎样先站起来”
+- 第二层回答“文档和决策怎样逐步沉淀”
+- 第三层回答“项目怎样进入真实工程实现”
+
+因此，完整工程目录不是启动时一次性铺开的静态模板，而是项目推进完成后的结构化落点。
+
 ## 主入口执行结果模板
 
 当主入口基于本文件执行补齐后，建议输出：

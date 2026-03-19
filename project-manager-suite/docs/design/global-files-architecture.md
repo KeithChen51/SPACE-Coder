@@ -7,14 +7,13 @@
 它解决两个问题：
 
 1. `ai-project-manager` 处理用户请求时，为什么要先经过全局文件体系
-2. 4 类全局文件在整个路由链路中分别承担什么作用
+2. 3 类全局文件与 1 类状态回写能力在整个路由链路中分别承担什么作用
 
 本文件是结构总览，不替代以下细节文档：
 
-- `skills/ai-project-manager/references/global-files-model.md`
-- `skills/ai-project-manager/references/global-files-readwrite-protocol.md`
-- `skills/ai-project-manager/references/entry-runtime-model.md`
-- `skills/ai-project-manager/references/entry-routing-conditions.md`
+- `skills/ai-project-manager/references/global-files-protocol.md`
+- `skills/ai-project-manager/references/runtime.md`
+- `skills/ai-project-manager/references/routing.md`
 - `docs/design/project-progression-workflow.md`
 - `skills/ai-project-manager/assets/global-files/README.md`
 
@@ -72,7 +71,7 @@
 
 ### 2.2 为什么架构层还要定义字段来源
 
-设计演进继续收敛后，当前模型已经不再只回答“4 类文件分别负责什么”，还要回答“这些文件里的字段应该由谁提供”。
+设计演进继续收敛后，当前模型已经不再只回答“3 类全局文件与状态回写能力分别负责什么”，还要回答“这些文件里的字段应该由谁提供”。
 
 如果只定义文件角色，而不定义字段来源，就会继续出现：
 
@@ -101,7 +100,7 @@
 
 一句话说：
 
-**4 类全局文件定义“信息放在哪”，字段来源三分类定义“这些信息由谁提供”。**
+**3 类全局文件定义“信息放在哪”，状态回写能力定义“最近发生了什么如何沉淀”，字段来源三分类定义“这些信息由谁提供”。**
 
 ---
 
@@ -111,11 +110,11 @@
 flowchart TD
     U[用户请求 / 现有材料] --> A[ai-project-manager 主入口]
 
-    A --> B{识别宿主项目是否已有\n4 类全局文件}
+    A --> B{识别宿主项目是否已有\n3 类全局文件与状态回写入口}
     B --> R1[全局规则文件\nproject-rules.md / 现有规则入口]
     B --> P1[项目画像文件\nproject-profile.md]
     B --> E1[当前执行计划文件\nexecution-plan.md]
-    B --> S1[项目状态回写文件\nproject-status.md / logs]
+    B --> S1[状态回写入口\nproject-devlog / logs]
 
     R1 --> C[读取最小必要上下文]
     P1 --> C
@@ -184,25 +183,25 @@ flowchart TD
     X --> R3[规则变化 -> 回写全局规则文件]
     X --> P3[项目快照变化\n用户确认事实更新/系统入口补齐/\n主入口判断结果 -> 回写项目画像]
     X --> E3[当前任务变化 -> 回写执行计划]
-    X --> S3[本轮结果 -> 回写状态文件]
+    X --> S3[本轮结果 -> 回写日志载体]
 ```
 
 ---
 
-## 4. 四类全局文件关系图
+## 4. 三类全局文件与状态回写能力关系图
 
 ```mermaid
 flowchart LR
     GR[全局规则文件\n回答: 项目怎么运行] --> PP[项目画像文件\n回答: 项目当前是什么]
     PP --> EP[当前执行计划文件\n回答: 现在做什么]
-    EP --> PS[项目状态回写文件\n回答: 最近发生了什么]
+    EP --> PS[状态回写能力\n回答: 最近发生了什么]
     PS --> PP
     PS --> EP
 ```
 
 ---
 
-## 5. 四类文件的职责定位
+## 5. 三类全局文件与状态回写能力的职责定位
 
 这里不仅定义“每类文件回答什么问题”，也补充定义“这类文件默认以哪种字段来源为主”。
 
@@ -289,7 +288,7 @@ flowchart LR
 - 项目基础画像
 - 完整过程记录
 
-### 5.4 项目状态回写文件
+### 5.4 状态回写能力
 
 回答的问题：
 
@@ -354,7 +353,7 @@ flowchart LR
 
 这一节用于说明：
 
-当前 `Prime-Trace` 仓库里的现有文件，如何映射到 `project-manager-suite` 定义的 4 类全局文件角色。
+当前 `Prime-Trace` 仓库里的现有文件，如何映射到 `project-manager-suite` 定义的 3 类全局文件与 1 类状态回写能力角色。
 
 这一节不是抽象模型，而是：
 
@@ -379,7 +378,7 @@ flowchart LR
     LG --> MISSING
 ```
 
-### 8.2 4 类全局文件角色映射
+### 8.2 3 类全局文件 + 1 类状态回写能力角色映射
 
 #### 8.2.1 全局规则文件
 
@@ -465,7 +464,7 @@ flowchart LR
 
 - 当前项目的执行计划文件角色已经存在，且非常明确
 
-#### 8.2.4 项目状态回写文件
+#### 8.2.4 状态回写能力
 
 对应角色：
 
@@ -485,7 +484,7 @@ flowchart LR
 
 - 当前项目已经有明显的状态回写习惯
 - 但载体是目录级，而不是单一文件级
-- 这不影响它承担“项目状态回写文件”角色
+- 这不影响它承担“状态回写能力默认载体”角色
 
 支撑证据：
 
@@ -499,14 +498,14 @@ flowchart LR
 
 ### 8.3 当前项目缺口判断
 
-基于现状映射，当前项目对 4 类全局文件的覆盖情况如下：
+基于现状映射，当前项目对 3 类全局文件与 1 类状态回写能力的覆盖情况如下：
 
 | 角色 | 当前状态 | 当前承载 |
 |---|---|---|
 | 全局规则文件 | 已存在 | `docs/ai-rules.md` |
 | 项目画像文件 | 缺失独立载体 | 信息分散在规则 / 计划 / PRD / 日志 |
 | 当前执行计划文件 | 已存在 | `docs/plans/hajimi-V6.md` |
-| 项目状态回写文件 | 已存在 | `logs/` |
+| 状态回写能力（默认日志载体） | 已存在 | `logs/` |
 
 一句话判断：
 
@@ -557,7 +556,7 @@ flowchart LR
 
 截至当前，`project-manager-suite` 在全局文件体系上已经明确：
 
-- 4 类全局文件角色模型
+- 3 类全局文件 + 1 类状态回写能力角色模型
 - 默认模板
 - 默认读写协议
 - 主入口围绕全局文件运行的主链路
