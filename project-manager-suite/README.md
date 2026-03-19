@@ -79,6 +79,7 @@
 → 测试执行
 → 人工点检准备
 → 点检结果回写
+→ 自动化部署（按需进入）
 ```
 
 其中 **S2 页面构建与完整版 PRD** 阶段有一条硬约束：
@@ -107,7 +108,9 @@ project-manager-suite/
     ├── delivery-planner/              # [子能力] 任务拆解与交付规划
     ├── engineering-executor/          # [子能力] 研发执行器
     ├── prd-test-case-generator/       # [子能力] PRD 驱动测试用例生成
-    ├── test-and-acceptance/           # [子能力] 测试与验收
+    ├── test-case-runner/              # [子能力] 测试用例执行
+    ├── test-and-acceptance/           # [子能力] 验收收口
+    ├── cloud-deploy/                  # [子能力] 云端部署与发布验证
     └── project-devlog/                # [子能力] 日志与状态回写
 ```
 
@@ -132,7 +135,9 @@ project-manager-suite/
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
 | `engineering-executor` | 承接开发执行和实现工作 | S4 |
 | `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S5 |
-| `test-and-acceptance` | 承接测试执行、点检准备和收口 | S6 / S7 / S8 |
+| `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S6 |
+| `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | S7 / S8 |
+| `cloud-deploy` | 承接构建验证、上传替换、服务重启和部署验证 | S9 |
 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
 | `coding-standards` | 为代码、接口、SQL、测试任务加载规范 | 代码相关任务伴随 |
 
