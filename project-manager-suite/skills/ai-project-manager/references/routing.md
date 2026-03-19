@@ -22,9 +22,10 @@
 | **当前阶段为 S3（任务拆解与开发计划）** | 路由到计划能力 | **是** | 开发计划 / 任务清单 |
 | **当前阶段为 S4（开发执行）** | 路由到执行能力 | **是** | 开发结果 / 当前迭代实现 |
 | **当前阶段为 S5（测试用例生成）** | 路由到 PRD 驱动测试用例能力 | **是** | 测试用例文档 |
-| **当前阶段为 S6（测试执行）** | 路由到测试执行能力 | **是** | 测试结果 / 缺陷清单 |
+| **当前阶段为 S6（测试执行）** | 路由到 `test-case-runner` 测试执行能力 | **是** | 测试结果 / 缺陷清单 |
 | **当前阶段为 S7（人工点检准备）** | 路由到验收准备能力 | **是** | 点检清单 / 验收说明 |
 | **当前阶段为 S8（点检结果回写与收口）** | 路由到验收收口能力，状态回写默认由 `project-devlog` 承接并写入日志文件 | **是** | 验收结论 / 状态回写 |
+| **当前阶段为 S9（自动化部署）** | 路由到 `cloud-deploy` 自动化部署能力 | **是** | 部署报告 / 部署验证结果 |
 | **本轮结束，不需要子能力承接大单体任务** | 直接统一回写 | 否 | 更新后的全局文件 |
 
 > **只补文件，不进子能力的条件（归纳）**：缺骨架、缺基础画像、缺入口信息、阶段无法判断、或本轮只为对齐信息不需直接执行。
@@ -50,7 +51,9 @@
 | `delivery-planning` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
 | `engineering-execution` (开发执行) | S4 | `skills/engineering-executor/` |
 | `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
-| `test-acceptance` (测试执行、点检准备、验收收口) | S6 / S7 / S8 | `skills/test-and-acceptance/` |
+| `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |
+| `test-acceptance` (人工点检准备、验收收口) | S7 / S8 | `skills/test-and-acceptance/` |
+| `cloud-deploy` (自动化部署) | S9 | `skills/cloud-deploy/` |
 
 ---
 

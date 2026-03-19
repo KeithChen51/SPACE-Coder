@@ -86,7 +86,9 @@
 - `project-rules.md`
 - `project-profile.md`
 - `execution-plan.md`
-- `project-status.md`（仅兼容性废弃说明，不再作为默认状态回写模板）
+- `README.md`
+- `project-status.md`（仅兼容迁移提示，不再作为默认状态模板）
+- `project-status.md`（仅兼容迁移提示，不再作为默认状态模板）
 - 解释这些模板如何使用的目录说明
 
 不应放入：
@@ -200,7 +202,9 @@
 - `delivery-planner`
 - `engineering-executor`
 - `prd-test-case-generator`
+- `test-case-runner`
 - `test-and-acceptance`
+- `cloud-deploy`
 - `project-devlog`
 
 ## 6. 稳定能力名
@@ -211,7 +215,9 @@
 - `delivery-planning`
 - `engineering-execution`
 - `test-case-generation`
+- `test-case-runner`
 - `test-acceptance`
+- `cloud-deploy`
 - `project-devlog`
 - `coding-standards`
 
@@ -237,13 +243,15 @@
 模型定义见：
 
 - `skills/ai-project-manager/references/global-files-protocol.md`
+- `skills/ai-project-manager/references/runtime.md`
+- `skills/ai-project-manager/references/routing.md`
 
 约束：
 
 1. 先按职责识别宿主项目现有文件，再做映射
 2. 若宿主项目缺少某类全局文件，再由套件补默认文件
 3. 子 skill 不得自行扩张全局文件定义
-4. 3 类全局文件模板属于主入口默认路由骨架的一部分，状态回写默认由 `project-devlog` 承接
+4. 3 类全局文件模板与默认状态回写能力共同构成主入口默认路由骨架
 
 ## 9. 主入口运行模型
 

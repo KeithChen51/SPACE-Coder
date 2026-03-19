@@ -108,7 +108,9 @@
 | `skills/delivery-planner/SKILL.md` | A | 基础计划拆解能力入口，当前属于公开版能力骨架 |
 | `skills/engineering-executor/SKILL.md` | A | 基础工程执行能力入口，当前属于公开版能力骨架 |
 | `skills/prd-test-case-generator/SKILL.md` | A | 基础测试用例生成入口，当前属于公开版能力骨架 |
-| `skills/test-and-acceptance/SKILL.md` | A | 基础测试执行与验收能力入口，当前属于公开版能力骨架 |
+| `skills/test-case-runner/SKILL.md` | A | 基础测试执行能力入口，当前属于公开版能力骨架 |
+| `skills/test-and-acceptance/SKILL.md` | A | 基础人工点检与验收收口能力入口，当前属于公开版能力骨架 |
+| `skills/cloud-deploy/SKILL.md` | A | 基础自动化部署能力入口，当前属于公开版能力骨架 |
 | `skills/project-devlog/SKILL.md` | A | 全局伴随的基础状态回写能力，属于公开版闭环实物 |
 
 ### 3.7 当前待补的公开低配实物
@@ -122,7 +124,9 @@
 | `skills/delivery-planner/assets/*` | B | 计划拆解低配模板仍待补齐 |
 | `skills/engineering-executor/assets/*` | B | 执行阶段低配模板仍待补齐 |
 | `skills/prd-test-case-generator/assets/*` | B | 测试用例低配模板仍待补齐 |
+| `skills/test-case-runner/assets/*` | B | 测试执行低配模板仍待补齐 |
 | `skills/test-and-acceptance/assets/*` | B | 测试验收低配模板仍待补齐 |
+| `skills/cloud-deploy/assets/*` | B | 自动化部署低配模板仍待补齐 |
 
 ---
 
@@ -140,7 +144,7 @@
 - 状态回写兼容说明或默认日志回写说明
 - 基础需求摘要模板
 - 套件 README
-- 全局文件模型
+- 全局文件协议
 - 主入口运行模型
 - 开源 / 私有分层策略
 
@@ -176,7 +180,9 @@
 - `delivery-planner` 完整基础版
 - `engineering-executor` 完整基础版
 - `prd-test-case-generator` 完整基础版
+- `test-case-runner` 完整基础版
 - `test-and-acceptance` 完整基础版
+- `cloud-deploy` 完整基础版
 - 多行业案例
 - 高质量示例集
 

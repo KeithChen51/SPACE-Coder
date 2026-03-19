@@ -37,6 +37,7 @@ flowchart TD
     H --> S6[S6 测试执行]
     H --> S7[S7 人工点检准备]
     H --> S8[S8 点检结果回写与收口]
+    H --> S9[S9 自动化部署]
 
     S0 --> O1[输出项目画像初稿 / 待确认项]
     S1 --> O2[输出需求摘要]
@@ -47,6 +48,7 @@ flowchart TD
     S6 --> O7[输出测试结果 / 缺陷清单]
     S7 --> O8[输出点检清单 / 验收说明]
     S8 --> O9[输出验收结论 / 状态回写]
+    S9 --> O10[输出部署报告 / 部署验证结果]
 
     O1 --> R{是否必须进入子 skill}
     O2 --> R
@@ -57,6 +59,7 @@ flowchart TD
     O7 --> R
     O8 --> R
     O9 --> R
+    O10 --> R
 
     R -- 否 --> W[停留在主入口继续推进]
     R -- 是 --> K[按需进入子 skill]
@@ -67,17 +70,21 @@ flowchart TD
     K --> DP[delivery-planner]
     K --> EE[engineering-executor]
     K --> TC[prd-test-case-generator]
+    K --> TR[test-case-runner]
     K --> TA[test-and-acceptance]
+    K --> CD[cloud-deploy]
     K --> DL[project-devlog]
 
-    W --> X[按职责回写 3 类全局文件并触发状态回写]
+    W --> X[按职责回写全局文件与日志]
     RS --> X
     UX --> X
     PW --> X
     DP --> X
     EE --> X
     TC --> X
+    TR --> X
     TA --> X
+    CD --> X
     DL --> X
 ```
 
@@ -114,6 +121,7 @@ flowchart TD
 | `S6` 测试执行 | 验收结论 / 不符合项清单 |
 | `S7` 人工点检准备 | 点检清单 / 验收说明 |
 | `S8` 点检结果回写与收口 | 验收结论 / 阶段收口建议 / 状态回写 |
+| `S9` 自动化部署 | 部署报告 / 部署验证结果 / 待跟进项 |
 
 ---
 
