@@ -102,7 +102,8 @@ project-manager-suite/
     │   ├── references/                # 路由规则与协议层
     │   └── assets/global-files/       # 全局文件默认骨架（画像、计划等）
     ├── coding-standards/              # [子能力] 编码规范
-    ├── requirements-starter/          # [子能力] 需求分析启动器
+    ├── toxic-commercial-pm/           # [子能力] 商业化业务需求文档 / BRD 收敛
+    ├── requirements-starter/          # [子能力] 轻量需求摘要整理
     ├── ui-ux-pro-max/                 # [子能力] 页面原型与视觉设计
     ├── prd-writer/                    # [子能力] 页面确认后的完整 PRD 反推
     ├── delivery-planner/              # [子能力] 任务拆解与交付规划
@@ -129,7 +130,8 @@ project-manager-suite/
 | 能力 | 主要职责 | 默认介入阶段 |
 |------|----------|--------------|
 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
-| `requirements-starter` | 将零散业务信息整理为需求摘要 | S1 |
+| `toxic-commercial-pm` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
+| `requirements-starter` | 将零散业务信息整理为轻量需求摘要，作为 S1 前置输入或降级方案 | S0 / S1 前置 |
 | `ui-ux-pro-max` | 生成页面原型、视觉方向和交互原型 | S2 首轮 |
 | `prd-writer` | 在页面确认后反推完整 PRD | S2 确认后 |
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |

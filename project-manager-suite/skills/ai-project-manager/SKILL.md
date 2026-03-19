@@ -35,6 +35,10 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 - 当前轮最小交付物是什么
 - 结果应写回哪个全局文件
 
+默认阶段口径补充：
+- S1“业务需求文档”默认进入 `toxic-commercial-pm`
+- `requirements-starter` 仅作为轻量需求摘要整理能力，在 S0 或 S1 前置补齐时使用
+
 ## 资源入口
 
 - 主入口运行流程、访谈规则与交付判断：`references/runtime.md`
