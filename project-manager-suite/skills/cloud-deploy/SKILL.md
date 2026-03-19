@@ -9,7 +9,7 @@ description: >
 
 # Cloud Deploy — 云端部署 Skill
 
-将本地改动安全部署到阿里云 ECS 服务器。
+将本地改动安全部署到云端服务器。
 
 ## 核心原则
 
@@ -35,6 +35,11 @@ description: >
 
 SSH 用户统一为 `root`。
 
+本地源码目录不强制写入 `.env`，可以按以下优先级确定：
+- 用户直接指定的本地目录
+- 仓库内可识别的前端 / 管理端 / 后端模块目录
+- 临时在当前会话中约定的本地变量：`LOCAL_TOC_DIR`、`LOCAL_ADMIN_DIR`、`LOCAL_BACKEND_DIR`
+
 ## SSH 连接方式
 
 本地没有 `sshpass`，使用 `expect` 处理密码交互：
@@ -58,27 +63,27 @@ SCP 同理，把 `spawn ssh` 换成 `spawn scp`。
 
 ### Step 0: 读取配置
 
-从 `.env` 文件解析所需的环境变量值。后续步骤中的 `${CLOUD_IP}` 等占位符都来自这里。
+从 `.env` 文件解析所需的环境变量值。后续步骤中的 `${CLOUD_IP}` 等远端占位符都来自这里；`${LOCAL_TOC_DIR}`、`${LOCAL_ADMIN_DIR}`、`${LOCAL_BACKEND_DIR}` 表示本地源码目录，可由用户指定或由仓库结构识别得到。
 
 ### Step 1: 确定改动范围
 
 检查哪些文件被修改了（`git diff --name-only` 或用户告知），判断需要部署：
-- **前端（Toc）**：`Prime-Trace-Toc/src/` 下的文件
-- **前端（Admin）**：`Prime-Trace-Config/admin/src/` 下的文件
-- **后端**：`Prime-Trace-Backend/src/` 下的 Java 文件
+- **前端（C 端）**：宿主项目 C 端前端源码目录下的文件
+- **前端（管理端）**：宿主项目管理端前端源码目录下的文件
+- **后端**：宿主项目后端源码目录下的文件
 
 ### Step 2: 本地构建验证
 
-#### 前端（Toc / Admin）
+#### 前端（C 端 / 管理端）
 
-**Admin 构建必须带 base path**：Admin 部署在 `/admin/` 子路径下，Vite 需要知道这个路径才能生成正确的资源引用。不带这个变量构建出来的 `index.html` 会引用 `/assets/xxx.js` 而不是 `/admin/assets/xxx.js`，导致页面白屏。
+**管理端构建必须带 base path**：如果管理端部署在 `/admin/` 子路径下，Vite 需要知道这个路径才能生成正确的资源引用。不带这个变量构建出来的 `index.html` 会引用 `/assets/xxx.js` 而不是 `/admin/assets/xxx.js`，导致页面白屏。
 
 ```bash
-# Toc（部署在根路径 /）
-cd Prime-Trace-Toc && npm run build
+# C 端前端（部署在根路径 /）
+cd ${LOCAL_TOC_DIR} && npm run build
 
-# Admin（部署在 /admin/ 子路径）
-cd Prime-Trace-Config/admin && VITE_PUBLIC_BASE_PATH=/admin/ npx vite build
+# 管理端前端（部署在 /admin/ 子路径）
+cd ${LOCAL_ADMIN_DIR} && VITE_PUBLIC_BASE_PATH=/admin/ npx vite build
 ```
 
 **必须在对应子目录下执行构建**，不要在项目根目录跑 `npx vite build`，否则找不到 `index.html` 入口。
@@ -87,7 +92,7 @@ cd Prime-Trace-Config/admin && VITE_PUBLIC_BASE_PATH=/admin/ npx vite build
 - `index.html` — 入口文件，引用带 hash 的资源
 - `assets/` — JS/CSS bundle（文件名含 content hash）
 
-**构建后检查 base path 是否正确（Admin 必做）**：
+**构建后检查 base path 是否正确（管理端必做）**：
 ```bash
 # 确认 index.html 中的资源引用包含 /admin/ 前缀
 grep -o 'src="[^"]*"' dist/index.html
@@ -107,7 +112,7 @@ grep -o 'src="[^"]*"' dist/index.html
 `npm run build` 成功退出不代表产物正确。两类常见的"构建成功但产物有问题"：
 
 1. **Tailwind CSS 静默降级**：v3 语法 + v4 插件等配置不匹配时，CSS 构建不报错但样式大面积缺失
-2. **base path 缺失**：Admin 构建时漏了 `VITE_PUBLIC_BASE_PATH=/admin/`，HTML 引用 `/assets/...` 导致 404 白屏
+2. **base path 缺失**：管理端构建时漏了 `VITE_PUBLIC_BASE_PATH=/admin/`，HTML 引用 `/assets/...` 导致 404 白屏
 
 构建完成后，立即执行以下检查：
 
@@ -119,10 +124,10 @@ ls -la dist/assets/*.css
 cat dist/assets/*.css | grep -oE '\.(bg-white|rounded-xl|p-4|font-bold|shadow-card)' | sort -u
 # 预期：5 个全部命中。缺失任何一个 = 构建产物有问题，禁止上传
 
-# 3. base path 检查（Admin 必做）
+# 3. base path 检查（管理端必做）
 grep -o 'src="[^"]*"' dist/index.html
-# Admin 预期: src="/admin/assets/..."
-# Toc 预期: src="/assets/..."
+# 管理端预期: src="/admin/assets/..."
+# C 端预期: src="/assets/..."
 ```
 
 如果 CSS 检查失败，排查方向：
@@ -132,7 +137,7 @@ grep -o 'src="[^"]*"' dist/index.html
 
 #### 后端
 ```bash
-cd Prime-Trace-Backend && JAVA_HOME="/opt/homebrew/opt/openjdk@17" mvn compile
+cd ${LOCAL_BACKEND_DIR} && JAVA_HOME="/opt/homebrew/opt/openjdk@17" mvn compile
 ```
 本地数据库不可达，编译通过即可（验证 Java 语法正确、无缺失依赖）。不需要 `spring-boot:run`。
 
@@ -171,8 +176,8 @@ expect SSH 到云端执行:
 ```bash
 # SCP 改动的文件到云端对应路径
 # 例如：
-# 本地: src/main/java/com/primetrace/toc/controller/XxxController.java
-# 云端: ${SERVER_BACKEND_DIR}/src/main/java/com/primetrace/toc/controller/XxxController.java
+# 本地: src/main/java/com/example/app/controller/XxxController.java
+# 云端: ${SERVER_BACKEND_DIR}/src/main/java/com/example/app/controller/XxxController.java
 ```
 
 ### Step 4: 重启后端
@@ -207,11 +212,11 @@ tail -5 /tmp/backend.log
 #### 后端验证
 ```bash
 # 无参数调用应返回错误（参数校验生效）
-curl -s http://localhost:8080/api/vehicles
+curl -s http://localhost:8080/api/items
 # 期望: {"code":500,"message":"缺少查询参数..."}
 
 # 带参数调用应正常返回
-curl -s "http://localhost:8080/api/vehicles?phone=xxx"
+curl -s "http://localhost:8080/api/items?query=demo"
 # 期望: {"code":200,...}
 ```
 
@@ -223,7 +228,7 @@ curl -s "http://localhost:8080/api/vehicles?phone=xxx"
 1. **云端不是 git repo** — 不能用 `git pull`，只能 SCP 文件
 2. **SCP 目标目录必须已存在** — 如果传到 `/tmp/` 临时目录，先 `mkdir -p`
 3. **后端重启有 30 秒空窗期** — 杀掉旧进程到新进程就绪之间 API 不可用
-4. **Admin 前端**部署流程与 Toc 相同，只是目录换成 `Prime-Trace-Config/admin` 和 `${PUBLISH_ADMIN_DIR}`，但构建时必须带 `VITE_PUBLIC_BASE_PATH=/admin/`
+4. **管理端前端**部署流程与 C 端相同，只是目录换成 `${LOCAL_ADMIN_DIR}` 和 `${PUBLISH_ADMIN_DIR}`，但构建时必须带 `VITE_PUBLIC_BASE_PATH=/admin/`
 5. **多个 expect 命令**可以合并成一个 SSH 会话内执行多条命令，减少连接次数
 6. **SCP 目录 trailing slash 行为不同** — 这是已经踩过的坑：
    - `scp -r dist/assets root@host:/target/` → 在 `/target/` 下创建 `assets/` 目录（正确）
@@ -236,9 +241,9 @@ curl -s "http://localhost:8080/api/vehicles?phone=xxx"
 
 ### 修代码前：先对比 working vs broken
 
-**不要假设任何"基础设施"一定没问题。** 如果页面上 A 功能正常、B 功能异常，首先对比 A 和 B 在代码中的唯一差异是什么——这个差异就是根因方向。
+**不要假设任何"基础设施"一定没问题。** 如果页面上 A 功能正常、B 功能异常，首先对比 A 和 B 在代码中的唯一差异是什么，这个差异通常就是根因方向。
 
-实例：`dueDays`（a-form-item 里的 a-input-number，v-model:value 正常）vs `themeColor`（a-table bodyCell slot 里的 a-select，v-model:value 失效）。唯一差异是 **a-table bodyCell slot 上下文**。如果第一次修复失败后就做这个对比，一轮就能定位。
+示例：某个表单字段双向绑定正常，而某个表格单元格内的选择器失效。唯一差异可能就在 **table slot 上下文**。如果第一次修复失败后就做这个对比，往往一轮就能定位。
 
 ### 修完代码后：完整走一遍部署流程
 
@@ -268,7 +273,7 @@ curl -s "http://localhost:8080/api/vehicles?phone=xxx"
 ### 服务状态
 | 服务 | 操作 | 状态 |
 |------|------|------|
-| 前端 Toc | dist 替换 | 已生效 |
+| 前端 C 端 | dist 替换 | 已生效 |
 | 后端 | 重启 (PID: xxx) | 已启动 |
 
 ### 验证结果

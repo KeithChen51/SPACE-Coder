@@ -15,7 +15,7 @@ description: >
 **权威文档源**：
 - 测试主文档：`docs/test-case/tc-主文档.md`
 - 环境配置：`application.yml`（地址/端口/目录）+ `.env`（仅密码凭证）
-- 项目规则：`docs/ai-rules.md`
+- 项目规则：宿主项目规则文件（如 `project-rules.md`）
 
 **外部依赖**：
 

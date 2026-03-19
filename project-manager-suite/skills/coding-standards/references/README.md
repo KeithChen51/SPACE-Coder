@@ -1,6 +1,6 @@
 # 编码规范索引
 
-> **适用项目**：Prime-Trace 系技术栈（Java Spring Boot + Vue 3 + MySQL）
+> **适用项目**：通用 Java Spring Boot + Vue 3 + MySQL 技术栈项目
 > **规范来源**：阿里巴巴 Java 开发手册 + 项目实际技术栈定制
 > **使用方式**：AI 通过 `project-manager-suite/skills/coding-standards/SKILL.md` 自动导航；人工可直接浏览本索引
 > **权威源说明**：本目录是当前 skill 的规范权威源；若当前 AI IDE 不支持 skill，直接从本文件进入即可

@@ -10,7 +10,7 @@
 
 1. 【强制】本文件同时承载两层规则：
    - 通用 REST 设计原则
-   - Prime-Trace 项目级接口口径
+   - 宿主项目级接口口径
 2. 【强制】设计/修改接口时，先按本文件判断：
    - 路径、方法、字段命名、分页、错误码是否符合项目统一规则
    - 当前接口是否属于固定行配置接口、列表接口、聚合接口
@@ -18,11 +18,11 @@
 
 ## 2. 路径规范
 
-1. 【强制】C 端接口：`/api/xxx`，如 `/api/vehicles`、`/api/basic-info`、`/api/orders`。
-2. 【强制】管理台接口：`/api/admin/xxx`，如 `/api/admin/status-config`、`/api/admin/vehicle-list`。
+1. 【强制】C 端接口：`/api/xxx`，如 `/api/items`、`/api/profile`、`/api/orders`。
+2. 【强制】管理台接口：`/api/admin/xxx`，如 `/api/admin/display-config`、`/api/admin/resource-list`。
 3. 【强制】路径全小写，多单词用连字符 `-` 分隔，如 `/api/admin/sync-logs`。
 4. 【强制】资源名优先使用名词，禁止动词式路径，如 `/api/getOrders`。
-5. 【推荐】集合资源使用复数，如 `/api/orders`；固定语义配置接口可按现有项目口径保留，如 `/api/admin/status-config`。
+5. 【推荐】集合资源使用复数，如 `/api/orders`；固定语义配置接口可按现有项目口径保留，如 `/api/admin/display-config`。
 
 ## 3. HTTP 方法
 
@@ -64,10 +64,10 @@
 
 ## 6. JSON 与命名风格
 
-1. 【强制】请求参数、响应 JSON 字段统一使用 `camelCase`，如 `maintenanceCount`、`primaryLabel`、`pageSize`。
+1. 【强制】请求参数、响应 JSON 字段统一使用 `camelCase`，如 `itemCount`、`primaryTag`、`pageSize`。
 2. 【强制】数据库 `snake_case` 与 JSON `camelCase` 的映射由后端处理，不暴露给前端。
-3. 【强制】枚举值使用 `UPPER_SNAKE_CASE`，如 `NOT_DUE`、`IN_SERVICE`。
-4. 【允许】层级型枚举/条件键使用点号表达，如 `TRAVEL.CHAUFFEUR`、`MAINT.FREE.EV`。
+3. 【强制】枚举值使用 `UPPER_SNAKE_CASE`，如 `ACTIVE`、`INACTIVE`。
+4. 【允许】层级型枚举/条件键使用点号表达，如 `STATUS.ACTIVE`、`TAG.HIGHLIGHT`。
 5. 【推荐】颜色值使用 HEX，如 `#722ED1`；语义色名仅在主题色场景使用，如 `green`、`gold`、`red`。
 
 ## 7. 分页约定
@@ -109,53 +109,53 @@
 ### 10.1 固定行配置
 
 1. 【强制】以下配置接口按“固定行、全量覆盖保存”设计：
-   - `/api/admin/status-config`
-   - `/api/admin/badge-strategies`
-   - `/api/admin/primary-labels`
-   - `/api/admin/detail-buttons`
-   - `/api/admin/benefit-text-config`
-   - `/api/admin/maintenance-benefits`
+   - `/api/admin/display-config`
+   - `/api/admin/tag-rules`
+   - `/api/admin/primary-tags`
+   - `/api/admin/detail-actions`
+   - `/api/admin/text-config`
+   - `/api/admin/theme-config`
 2. 【强制】固定行配置用 `GET/PUT`，`PUT` 请求体传完整数组或完整配置对象。
 3. 【强制】固定行配置不提供创建、删除路由。
 
 ### 10.2 可增删配置
 
 1. 【强制】以下接口按可增删资源设计：
-   - `/api/admin/button-strategies`
-   - `/api/admin/order-benefits`
+   - `/api/admin/action-rules`
+   - `/api/admin/resource-benefits`
 2. 【强制】这类接口可使用 `POST / PUT / DELETE`。
 
 ### 10.3 阈值嵌入
 
 1. 【强制】全局阈值就近挂载到最相关的配置接口，不单独新建阈值接口。
 2. 【强制】当前项目口径：
-   - `dueDays` / `dueMileage` 嵌入 `status-config`
-   - `maintenanceIntervalMonths` 嵌入 `badge-strategies`
+   - `dueDays` / `dueCount` 嵌入 `display-config`
+   - `highlightThreshold` 嵌入 `tag-rules`
 
-## 11. 当前项目接口清单
+## 11. 示例接口清单
 
 ### 11.1 C 端接口
 
-- `GET /api/vehicles`
-- `GET /api/basic-info`
+- `GET /api/items`
+- `GET /api/profile`
 - `GET /api/orders`
 - `GET /api/orders/types`
 
 ### 11.2 管理台配置接口
 
-- `GET/PUT /api/admin/status-config`
-- `GET/PUT /api/admin/badge-strategies`
-- `GET/PUT /api/admin/button-strategies`
-- `GET/PUT /api/admin/benefit-text-config`
-- `GET/PUT /api/admin/maintenance-benefits`
-- `GET/PUT /api/admin/primary-labels`
-- `CRUD /api/admin/order-benefits`
-- `GET/PUT /api/admin/detail-buttons`
+- `GET/PUT /api/admin/display-config`
+- `GET/PUT /api/admin/tag-rules`
+- `GET/PUT /api/admin/action-rules`
+- `GET/PUT /api/admin/text-config`
+- `GET/PUT /api/admin/theme-config`
+- `GET/PUT /api/admin/primary-tags`
+- `CRUD /api/admin/resource-benefits`
+- `GET/PUT /api/admin/detail-actions`
 
 ### 11.3 管理台数据接口
 
-- `GET /api/admin/vehicle-list`
-- `GET /api/admin/vehicle-detail`
+- `GET /api/admin/resource-list`
+- `GET /api/admin/resource-detail`
 - `GET /api/admin/sync-logs`
 - `POST /api/admin/sync/trigger`
 

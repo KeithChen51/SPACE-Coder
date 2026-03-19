@@ -1,11 +1,11 @@
 ---
 name: coding-standards
-description: Load the Prime-Trace coding standards and route Claude to the right rule document before writing, modifying, reviewing, or refactoring Java, Vue, SQL, API, or test-related artifacts. Use this skill whenever the task touches code, database schema, REST APIs, automated tests, or test case documents, even if the user does not explicitly mention "standards" or "规范".
+description: Load the project coding standards and route Claude to the right rule document before writing, modifying, reviewing, or refactoring Java, Vue, SQL, API, or test-related artifacts. Use this skill whenever the task touches code, database schema, REST APIs, automated tests, or test case documents, even if the user does not explicitly mention "standards" or "规范".
 ---
 
 # Coding Standards Router
 
-Use this skill as the entry point for Prime-Trace engineering rules. Do not invent style rules from memory when the skill already has a matching standards document.
+Use this skill as the entry point for the repository engineering rules. Do not invent style rules from memory when the skill already has a matching standards document.
 
 The authority source is this skill's private reference library under `references/`. This skill routes Claude to the right document inside the skill package.
 
