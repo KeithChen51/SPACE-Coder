@@ -75,6 +75,8 @@
 → 完整版 PRD
 → 开发计划
 → 开发执行
+→ 代码审核
+→ 安全扫描
 → 测试用例
 → 测试执行
 → 人工点检准备
@@ -108,6 +110,8 @@ project-manager-suite/
     ├── prd-writer/                    # [子能力] 页面确认后的完整 PRD 反推
     ├── delivery-planner/              # [子能力] 任务拆解与交付规划
     ├── engineering-executor/          # [子能力] 研发执行器
+    ├── code-review/                   # [子能力] 代码审核
+    ├── security-scan/                 # [子能力] 安全扫描
     ├── prd-test-case-generator/       # [子能力] PRD 驱动测试用例生成
     ├── test-case-runner/              # [子能力] 测试用例执行
     ├── test-and-acceptance/           # [子能力] 验收收口
@@ -136,10 +140,12 @@ project-manager-suite/
 | `prd-writer` | 在页面确认后反推完整 PRD | S2 确认后 |
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
 | `engineering-executor` | 承接开发执行和实现工作 | S4 |
-| `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S5 |
-| `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S6 |
-| `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | S7 / S8 |
-| `cloud-deploy` | 承接构建验证、上传替换、服务重启和部署验证 | S9 |
+| `code-review` | 从功能正确性、回归风险和测试缺口视角审查当前代码变更 | S5 |
+| `security-scan` | 从鉴权、注入、越权、敏感信息和危险配置视角审查安全风险 | S6 |
+| `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S7 |
+| `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S8 |
+| `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | S9 / S10 |
+| `cloud-deploy` | 承接构建验证、上传替换、服务重启和部署验证 | S11 |
 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
 | `coding-standards` | 为代码、接口、SQL、测试任务加载规范 | 代码相关任务伴随 |
 
