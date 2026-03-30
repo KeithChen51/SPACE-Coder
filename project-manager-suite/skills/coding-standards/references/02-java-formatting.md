@@ -42,3 +42,60 @@
 16. 【推荐】中文注释优先（本项目约定），专有名词保持英文。
 17. 【推荐】代码修改时同步更新注释。
 18. 【参考】无用代码直接删除，不要注释保留（Git 有历史记录）。
+19. 【强制】Javadoc 中的 `@param`、`@return`、`@throws` 标签**必须有实际说明**，禁止留空标签。如果方法返回 `void` 且无异常声明，省略对应标签即可，不要写空占位。
+    ```java
+    // ✅ 正确
+    /**
+     * 根据设备编号查询最近一次轨迹记录。
+     *
+     * @param deviceCode 设备唯一编码，不能为 null
+     * @return 轨迹记录 DTO；无数据时返回 null
+     * @throws BizException 当设备编号不存在时抛出
+     */
+
+    // ❌ 错误 — 空标签
+    /**
+     * 查询轨迹。
+     *
+     * @param deviceCode
+     * @return
+     */
+    ```
+20. 【强制】TODO / FIXME 注释必须使用统一格式：`// TODO [负责人 YYYY-MM-DD] 具体内容`。上线前必须清零所有 TODO，FIXME 必须在当前迭代内解决。
+    ```java
+    // TODO [张三 2026-04-01] 当前为硬编码阈值，后续从配置中心读取
+    // FIXME [李四 2026-03-30] 并发场景下存在重复扣减问题，需加分布式锁
+    ```
+21. 【推荐】注释应当解释**"为什么这样做"**（业务背景、设计取舍、边界条件），而不是翻译代码逻辑。显而易见的代码不需要注释。
+    ```java
+    // ✅ 正确 — 解释业务原因
+    // 合同金额低于 500 元时免审批，依据：《采购审批流程 v2.3》第 4.2 条
+    if (amount.compareTo(APPROVAL_THRESHOLD) < 0) { ... }
+
+    // ❌ 错误 — 翻译代码
+    // 判断金额是否小于 500
+    if (amount.compareTo(new BigDecimal("500")) < 0) { ... }
+    ```
+22. 【推荐】Controller 方法的 Javadoc 至少包含：功能摘要、对应前端页面或按钮（如有）、特殊权限要求（如有）。
+    ```java
+    /**
+     * 导出设备巡检报表（Excel）。
+     * <p>前端入口：设备管理 → 巡检记录 → 导出按钮</p>
+     * <p>权限：需要 ROLE_INSPECTOR 或 ROLE_ADMIN</p>
+     *
+     * @param query 查询条件
+     * @param response HttpServletResponse，用于写出文件流
+     */
+    @GetMapping("/inspections/export")
+    public void exportInspections(InspectionQuery query, HttpServletResponse response) { ... }
+    ```
+23. 【参考】代码中出现魔法值（硬编码的数字或字符串）时，优先提取为常量并以常量名自解释；如因场景简单不提取，则**必须**加行尾注释说明含义。
+    ```java
+    // ✅ 优先做法 — 提取常量
+    private static final int MAX_RETRY_TIMES = 3;
+
+    // ✅ 次选做法 — 行尾注释
+    if (retryCount > 3) { // 最大重试次数，超过则熔断
+        throw new BizException("重试已超限");
+    }
+    ```
