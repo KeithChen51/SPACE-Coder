@@ -184,29 +184,29 @@ src/
 完整参考树如下：
 
 ```text
-<项目名称>/
-├── project-profile.md
-├── project-rules.md
-├── docs/
+<项目名称>/                          # 根目录命名默认以项目名称为准，与文中的 <项目名> 使用同一命名锚点
+├── project-profile.md             # 项目快照与当前主计划入口
+├── project-rules.md               # 长期规则与计划组织规则
+├── docs/                          # 文档主目录，承载计划、规则、需求、决策、测试与架构沉淀
 │   ├── plans/
-│   │   └── execution-plan.md
-│   ├── rules/
-│   ├── prd/
-│   ├── decisions/
-│   ├── test-case/
-│   └── architecture.md
-├── logs/
-├── src/
-│   ├── <项目名>-Toc/
-│   │   ├── frontend/
-│   │   └── backend/
-│   ├── <项目名>-Config/
-│   │   ├── frontend/
-│   │   └── backend/
-│   └── shared/
-├── tools/
-└── .agent/
-    └── skills/
+│   │   └── execution-plan.md      # 当前激活的主计划载体
+│   ├── rules/                     # 专项规则沉淀位
+│   ├── prd/                       # 需求整理与需求持续迭代沉淀位
+│   ├── decisions/                 # 方案选型与关键决策沉淀位
+│   ├── test-case/                 # 测试设计与验收设计沉淀位
+│   └── architecture.md            # 架构总览文档
+├── logs/                          # 状态回写与开发日志目录
+├── src/                           # 真实开发阶段的实现主目录
+│   ├── <项目名>-Toc/              # 面向目录结构组织的实现分区
+│   │   ├── frontend/              # 前端实现目录
+│   │   └── backend/               # 后端实现目录
+│   ├── <项目名>-Config/           # 面向配置结构组织的实现分区
+│   │   ├── frontend/              # 前端配置目录
+│   │   └── backend/               # 后端配置目录
+│   └── shared/                    # 两端确有共享需求时使用的共享目录
+├── tools/                         # 脚本、自动化、迁移等工程化工具目录
+└── .agent/                        # 宿主项目本地 AI 配置根目录，作为后续本地能力挂载位
+    └── skills/                    # 宿主项目沉淀本地 skill、覆盖默认实现或补充宿主增强能力的统一入口
 ```
 
 各层在完整工程目录中的位置对应如下：
