@@ -1,6 +1,6 @@
 ---
 name: coding-standards
-description: Load the project coding standards and route Claude to the right rule document before writing, modifying, reviewing, or refactoring Java, Vue, SQL, API, or test-related artifacts. Use this skill whenever the task touches code, database schema, REST APIs, automated tests, or test case documents, even if the user does not explicitly mention "standards" or "规范".
+description: Load the project coding standards and route Claude to the right rule document before writing, modifying, reviewing, or refactoring Java, Vue, SQL, API, or test-related artifacts. Use this skill only after the task has clearly entered an implementation activity such as code changes, database schema work, REST API design, automated tests, or test case document maintenance, even if the user does not explicitly mention "standards" or "规范".
 ---
 
 # Coding Standards Router
@@ -8,6 +8,11 @@ description: Load the project coding standards and route Claude to the right rul
 Use this skill as the entry point for the repository engineering rules. Do not invent style rules from memory when the skill already has a matching standards document.
 
 The authority source is this skill's private reference library under `references/`. This skill routes Claude to the right document inside the skill package.
+
+Boundary note:
+- This skill is **not** the entry point for project kickoff, requirements clarification, stage routing, project profile maintenance, or scaffold setup.
+- If the user intent is to start a new project or determine the next project stage, route through `ai-project-manager` first.
+- Load this skill only after the main entry has determined that the current round is performing implementation work.
 
 Current scope note:
 - The repository currently contains **9 active standards documents**: `01` to `09`.
