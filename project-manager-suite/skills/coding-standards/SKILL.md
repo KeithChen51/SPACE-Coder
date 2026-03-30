@@ -40,6 +40,7 @@ Current scope note:
 | Vue 3 component, page, frontend interaction | `references/07-vue-frontend.md` |
 | Layering, package structure, domain model, module boundaries | `references/08-engineering.md` |
 | REST endpoint design, request or response schema, pagination | `references/09-api-design.md` |
+| Swagger / OpenAPI annotation, @Operation, @Schema, @Tag, API doc | `references/09-api-design.md` |
 | Unit tests, integration tests, automated test code | `Not currently available in references/; check before loading` |
 | Test case document, acceptance matrix, regression case maintenance | `Not currently available in references/; check before loading` |
 

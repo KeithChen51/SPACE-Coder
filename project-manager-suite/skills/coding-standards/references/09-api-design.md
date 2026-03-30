@@ -164,3 +164,103 @@
 1. 【强制】若你改了路径、分页参数、响应包装、字段命名，必须同步检查前端调用、测试、PRD、fixtures。
 2. 【强制】若项目已有 PRD fixtures、接口总览文档或前端子项目 API 文档，修改接口时要核对是否需要同步更新。
 3. 【推荐】新增接口前，先判断能否复用既有资源命名和现有配置接口模式，避免继续扩散风格。
+
+## 13. Swagger 接口文档注解规范
+
+> 适用：项目使用 Swagger / springdoc-openapi / knife4j 自动生成接口文档的场景
+> 目标：让 Swagger UI 页面成为可直接使用的前后端协作文档，减少口头沟通
+
+### 13.1 Controller 层注解
+
+1. 【强制】每个 Controller 类必须加 `@Tag(name = "模块名")`，用于 Swagger UI 分组展示。
+
+    ```java
+    @Tag(name = "设备管理")
+    @RestController
+    @RequestMapping("/api/admin/devices")
+    public class DeviceController { ... }
+    ```
+
+2. 【强制】每个接口方法必须加 `@Operation(summary = "一句话描述")`，禁止留空或使用方法名充当描述。
+
+    ```java
+    // ✅ 正确
+    @Operation(summary = "根据条件分页查询设备列表")
+    @GetMapping
+    public Result<PageResult<DeviceVO>> listDevices(DeviceQuery query) { ... }
+
+    // ❌ 错误 — 无注解或描述为空
+    @GetMapping
+    public Result<PageResult<DeviceVO>> listDevices(DeviceQuery query) { ... }
+    ```
+
+3. 【推荐】涉及多种响应状态的接口，使用 `@ApiResponse` 补充说明非 200 场景。
+
+    ```java
+    @Operation(summary = "删除设备")
+    @ApiResponse(responseCode = "200", description = "删除成功")
+    @ApiResponse(responseCode = "404", description = "设备不存在")
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteDevice(@PathVariable Long id) { ... }
+    ```
+
+### 13.2 DTO / VO 字段注解
+
+4. 【强制】所有 DTO、VO、Query 对象的字段必须加 `@Schema(description = "字段说明")`，禁止留空。
+
+    ```java
+    public class DeviceVO {
+        @Schema(description = "设备唯一编码")
+        private String deviceCode;
+
+        @Schema(description = "设备状态：ONLINE-在线，OFFLINE-离线，FAULT-故障")
+        private String status;
+
+        @Schema(description = "最近一次上报时间，格式 yyyy-MM-dd HH:mm:ss")
+        private String lastReportTime;
+    }
+    ```
+
+5. 【强制】必填字段必须标注 `requiredMode = Schema.RequiredMode.REQUIRED`。
+
+    ```java
+    @Schema(description = "设备编码，新增时必填", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String deviceCode;
+    ```
+
+6. 【推荐】关键字段加 `example` 属性，为前端提供示例值参考。
+
+    ```java
+    @Schema(description = "设备编码", example = "DEV-2026-001")
+    private String deviceCode;
+
+    @Schema(description = "页码，从 1 开始", example = "1")
+    private Integer page;
+    ```
+
+### 13.3 枚举与取值范围
+
+7. 【强制】枚举类型字段必须在 `description` 中列出所有可选值及含义，格式为 `值-含义`，用逗号或中文顿号分隔。
+
+    ```java
+    // ✅ 正确 — 可选值自包含
+    @Schema(description = "操作类型：CREATE-新增，UPDATE-修改，DELETE-删除")
+    private String actionType;
+
+    // ❌ 错误 — 只写了字段名
+    @Schema(description = "操作类型")
+    private String actionType;
+    ```
+
+8. 【推荐】数值范围字段在 `description` 中说明边界。
+
+    ```java
+    @Schema(description = "每页条数，范围 1~50，默认 10", example = "10")
+    private Integer pageSize;
+    ```
+
+### 13.4 注意事项
+
+9. 【强制】Swagger 注解中的描述文本与接口实际行为必须一致；接口变更时同步更新注解，不要留过期描述。
+10. 【强制】禁止使用已废弃的 Swagger 2.x 注解（如 `@ApiOperation`、`@ApiModel`、`@ApiModelProperty`），统一使用 OpenAPI 3 注解（`@Operation`、`@Schema`、`@Tag`）。如项目仍在 Swagger 2.x，应计划迁移。
+11. 【推荐】内部管理接口和 C 端接口使用不同的 `@Tag` 分组，保持 Swagger UI 页面清晰。
