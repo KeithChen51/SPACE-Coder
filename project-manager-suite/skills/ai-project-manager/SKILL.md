@@ -9,8 +9,8 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 
 > **[🚨 核心红线]**
 > 当处理要求“启动项目”的空目录时，**绝对禁止**一上来就凭借假设直接输出项目骨架和新建全局文件！
-> 在你执行任何文件的创建（如 `project-profile.md`）之前，**必须且只能**先读取 `references/runtime.md` 向用户发起首轮极简访谈。不要跳过收集上下文这关键一步去搞纯结构的初始化！
-> 当用户意图属于“启动项目 / 新建项目 / 从零开始 / 帮我规划项目 / 帮我落地需求”时，**`ai-project-manager` 是唯一允许的起始入口**。在完成 `references/runtime.md` 的首轮极简访谈、阶段判断和初次路由前，**不得预加载** `coding-standards`、`engineering-executor`、`prd-writer` 等实现型或阶段型 skill。
+> 在你执行任何文件的创建（如 `project-profile.md`）之前，**必须且只能**先读取 `references/core/runtime.md` 向用户发起首轮极简访谈。不要跳过收集上下文这关键一步去搞纯结构的初始化！
+> 当用户意图属于“启动项目 / 新建项目 / 从零开始 / 帮我规划项目 / 帮我落地需求”时，**`ai-project-manager` 是唯一允许的起始入口**。在完成 `references/core/runtime.md` 的首轮极简访谈、阶段判断和初次路由前，**不得预加载** `coding-standards`、`delivery-planner`、`prd-writer` 等实现型或阶段型 skill。
 
 ## 职责边界
 
@@ -38,30 +38,30 @@ description: 面向业务团队的项目总入口。优先识别项目全局文�
 
 默认阶段口径补充：
 - S1“业务需求文档”默认进入 `toxic-commercial-pm`
-- `requirements-starter` 仅作为轻量需求摘要整理能力，在 S0 或 S1 前置补齐时使用
 
 ## 资源入口
 
-- 主入口运行流程、访谈规则与交付判断：`references/runtime.md`
-- 3 类全局文件与 `project-devlog` 状态回写协议：`references/global-files-protocol.md`
-- 路由条件、能力映射与脚手架骨架规则：`references/routing.md`
-- 技术栈约束：`references/tech.md`
+- 主入口运行流程、访谈规则与交付判断：`references/core/runtime.md`
+- 3 类全局文件与 `project-devlog` 状态回写协议：`references/core/global-files-protocol.md`
+- 路由条件、能力映射与脚手架骨架规则：`references/core/routing.md`
+- 技术栈默认参数：仅当宿主项目尚未明确技术栈，或当前任务涉及技术选型、页面实现、后端开发、数据库设计、部署方案时读取 `references/defaults/tech-stack.md`
 - 模板文件处理遵循两段逻辑：宿主项目存在可用全局文件时，模板文件只作为指向目标；宿主项目不存在对应全局文件时，才基于模板新建文件：`../../skills/ai-project-manager/assets/global-files/*.md`
 
 ## 维护约定
 
-- `references/global-files-protocol.md` 是字段合同唯一来源；凡是字段名、字段来源、字段是否必填发生变化，先改这里。
+- `references/core/global-files-protocol.md` 是字段合同唯一来源；凡是字段名、字段来源、字段是否必填发生变化，先改这里。
 - `assets/global-files/project-profile.md` 只负责模板外形与长期记忆展示；允许调整分组和顺序，但不单独发明字段语义。
-- `references/runtime.md` 只依赖协议中的字段包决定访谈、补齐和路由；只有当字段包变化时才需要同步修改。
-- `references/routing.md` 只负责能力映射和骨架规则；字段变更默认不改，除非影响路由条件或目录约定。
+- `references/core/runtime.md` 只依赖协议中的字段包决定访谈、补齐和路由；只有当字段包变化时才需要同步修改。
+- `references/core/routing.md` 只负责能力映射和骨架规则；字段变更默认不改，除非影响路由条件或目录约定。
+- `references/_archive/` 只存放历史版本与废弃草案，不参与当前运行链路；除非在做迁移、考古或差异比对，否则不要读取这里的文件。
 - 阶段只定义“最小交付物”和目标 skill；具体模板、references 与生成工作流由目标 skill 内部定义，主入口不重复维护模板路径。
 - 推荐修改顺序：先改协议，再改模板，再按需改 runtime，最后仅在必要时改 routing。
 
 ## 补充红线约束
 
-- **【访谈必做】一旦发现 `project-profile.md` 缺失，你的动作只能是：向用户提问！** 问题清单必须从 `references/runtime.md` 的“首轮极简访谈”里选，每次问最核心的，并附 1 条 `参考回答`。
+- **【访谈必做】一旦发现 `project-profile.md` 缺失，你的动作只能是：向用户提问！** 问题清单必须从 `references/core/runtime.md` 的“首轮极简访谈”里选，每次问最核心的，并附 1 条 `参考回答`。
 - **【严禁编造】** 项目画像更新必须使用用户的真实回答。在没有拿到用户业务输入前，宁可停机等待，也绝不允许把主观猜测写成既定事实。
-- 只有在拿到了确切反馈后，才能开始处理 `references/routing.md` 中的物理目录骨架补齐。
+- 只有在拿到了确切反馈后，才能开始处理 `references/core/routing.md` 中的物理目录骨架补齐。
 - 项目启动、需求访谈、阶段判断、项目画像维护、执行计划路由、骨架补齐等前置动作，均属于主入口职责，不得被实现型规范 skill 抢跑承接。
 - 若宿主项目已有对应角色的全局文件，后续能力应直接指向该模板文件，不重复新建。
 - 若宿主项目没有对应角色的全局文件，且已完成必要访谈，才使用模板（`../../skills/ai-project-manager/assets/global-files/*.md`）新建文件。

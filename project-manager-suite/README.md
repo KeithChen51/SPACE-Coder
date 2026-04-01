@@ -79,13 +79,9 @@
 → 完整版 PRD
 → 开发计划
 → 开发执行
-→ 代码审核
-→ 安全扫描
 → 测试用例
 → 测试执行
-→ 人工点检准备
-→ 点检结果回写
-→ 自动化部署（按需进入）
+→ 验收收口
 ```
 
 其中 **S2 页面构建与完整版 PRD** 阶段有一条硬约束：
@@ -105,23 +101,38 @@ project-manager-suite/
 └── skills/                        # 实际运行时的能力目录
     ├── ai-project-manager/            # [核心] 唯一总入口
     │   ├── SKILL.md                   # 入口指令
-    │   ├── references/                # 路由规则与协议层
+    │   ├── references/
+    │   │   ├── core/                  # 运行协议、全局文件协议、路由与骨架规则
+    │   │   ├── rules/                 # 前端/后端/数据库/调试等专项规则
+    │   │   ├── defaults/              # 默认技术栈与其他默认参数
+    │   │   └── _archive/              # 历史版本与废弃草案，不参与当前运行
     │   └── assets/global-files/       # 全局文件默认骨架（画像、计划等）
-    ├── coding-standards/              # [子能力] 编码规范
+    ├── coding-standards/              # [子能力] 编码规范与研发执行
     ├── toxic-commercial-pm/           # [子能力] 商业化业务需求文档 / BRD 收敛
-    ├── requirements-starter/          # [子能力] 轻量需求摘要整理
     ├── ui-ux-pro-max/                 # [子能力] 页面原型与视觉设计
     ├── prd-writer/                    # [子能力] 页面确认后的完整 PRD 反推
     ├── delivery-planner/              # [子能力] 任务拆解与交付规划
-    ├── engineering-executor/          # [子能力] 研发执行器
-    ├── code-review/                   # [子能力] 代码审核
-    ├── security-scan/                 # [子能力] 安全扫描
     ├── prd-test-case-generator/       # [子能力] PRD 驱动测试用例生成
     ├── test-case-runner/              # [子能力] 测试用例执行
     ├── test-and-acceptance/           # [子能力] 验收收口
-    ├── cloud-deploy/                  # [子能力] 云端部署与发布验证
     └── project-devlog/                # [子能力] 日志与状态回写
 ```
+
+其中 `skills/ai-project-manager/references/` 建议按以下三层组织：
+
+- `core/`：主入口运行所依赖的核心协议层，存放运行流程、全局文件协议、路由与骨架规则等“上位约束”。这类文件决定主入口怎么判断、怎么路由、怎么回写。
+- `rules/`：面向具体任务类型的专项执行规则，存放前端、后端、数据库、文档、调试、日志等下位规则包。这类文件只在命中对应任务时按需加载。
+- `defaults/`：默认参数与默认约定，存放默认技术栈、默认实现偏好、默认环境口径等可被引用和覆盖的参考输入。这类文件更像参数源，而不是主流程协议。
+
+当前 `ai-project-manager` 中，这三层的典型职责分别是：
+- `references/core/runtime.md`：定义主入口运行流程与访谈协议
+- `references/core/global-files-protocol.md`：定义全局文件字段合同与读写职责
+- `references/core/routing.md`：定义阶段路由与项目骨架补齐规则
+- `references/rules/*.md`：定义前端、后端、数据库、调试、文档等专项规则
+- `references/defaults/tech-stack.md`：定义默认技术栈参数，供主入口和子能力在未有宿主项目明确技术栈时按需引用
+
+补充说明：
+- `references/_archive/` 只用于保留历史版本、迁移草案和旧设计，不应作为当前运行时的读取入口。
 
 ## 适用场景
 
@@ -139,25 +150,20 @@ project-manager-suite/
 |------|----------|--------------|
 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
 | `toxic-commercial-pm` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
-| `requirements-starter` | 将零散业务信息整理为轻量需求摘要，作为 S1 前置输入或降级方案 | S0 / S1 前置 |
 | `ui-ux-pro-max` | 生成页面原型、视觉方向和交互原型 | S2 首轮 |
 | `prd-writer` | 在页面确认后反推完整 PRD | S2 确认后 |
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
-| `engineering-executor` | 承接开发执行和实现工作 | S4 |
-| `code-review` | 从功能正确性、回归风险和测试缺口视角审查当前代码变更 | S5 |
-| `security-scan` | 从鉴权、注入、越权、敏感信息和危险配置视角审查安全风险 | S6 |
-| `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S7 |
-| `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S8 |
-| `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | S9 / S10 |
-| `cloud-deploy` | 承接构建验证、上传替换、服务重启和部署验证 | S11 |
+| `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
+| `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S5 |
+| `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S6 |
+| `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | 验收阶段 |
 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
-| `coding-standards` | 为代码、接口、SQL、测试任务加载规范 | 代码相关任务伴随 |
 
 ## 使用提醒
 
 - `project-manager-suite` 应作为完整目录整体复制使用，不建议拆散单个 skill。
-- 主入口行为以 `skills/ai-project-manager/references/runtime.md` 为准。
-- 路由映射和骨架补齐规则以 `skills/ai-project-manager/references/routing.md` 为准。
+- 主入口行为以 `skills/ai-project-manager/references/core/runtime.md` 为准。
+- 路由映射和骨架补齐规则以 `skills/ai-project-manager/references/core/routing.md` 为准。
 - 若修改了阶段流转、技能职责或默认交付链路，应该同步更新本 README，避免使用者读到过期说明。
 
 ## 延伸阅读

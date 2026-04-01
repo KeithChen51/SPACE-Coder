@@ -44,9 +44,8 @@
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|
 | `toxic-commercial-pm` (业务需求文档 / BRD) | S1 | `skills/toxic-commercial-pm/` |
-| `requirements-starter` (轻量需求摘要，S1 可降级使用) | S0 / S1 前置 | `skills/requirements-starter/` |
 | `prd-writer` (页面确认后的完整版 PRD 反推与沉淀) | S2 | `skills/prd-writer/` |
-| `delivery-planning` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
+| `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
 | `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
 | `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |
 
@@ -163,6 +162,6 @@ src/
 
 若当前涉及具体的技术栈开发工作，请严格遵守独立维护的技术约束规范：
 
-- 详细技术栈参考：[`tech.md`](file:./tech.md)
+- 详细技术栈参考：[`../defaults/tech-stack.md`](file:../defaults/tech-stack.md)
 
 主入口与各子能力在提出技术选型、组件建议或代码实现方案时，必须默认遵循该文件中定义的前后两端框架与部署约束。
