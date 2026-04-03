@@ -144,6 +144,24 @@ project-manager-suite/
 
 ## 能力分工
 
+从 skill 角色来看，当前主链路中的能力可以先分成 3 类：
+
+- **流程调度型**
+  - `ai-project-manager`
+  - 负责识别全局文件、补齐最小上下文、判断阶段、路由子能力和回写状态
+- **阶段交付型**
+  - `toxic-commercial-pm`
+  - `prd-writer`
+  - `delivery-planner`
+  - `prd-test-case-generator`
+  - `test-case-runner`
+  - 负责承接某一阶段的正式交付物，例如 BRD、完整版 PRD、开发计划、测试用例和测试结果
+- **专项执行型**
+  - `ui-ux-pro-max`
+  - `coding-standards`
+  - `project-devlog`
+  - 负责页面原型、研发执行规范、状态回写等专项工作，不承担主流程调度
+
 当前主链路中的能力职责如下：
 
 | 能力 | 主要职责 | 默认介入阶段 |
