@@ -37,6 +37,22 @@ winget install Python.Python.3.12
 
 When user requests UI/UX work (design, build, create, implement, review, fix, improve), follow this workflow:
 
+### Step 0: Read Page Positioning From Project Context
+
+Before doing any design search or implementation, check whether the host project already has page-positioning fields such as:
+
+- `页面设计标签`
+- `当前页面主要给谁用`
+- `当前页面主要用途`
+
+Execution rules:
+- If `页面设计标签` is available, treat it as the authoritative design direction and align layout density, interaction complexity, visual tone, and information hierarchy accordingly.
+- If only business-language fields are available, infer the likely direction conservatively:
+  - external users / owners / customers / members -> `C端`
+  - internal operators + business processing / content viewing -> `B端`
+  - internal staff + system configuration / permissions / administration -> `后台`
+- If none of these signals are available and the page type materially affects the design direction, stop and ask for clarification instead of guessing.
+
 ### Step 1: Analyze User Requirements
 
 Extract key information from user request:
@@ -44,6 +60,16 @@ Extract key information from user request:
 - **Style keywords**: minimal, playful, professional, elegant, dark mode, etc.
 - **Industry**: healthcare, fintech, gaming, education, etc.
 - **Stack**: React, Vue, Next.js, or default to `html-tailwind`
+- **Page positioning**: `C端 / B端 / 后台` + who the page serves + whether the goal is business processing, system management, or content display
+
+### Page Positioning Heuristics
+
+Use the page-positioning signal to avoid design drift:
+
+- `C端`: prioritize emotional appeal, lower cognitive load, clearer primary CTA, lighter terminology, and mobile-first task flow.
+- `B端`: prioritize information density, operational efficiency, batch actions, status visibility, and clearer module grouping.
+- `后台`: prioritize configuration clarity, permissions/rules visibility, table-form workflows, and risk-prevention affordances.
+- If the user explicitly says the page is one type, that overrides heuristics.
 
 ### Step 2: Generate Design System (REQUIRED)
 

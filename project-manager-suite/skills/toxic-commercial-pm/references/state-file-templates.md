@@ -1,52 +1,34 @@
-# State File Templates
+# Host File Mapping Notes
 
-运行目录：`./toxic-commercial-pm-state/`
+`toxic-commercial-pm` 默认不创建 `toxic-commercial-pm-state/` 这类 skill 私有状态目录。
 
-## decision-ledger.md
+优先读取这些宿主文件作为状态来源：
+
+1. `project-profile.md`
+2. `execution-plan.md`
+3. 已存在的 BRD 草稿或需求摘要
+
+如果需要向用户展示“已锁定决策 / 当前缺口 / 方法依据”，使用紧凑摘要即可。推荐摘要结构如下：
+
 ```md
-# Decision Ledger
+# 本轮收敛摘要
 
 ## 已锁定
-- 商业目标与时间窗口:
-- 目标用户与核心场景:
-- 核心价值主张:
-- 核心流程:
-- 变现模型与触发点:
-- MVP In/Out Scope:
-- 指标体系:
-- 功能验收标准:
-- 风险与兜底:
+- 商业目标与时间窗口：
+- 目标用户与核心场景：
+- 核心价值主张：
+- 核心流程：
+- MVP In/Out Scope：
+- 页面定位（如适用）：
 
-## 冲突
-- 无
-```
+## 当前缺口
+- 待补字段：
+- 下一题优先级：
 
-## missing-fields.md
-```md
-# Missing Fields
-
-- 待补字段:
-- 下一题优先级:
-```
-
-## methodology-map.md
-```md
-# Methodology Map
-
-- 决策主题:
-  - 方法依据:
-  - 关键推导:
-  - 结论:
-  - 待验证:
-```
-
-## session-meta.md
-```md
-# Session Meta
-
-- active_skill: toxic-commercial-pm
-- run_status: RUNNING
-- last_round:
-- final_output_path:
-- updated_at:
+## 方法依据
+- 决策主题：
+  - 方法依据：
+  - 关键推导：
+  - 结论：
+  - 待验证：
 ```
