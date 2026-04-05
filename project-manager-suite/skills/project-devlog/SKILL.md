@@ -82,7 +82,6 @@ logs/weekly/YYYY-WXX_weekly_report.md        # 周报
 
 ## 资源入口
 
-- 状态回写模板：`assets/devlog-template.md`
 - 每日日志模板：`assets/daily.md`
 - 周报模板：`assets/weekly.md`
 - 每日操作工作流：`references/daily-workflow.md`
