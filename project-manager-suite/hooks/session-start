@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# SessionStart hook for project-manager-suite
+# 会话启动时自动注入 ai-project-manager SKILL.md 内容
+
+set -euo pipefail
+
+# Determine plugin root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Read ai-project-manager SKILL.md content
+ai_pm_content=$(cat "${PLUGIN_ROOT}/skills/ai-project-manager/SKILL.md" 2>&1 || echo "Error reading ai-project-manager skill")
+
+# Escape string for JSON embedding
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+ai_pm_escaped=$(escape_for_json "$ai_pm_content")
+session_context="<EXTREMELY_IMPORTANT>\n你已加载项目经理套件。\n\n**以下是 ai-project-manager skill 的完整内容，作为项目域默认第一入口：**\n\n${ai_pm_escaped}\n</EXTREMELY_IMPORTANT>"
+
+# Output context injection as JSON.
+# Keep both shapes for compatibility:
+# - Cursor hooks expect additional_context.
+# - Claude hooks expect hookSpecificOutput.additionalContext.
+cat <<EOF
+{
+  "additional_context": "${session_context}",
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "${session_context}"
+  }
+}
+EOF
+
+exit 0
