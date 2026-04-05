@@ -39,6 +39,30 @@
 - 把宿主项目现有的日志或状态沉淀入口映射为“状态回写能力”
 - 若缺失稳定的项目快照载体，再补齐“项目画像文件”
 
+### 宿主专项规则生成
+
+`ai-project-manager` 的专项规则默认源位于：
+
+- `skills/ai-project-manager/references/rules/*.md`
+
+宿主项目中的专项规则权威目录位于：
+
+- `docs/rules/`
+
+主入口在执行骨架补齐时，应负责创建宿主 `docs/rules/` 目录；当宿主缺少默认专项规则文件时，可调用以下工具脚本批量生成：
+
+```bash
+node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-root>
+```
+
+补充说明：
+
+- 默认策略是“只补缺失文件，不覆盖宿主已有同名规则文件”
+- 若需要强制覆盖，可追加 `--force`
+- 运行时读取顺序应始终保持“宿主 `docs/rules/` 优先，套件默认规则源兜底”
+- 验收样例可参考 `docs/host-rules-generation-example.md`
+- 若你当前就在套件源码仓库中联调，也可直接使用仓库路径：`node project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`
+
 ## 核心运行机制
 
 `ai-project-manager` 作为全套件的**唯一总入口**。

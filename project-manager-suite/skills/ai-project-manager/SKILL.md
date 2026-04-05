@@ -121,6 +121,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - 主入口运行流程、访谈规则与交付判断：`references/core/runtime.md`
 - 3 类全局文件与 `project-devlog` 状态回写协议：`references/core/global-files-protocol.md`
 - 路由条件、能力映射与脚手架骨架规则：`references/core/routing.md`
+- 宿主默认专项规则源：`references/rules/*.md`；宿主初始化 `docs/rules/` 时应从该目录补齐默认规则文件，运行时优先读取宿主 `docs/rules/`，缺失时再回退到该目录；批量生成可调用当前套件根目录下的 `tools/generate-host-rules.mjs`
 - 技术栈默认参数：仅当宿主项目尚未明确技术栈，或当前任务涉及技术选型、页面实现、后端开发、数据库设计、部署方案时读取 `references/defaults/tech-stack.md`
 - 模板文件处理遵循两段逻辑：宿主项目存在可用全局文件时，模板文件只作为指向目标；宿主项目不存在对应全局文件时，才基于模板新建文件：`../../skills/ai-project-manager/assets/global-files/*.md`
 
@@ -130,6 +131,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - `assets/global-files/project-profile.md` 只负责模板外形与长期记忆展示；允许调整分组和顺序，但不单独发明字段语义。
 - `references/core/runtime.md` 只依赖协议中的字段包决定访谈、补齐和路由；只有当字段包变化时才需要同步修改。
 - `references/core/routing.md` 只负责能力映射和骨架规则；字段变更默认不改，除非影响路由条件或目录约定。
+- `references/rules/` 负责维护宿主默认专项规则源；若规则分类、默认文件名或宿主落地策略变化，应同步更新协议、路由和生成逻辑。
 - `references/_archive/` 只存放历史版本与废弃草案，不参与当前运行链路；除非在做迁移、考古或差异比对，否则不要读取这里的文件。
 - 阶段只定义“最小交付物”和目标 skill；具体模板、references 与生成工作流由目标 skill 内部定义，主入口不重复维护模板路径。
 - 推荐修改顺序：先改协议，再改模板，再按需改 runtime，最后仅在必要时改 routing。
@@ -140,6 +142,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - **【严禁编造】** 项目画像更新必须使用用户的真实回答。在没有拿到用户业务输入前，宁可停机等待，也绝不允许把主观猜测写成既定事实。
 - 只有在拿到了确切反馈后，才能开始处理 `references/core/routing.md` 中的物理目录骨架补齐。
 - 项目启动、需求访谈、阶段判断、项目画像维护、执行计划路由、骨架补齐等前置动作，均属于主入口职责，不得被实现型规范 skill 抢跑承接。
+- 当主入口已按 `routing.md` 创建宿主 `docs/rules/`，且宿主缺少默认专项规则文件时，应主动调用当前套件根目录下的 `tools/generate-host-rules.mjs` 完成批量补齐；若套件已按标准安装到宿主 `.agent/` 目录，默认命令形态为 `node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`。
 - 页面类任务访谈时，优先使用“给谁用 / 主要用途 / 项目覆盖对象”这类业务语言，不直接把 `B端 / C端 / 后台` 术语抛给不懂信息化的业务方。
 - `页面设计标签` 属于主入口标准化回写字段，不要求业务方自己说出；若无法稳定归一，宁可写 `待确认` 继续补问，也不要强行进入 S2。
 - 命中 S1 后，主入口不得直接代写 BRD；命中 S2 后，主入口不得直接代做页面原型或完整版 PRD；命中 S3/S4/S5/S6 后，同理不得直接代做该阶段正式交付物。

@@ -140,11 +140,14 @@
 `【主入口回写】` 候选区
 
 - 专项规则入口：
-  - 文档与计划类任务优先引用 `../../references/rules/docs-and-plans.md`
-  - 服务端开发类任务优先引用 `../../references/rules/backend-tasks.md`
-  - 前端开发类任务优先引用 `../../references/rules/frontend-tasks.md`
-  - 数据库结构、迁移、种子与数据修复类任务优先引用 `../../references/rules/database-tasks.md`
-  - 故障排查与联调异常定位类任务优先引用 `../../references/rules/debugging.md`
+  - 宿主项目初始化后，专项规则默认落地到 `docs/rules/`
+  - 文档与计划类任务优先引用 `docs/rules/docs-and-plans.md`
+  - 服务端开发类任务优先引用 `docs/rules/backend-tasks.md`
+  - 前端开发类任务优先引用 `docs/rules/frontend-tasks.md`
+  - 数据库结构、迁移、种子与数据修复类任务优先引用 `docs/rules/database-tasks.md`
+  - 故障排查与联调异常定位类任务优先引用 `docs/rules/debugging.md`
+  - 开发日志与状态回写类任务优先引用 `docs/rules/devlog.md`
+  - 若宿主已存在同名规则文件，则以宿主文件为权威源
   - 规则层只声明专项规则入口，不在本文件重复维护对应细则副本
 - 待填写
   - 新经验默认先进入复盘或经验沉淀区
