@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 
+/**
+ * Traceability:
+ * Rule sources:
+ * - skills/ai-project-manager/references/core/global-files-protocol.md
+ * - skills/ai-project-manager/references/core/routing.md
+ * - skills/ai-project-manager/references/rules/*.md
+ * Structured config:
+ * - lib/ai-pm-protocol/rules-sync.js
+ * Related tools:
+ * - tools/bootstrap-host.mjs
+ */
 import fs from 'fs';
 import path from 'path';
 import process from 'process';

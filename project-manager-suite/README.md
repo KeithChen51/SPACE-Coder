@@ -212,3 +212,7 @@ project-manager-suite/
 
 如果你希望了解为何如此设计（如能力边界在哪、有哪些机制确保不退化成单次会话工具、分层策略的考量），请参阅产品设计白皮书：
 - `docs/design/project-manager-suite-product-design.md`
+
+如果你需要维护脚本化能力，而不是只使用它们，请继续阅读：
+- `docs/tooling/ai-pm-tools-usage.md`
+- `docs/tooling/ai-pm-maintenance-guide.md`

@@ -1,0 +1,8 @@
+{
+  "name": "project-manager-suite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:ai-pm": "node --test tests/ai-pm-tools.test.mjs tests/protocol-alignment.test.mjs"
+  }
+}

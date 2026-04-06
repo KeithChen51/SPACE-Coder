@@ -44,11 +44,27 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 
 只记 5 条：
 
-1. 先识别宿主项目已有全局文件，再决定是否补文件。
+1. 优先使用工具脚本完成稳定动作：先校验，再判阶段，再按条件补骨架和回写日志。
 2. 缺 `project-profile` 时，先访谈，后建文件；不得反过来。
 3. 先判当前最适合进入的阶段，再决定是否进入子 skill。
 4. 一旦命中阶段且满足进入条件，正式交付物交给目标 skill 独占产出。
 5. 每轮结果必须回写到宿主权威文件，不得只停留在对话里。
+
+## 脚本优先原则
+
+当运行环境允许执行本地工具脚本时，主入口默认按以下顺序工作：
+
+1. 先调用 `validate-global-files.mjs` 识别权威入口和结构缺口
+2. 再调用 `route-check.mjs` 判断当前阶段、目标阶段和阻断原因
+3. 需要补骨架时，再调用 `bootstrap-host.mjs`
+4. 一轮有效推进结束后，再按需调用 `devlog-sync.mjs`
+
+只有以下情况，才退回纯 Markdown 推理：
+
+- 当前平台不支持执行本地脚本
+- 宿主环境没有安装完整套件
+- 当前问题属于访谈、业务判断、模糊需求澄清，脚本无法替代
+- 当前动作超出 V1 工具边界，需要主入口按协议手动处理
 
 ## 职责边界
 
@@ -121,9 +137,29 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - 主入口运行流程、访谈规则与交付判断：`references/core/runtime.md`
 - 3 类全局文件与 `project-devlog` 状态回写协议：`references/core/global-files-protocol.md`
 - 路由条件、能力映射与脚手架骨架规则：`references/core/routing.md`
+- 脚本化执行入口：优先使用当前套件根目录下的 `tools/validate-global-files.mjs`、`tools/route-check.mjs`、`tools/bootstrap-host.mjs`、`tools/devlog-sync.mjs`
 - 宿主默认专项规则源：`references/rules/*.md`；宿主初始化 `docs/rules/` 时应从该目录补齐默认规则文件，运行时优先读取宿主 `docs/rules/`，缺失时再回退到该目录；批量生成可调用当前套件根目录下的 `tools/generate-host-rules.mjs`
 - 技术栈默认参数：仅当宿主项目尚未明确技术栈，或当前任务涉及技术选型、页面实现、后端开发、数据库设计、部署方案时读取 `references/defaults/tech-stack.md`
 - 模板文件处理遵循两段逻辑：宿主项目存在可用全局文件时，模板文件只作为指向目标；宿主项目不存在对应全局文件时，才基于模板新建文件：`../../skills/ai-project-manager/assets/global-files/*.md`
+
+## 对应实现与注入入口
+
+本文件是主入口身份、红线和执行顺序的上位规则源。
+
+对应关系：
+
+- 结构化实现：
+  - `lib/ai-pm-protocol/bootstrap.js`
+  - `lib/bootstrap/index.js`
+- 平台注入入口：
+  - `hooks/session-start`
+  - `.opencode/plugins/project-manager-suite.js`
+
+维护原则：
+
+- 若主入口身份、默认第一入口定位、脚本优先顺序、核心红线发生变化，先改本文件
+- 若只是某个平台没有正确读取本文件内容，再改 bootstrap 或平台注入层
+- 不要在平台入口里单独发明另一套主入口规则
 
 ## 维护约定
 
@@ -132,14 +168,17 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - `references/core/runtime.md` 只依赖协议中的字段包决定访谈、补齐和路由；只有当字段包变化时才需要同步修改。
 - `references/core/routing.md` 只负责能力映射和骨架规则；字段变更默认不改，除非影响路由条件或目录约定。
 - `references/rules/` 负责维护宿主默认专项规则源；若规则分类、默认文件名或宿主落地策略变化，应同步更新协议、路由和生成逻辑。
+- `tools/*.mjs` 负责执行稳定动作；涉及结构校验、阶段门禁、骨架补齐、日志回写的规则变更时，应同步检查工具实现与参数口径。
+- `lib/ai-pm-protocol/` 是脚本和 bootstrap 的结构化规则源；稳定规则优先收口到这里，不要散落到单个脚本或平台入口。
 - `references/_archive/` 只存放历史版本与废弃草案，不参与当前运行链路；除非在做迁移、考古或差异比对，否则不要读取这里的文件。
 - 阶段只定义“最小交付物”和目标 skill；具体模板、references 与生成工作流由目标 skill 内部定义，主入口不重复维护模板路径。
-- 推荐修改顺序：先改协议，再改模板，再按需改 runtime，最后仅在必要时改 routing。
+- 推荐修改顺序：先改协议，再改 `lib/ai-pm-protocol/`，再按需改工具与 bootstrap，最后同步 runtime / routing / 模板文档。
 
 ## 补充红线约束
 
 - **【访谈必做】一旦发现 `project-profile.md` 缺失，你的动作只能是：向用户提问！** 问题清单必须从 `references/core/runtime.md` 的“首轮极简访谈”里选，每次问最核心的，并附 1 条 `参考回答`。
 - **【严禁编造】** 项目画像更新必须使用用户的真实回答。在没有拿到用户业务输入前，宁可停机等待，也绝不允许把主观猜测写成既定事实。
+- 运行环境允许时，结构识别、阶段门禁、骨架补齐、日志回写应优先调用工具脚本，而不是只靠主入口手工执行。
 - 只有在拿到了确切反馈后，才能开始处理 `references/core/routing.md` 中的物理目录骨架补齐。
 - 项目启动、需求访谈、阶段判断、项目画像维护、执行计划路由、骨架补齐等前置动作，均属于主入口职责，不得被实现型规范 skill 抢跑承接。
 - 当主入口已按 `routing.md` 创建宿主 `docs/rules/`，且宿主缺少默认专项规则文件时，应主动调用当前套件根目录下的 `tools/generate-host-rules.mjs` 完成批量补齐；若套件已按标准安装到宿主 `.agent/` 目录，默认命令形态为 `node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`。
