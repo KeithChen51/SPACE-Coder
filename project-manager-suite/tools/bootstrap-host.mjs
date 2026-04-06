@@ -27,7 +27,7 @@ const templatesDir = path.join(suiteRoot, 'skills', 'ai-project-manager', 'asset
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S3|S4] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file] [--create-plan-file]'
+        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S3|S4] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
     );
 }
 
@@ -200,6 +200,10 @@ function normalizeRelative(root, target) {
     return path.relative(root, target).split(path.sep).join('/') || '.';
 }
 
+function escapeInlineCode(value) {
+    return String(value).replace(/`/g, "'");
+}
+
 function safeExists(targetPath) {
     return fs.existsSync(targetPath);
 }
@@ -228,14 +232,62 @@ function detectContainerDirectory(hostRoot) {
     };
 }
 
-function resolveEffectiveRoot(hostRoot, options) {
+function getInterviewProjectName(interviewInput) {
+    const projectName = interviewInput.answers.project_name;
+
+    if (!hasMeaningfulValue(projectName)) {
+        return '';
+    }
+
+    return String(projectName).trim();
+}
+
+function assertValidProjectDirectoryName(projectName) {
+    if (projectName.includes('/') || projectName.includes('\\')) {
+        throw new Error(`Interview project_name cannot contain path separators: ${projectName}`);
+    }
+}
+
+function assertContainerBootstrapPreconditions(options, interviewInput) {
+    if (!options.interviewComplete) {
+        throw new Error(
+            'Bootstrapping a new host inside a container root requires completed startup interview confirmation.'
+        );
+    }
+
+    if (!interviewInput.provided) {
+        throw new Error(
+            'Bootstrapping a new host inside a container root requires --interview-json with the startup minimum interview fields.'
+        );
+    }
+
+    if (interviewInput.missingKeys.length > 0) {
+        throw new Error(
+            `Interview JSON is missing required startup fields: ${formatMissingInterviewFields(interviewInput.missingKeys)}`
+        );
+    }
+}
+
+function resolveEffectiveRoot(hostRoot, options, interviewInput) {
     const resolvedHostRoot = path.resolve(process.cwd(), options.hostRoot);
     const containerCheck = detectContainerDirectory(resolvedHostRoot);
+    const shouldUseContainerRoot = options.containerRoot || containerCheck.isContainerLike;
 
-    if ((options.containerRoot || containerCheck.isContainerLike) && options.projectName) {
+    if (shouldUseContainerRoot) {
+        assertContainerBootstrapPreconditions(options, interviewInput);
+
+        const interviewProjectName = getInterviewProjectName(interviewInput);
+        assertValidProjectDirectoryName(interviewProjectName);
+
+        if (options.projectName && options.projectName !== interviewProjectName) {
+            throw new Error(
+                `--project-name must match interview project_name when bootstrapping a container root. Received "${options.projectName}" but interview project_name is "${interviewProjectName}".`
+            );
+        }
+
         return {
             inputRoot: resolvedHostRoot,
-            effectiveRoot: path.join(resolvedHostRoot, options.projectName),
+            effectiveRoot: path.join(resolvedHostRoot, interviewProjectName),
             rootMode: 'container',
             detectionEvidence: containerCheck.evidence
         };
@@ -284,7 +336,45 @@ function copyTemplateIfNeeded({ effectiveRoot, relativePath, templateName, optio
 }
 
 function shouldCreatePlanFile(options) {
-    return options.createPlanFile || options.targetStage === STAGE_IDS.S3 || options.targetStage === STAGE_IDS.S4;
+    return true;
+}
+
+function fillProfileTemplate(templateContent, interviewInput) {
+    const replacements = [
+        ['项目名称', interviewInput.answers.project_name],
+        ['项目一句话目标', interviewInput.answers.project_one_liner],
+        ['协作模式', interviewInput.answers.collaboration_mode],
+        ['目标用户', interviewInput.answers.target_users],
+        ['主要问题', interviewInput.answers.main_problem]
+    ];
+
+    return replacements.reduce((content, [label, value]) => {
+        const safeValue = escapeInlineCode(value);
+        const pattern = new RegExp(`(^- ${label}：).*?$`, 'm');
+        return content.replace(pattern, `$1\`【用户确认】\` \`${safeValue}\``);
+    }, templateContent);
+}
+
+function createProfileFile({ effectiveRoot, options, results, interviewInput }) {
+    const targetPath = path.join(effectiveRoot, 'project-profile.md');
+    if (safeExists(targetPath)) {
+        results.files.skipped.push({
+            path: targetPath,
+            reason: 'already_exists'
+        });
+        return;
+    }
+
+    const templatePath = path.join(templatesDir, 'project-profile.md');
+    const templateContent = fs.readFileSync(templatePath, 'utf8');
+    const content = fillProfileTemplate(templateContent, interviewInput);
+
+    if (!options.dryRun) {
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+        fs.writeFileSync(targetPath, content, 'utf8');
+    }
+
+    results.files.created.push(targetPath);
 }
 
 function buildEmptyValidationState(effectiveRoot) {
@@ -301,7 +391,7 @@ function buildEmptyValidationState(effectiveRoot) {
 
 function bootstrapHost(options) {
     const interviewInput = loadInterviewInput(options);
-    const rootResolution = resolveEffectiveRoot(options.hostRoot, options);
+    const rootResolution = resolveEffectiveRoot(options.hostRoot, options, interviewInput);
     const effectiveRoot = rootResolution.effectiveRoot;
     const results = {
         rootResolution,
@@ -351,15 +441,7 @@ function bootstrapHost(options) {
                 );
             }
 
-            copyTemplateIfNeeded(
-                {
-                    effectiveRoot,
-                    relativePath: 'project-profile.md',
-                    templateName: 'project-profile.md',
-                    options,
-                    results
-                }
-            );
+            createProfileFile({ effectiveRoot, options, results, interviewInput });
         } else if (options.createProfileFile && !options.interviewComplete) {
             throw new Error(
                 'Creating project-profile.md requires completed interview confirmation. Pass --interview-complete only after the main entry finishes the startup interview.'

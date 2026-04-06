@@ -140,7 +140,7 @@
 ├── project-profile.md     (仅在宿主缺少项目画像文件时创建；已有则映射到宿主权威文件)
 ├── project-rules.md       (仅在宿主缺少全局规则文件时创建；已有则映射到宿主权威文件)
 ├── docs/plans/
-│   └── execution-plan.md  (初始主计划载体)
+│   └── execution-plan.md  (启动期 AI 记忆骨架中的当前执行计划载体)
 ├── docs/rules/            (宿主专项规则权威目录；首次创建后应自动从套件默认规则源补齐默认文件)
 ├── logs/                  (`project-devlog` 默认状态回写与开发日志目录；不再创建 `project-status.md`)
 └── .agent/skills/         (宿主项目本地 AI 配置和扩充能力挂载位)
@@ -150,6 +150,7 @@
 - 若宿主项目已存在可承担同职责的全局文件，主入口应记录模板与宿主文件的指向关系，后续能力直接读写宿主文件。
 - 若宿主项目不存在对应全局文件，且已完成首轮必要访谈，才按默认文件名创建最小载体。
 - 若通过 `bootstrap-host.mjs` 创建 `project-profile.md`，必须同时满足“访谈已结束 + 已提供结构化访谈输入 + 启动最小必需字段包完整”这 3 个条件。
+- `execution-plan.md` 属于启动必建骨架，是 AI 持续记忆系统中的当前执行计划载体；若宿主缺失，应在初始化时创建最小文件。
 - 若宿主 `docs/rules/` 为空或缺少默认专项规则文件，主入口在完成骨架目录创建后，应从 `skills/ai-project-manager/references/rules/` 自动补齐同名规则文件；执行时可调用 `project-manager-suite/tools/generate-host-rules.mjs` 工具脚本完成批量生成。
 - 已存在同名宿主规则文件时不得覆盖，除非显式执行强制刷新。
 - `bootstrap-host.mjs` V1 负责安全补骨架，不负责自动迁移整个套件到宿主 `.agent/`，也不负责删除原目录。

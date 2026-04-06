@@ -111,9 +111,10 @@
 当前策略：
 
 - 默认优先创建目录和规则目录
+- 若当前目录是容器目录，新宿主物理目录名必须来自 `--interview-json` 中的 `project_name`
 - 不默认静默创建 `project-profile.md`
-- 创建 `project-profile.md` 时，必须同时提供 `--interview-complete` 与 `--interview-json`
-- 不默认静默创建 `execution-plan.md`
+- 创建 `project-profile.md` 时，必须同时提供 `--interview-complete` 与 `--interview-json`，且会把访谈字段真实回写到画像模板
+- 默认创建 `execution-plan.md`，因为它属于启动骨架和 AI 持续记忆系统关键文件
 - 不覆盖已有权威文件
 
 适用场景：

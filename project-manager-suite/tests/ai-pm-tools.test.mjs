@@ -27,6 +27,17 @@ function readFile(targetPath) {
     return fs.readFileSync(targetPath, 'utf8');
 }
 
+function buildStartupInterview(overrides = {}) {
+    return {
+        project_name: '演示项目',
+        project_one_liner: '帮助团队稳定推进项目',
+        target_users: '运营人员',
+        main_problem: '推进信息分散',
+        collaboration_mode: '业务单人 + AI执行',
+        ...overrides
+    };
+}
+
 function buildRulesContent() {
     return `# 项目全局规则
 
@@ -234,27 +245,53 @@ test('generate-host-rules syncs default rules into host docs/rules', () => {
 
 test('bootstrap-host initializes container root and creates safe scaffold', () => {
     const workspaceRoot = makeTempDir('pm-suite-workspace-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
 
     const result = bootstrapHost({
         hostRoot: workspaceRoot,
-        projectName: 'demo-host',
+        projectName: '演示项目',
         targetStage: '',
         containerRoot: true,
         dryRun: false,
         json: false,
         forceRules: false,
-        interviewComplete: false,
+        interviewComplete: true,
+        interviewJsonPath,
         createProfileFile: false,
         createRulesFile: true,
         createPlanFile: false
     });
 
-    const effectiveRoot = path.join(workspaceRoot, 'demo-host');
+    const effectiveRoot = path.join(workspaceRoot, '演示项目');
     assert.equal(result.rootResolution.rootMode, 'container');
     assert.ok(fs.existsSync(path.join(effectiveRoot, 'docs', 'rules')));
+    assert.ok(fs.existsSync(path.join(effectiveRoot, 'docs', 'plans', 'execution-plan.md')));
     assert.ok(fs.existsSync(path.join(effectiveRoot, '.agent', 'skills')));
     assert.ok(fs.existsSync(path.join(effectiveRoot, 'project-rules.md')));
     assert.ok(result.files.deferred.some((item) => item.reason === 'profile_creation_not_requested'));
+});
+
+test('bootstrap-host refuses to bootstrap a container root before startup interview is complete', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-container-incomplete-');
+
+    assert.throws(
+        () =>
+            bootstrapHost({
+                hostRoot: workspaceRoot,
+                targetStage: '',
+                containerRoot: true,
+                dryRun: false,
+                json: false,
+                forceRules: false,
+                interviewComplete: false,
+                createProfileFile: false,
+                createRulesFile: true,
+                createPlanFile: false
+            }),
+        /completed startup interview confirmation/
+    );
 });
 
 test('bootstrap-host refuses to create project-profile.md with only interview-complete flag', () => {
@@ -264,7 +301,7 @@ test('bootstrap-host refuses to create project-profile.md with only interview-co
         () =>
             bootstrapHost({
                 hostRoot: workspaceRoot,
-                projectName: 'demo-host',
+                projectName: '演示项目',
                 targetStage: '',
                 containerRoot: true,
                 dryRun: false,
@@ -275,7 +312,7 @@ test('bootstrap-host refuses to create project-profile.md with only interview-co
                 createRulesFile: false,
                 createPlanFile: false
             }),
-        /--interview-json/
+        /startup minimum interview fields/
     );
 });
 
@@ -312,17 +349,11 @@ test('bootstrap-host creates project-profile.md only after receiving complete in
     const workspaceRoot = makeTempDir('pm-suite-bootstrap-complete-interview-');
     const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
 
-    writeJsonFile(interviewJsonPath, {
-        project_name: '演示项目',
-        project_one_liner: '帮助团队稳定推进项目',
-        target_users: '运营人员',
-        main_problem: '推进信息分散',
-        collaboration_mode: '业务单人 + AI执行'
-    });
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
 
     const result = bootstrapHost({
         hostRoot: workspaceRoot,
-        projectName: 'demo-host',
+        projectName: '演示项目',
         targetStage: '',
         containerRoot: true,
         dryRun: false,
@@ -335,9 +366,66 @@ test('bootstrap-host creates project-profile.md only after receiving complete in
         createPlanFile: false
     });
 
-    const effectiveRoot = path.join(workspaceRoot, 'demo-host');
+    const effectiveRoot = path.join(workspaceRoot, '演示项目');
+    const profileContent = readFile(path.join(effectiveRoot, 'project-profile.md'));
+
     assert.ok(fs.existsSync(path.join(effectiveRoot, 'project-profile.md')));
     assert.ok(result.files.created.includes(path.join(effectiveRoot, 'project-profile.md')));
+    assert.ok(profileContent.includes('`【用户确认】` `演示项目`'));
+    assert.ok(profileContent.includes('`【用户确认】` `帮助团队稳定推进项目`'));
+    assert.ok(profileContent.includes('`【用户确认】` `运营人员`'));
+});
+
+test('bootstrap-host rejects mismatched --project-name and interview project_name in container mode', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-mismatch-name-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
+
+    assert.throws(
+        () =>
+            bootstrapHost({
+                hostRoot: workspaceRoot,
+                projectName: 'demo-host',
+                targetStage: '',
+                containerRoot: true,
+                dryRun: false,
+                json: false,
+                forceRules: false,
+                interviewComplete: true,
+                interviewJsonPath,
+                createProfileFile: false,
+                createRulesFile: true,
+                createPlanFile: false
+            }),
+        /must match interview project_name/
+    );
+});
+
+test('bootstrap-host creates execution-plan.md as part of startup scaffold', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-plan-default-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
+
+    const result = bootstrapHost({
+        hostRoot: workspaceRoot,
+        projectName: '演示项目',
+        targetStage: '',
+        containerRoot: true,
+        dryRun: false,
+        json: false,
+        forceRules: false,
+        interviewComplete: true,
+        interviewJsonPath,
+        createProfileFile: false,
+        createRulesFile: true,
+        createPlanFile: false
+    });
+
+    const effectiveRoot = path.join(workspaceRoot, '演示项目');
+    assert.ok(fs.existsSync(path.join(effectiveRoot, 'docs', 'plans', 'execution-plan.md')));
+    assert.ok(result.files.created.includes(path.join(effectiveRoot, 'docs/plans/execution-plan.md')));
 });
 
 test('devlog-sync creates daily log, appends updates, and updates candidate pool', () => {
