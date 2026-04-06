@@ -180,7 +180,7 @@
 *   当前执行计划参考模板：`skills/ai-project-manager/assets/global-files/execution-plan.md`
 
 前置条件约束：
-- `project-profile.md`：必须先完成最小访谈。
+- `project-profile.md`：必须先完成最小访谈。若通过 `bootstrap-host.mjs` 创建，还必须提供可校验的结构化访谈输入，并覆盖“启动最小必需字段包”；单独的完成标记不构成创建依据。
 - `project-rules.md`：仅在确有长期规则承载需要，且无法通过现有文件映射时才创建。
 - `execution-plan.md`：仅在进入 S3/S4 且缺少计划载体时才创建。
 - `logs/`：由 `project-devlog` 作为默认状态回写能力负责落地；不阻断当前轮；仅在本轮结束后仍找不到可映射状态载体时，于日志目录补最小日志文件。

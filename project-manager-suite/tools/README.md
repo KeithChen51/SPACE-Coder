@@ -112,6 +112,7 @@
 
 - 默认优先创建目录和规则目录
 - 不默认静默创建 `project-profile.md`
+- 创建 `project-profile.md` 时，必须同时提供 `--interview-complete` 与 `--interview-json`
 - 不默认静默创建 `execution-plan.md`
 - 不覆盖已有权威文件
 
@@ -125,6 +126,7 @@
 
 - V1 不负责自动迁移整个套件到宿主 `.agent/`
 - V1 不负责自动删除旧套件目录
+- V1 不替代主入口完成访谈；调用方必须先完成访谈并提交结构化结果
 
 ---
 

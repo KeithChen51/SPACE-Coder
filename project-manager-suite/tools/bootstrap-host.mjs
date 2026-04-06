@@ -16,7 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
-import { STAGE_IDS } from '../lib/ai-pm-protocol/index.js';
+import { FILE_ROLE_IDS, STAGE_IDS, fieldPackages, fileContracts } from '../lib/ai-pm-protocol/index.js';
 import { generateHostRules } from './generate-host-rules.mjs';
 import { validateGlobalFiles } from './validate-global-files.mjs';
 
@@ -27,7 +27,7 @@ const templatesDir = path.join(suiteRoot, 'skills', 'ai-project-manager', 'asset
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S3|S4] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--create-profile-file] [--create-rules-file] [--create-plan-file]'
+        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S3|S4] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file] [--create-plan-file]'
     );
 }
 
@@ -42,6 +42,7 @@ function parseArgs(argv) {
         json: false,
         forceRules: false,
         interviewComplete: false,
+        interviewJsonPath: '',
         createProfileFile: false,
         createRulesFile: false,
         createPlanFile: false
@@ -72,6 +73,15 @@ function parseArgs(argv) {
 
         if (arg === '--interview-complete') {
             options.interviewComplete = true;
+            continue;
+        }
+
+        if (arg === '--interview-json') {
+            options.interviewJsonPath = args[i + 1] || '';
+            if (!options.interviewJsonPath) {
+                throw new Error('Missing value for --interview-json');
+            }
+            i += 1;
             continue;
         }
 
@@ -125,6 +135,65 @@ function parseArgs(argv) {
     }
 
     return options;
+}
+
+const profileFieldLabels = new Map(
+    fileContracts[FILE_ROLE_IDS.PROFILE].map((item) => [item.key, item.label])
+);
+
+function hasMeaningfulValue(value) {
+    if (typeof value === 'string') {
+        return value.trim().length > 0;
+    }
+
+    return value !== null && value !== undefined;
+}
+
+function loadInterviewInput(options) {
+    if (!options.interviewJsonPath) {
+        return {
+            provided: false,
+            path: '',
+            answers: {},
+            missingKeys: []
+        };
+    }
+
+    const resolvedPath = path.resolve(process.cwd(), options.interviewJsonPath);
+    if (!safeExists(resolvedPath)) {
+        throw new Error(`Interview JSON not found: ${resolvedPath}`);
+    }
+
+    let parsed;
+    try {
+        parsed = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
+    } catch (error) {
+        throw new Error(`Interview JSON is invalid: ${resolvedPath}`);
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error(`Interview JSON must contain an object: ${resolvedPath}`);
+    }
+
+    const answers =
+        parsed.startupMinimum && typeof parsed.startupMinimum === 'object' && !Array.isArray(parsed.startupMinimum)
+            ? parsed.startupMinimum
+            : parsed;
+
+    const missingKeys = fieldPackages.startupMinimum.filter((key) => !hasMeaningfulValue(answers[key]));
+
+    return {
+        provided: true,
+        path: resolvedPath,
+        answers,
+        missingKeys
+    };
+}
+
+function formatMissingInterviewFields(missingKeys) {
+    return missingKeys
+        .map((key) => `${key} (${profileFieldLabels.get(key) || key})`)
+        .join(', ');
 }
 
 function normalizeRelative(root, target) {
@@ -231,6 +300,7 @@ function buildEmptyValidationState(effectiveRoot) {
 }
 
 function bootstrapHost(options) {
+    const interviewInput = loadInterviewInput(options);
     const rootResolution = resolveEffectiveRoot(options.hostRoot, options);
     const effectiveRoot = rootResolution.effectiveRoot;
     const results = {
@@ -269,6 +339,18 @@ function bootstrapHost(options) {
 
     if (!validationBefore.authority.project_profile) {
         if (options.createProfileFile && options.interviewComplete) {
+            if (!interviewInput.provided) {
+                throw new Error(
+                    'Creating project-profile.md requires --interview-json with the startup minimum interview fields.'
+                );
+            }
+
+            if (interviewInput.missingKeys.length > 0) {
+                throw new Error(
+                    `Interview JSON is missing required startup fields: ${formatMissingInterviewFields(interviewInput.missingKeys)}`
+                );
+            }
+
             copyTemplateIfNeeded(
                 {
                     effectiveRoot,
@@ -277,6 +359,10 @@ function bootstrapHost(options) {
                     options,
                     results
                 }
+            );
+        } else if (options.createProfileFile && !options.interviewComplete) {
+            throw new Error(
+                'Creating project-profile.md requires completed interview confirmation. Pass --interview-complete only after the main entry finishes the startup interview.'
             );
         } else {
             results.files.deferred.push({

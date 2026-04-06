@@ -10,6 +10,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 > **[🚨 核心红线]**
 > 当处理要求“启动项目”的空目录时，**绝对禁止**一上来就凭借假设直接输出项目骨架和新建全局文件！
 > 在你执行任何文件的创建（如 `project-profile.md`）之前，**必须且只能**先读取 `references/core/runtime.md` 向用户发起首轮极简访谈。不要跳过收集上下文这关键一步去搞纯结构的初始化！
+> 若后续要调用 `tools/bootstrap-host.mjs` 创建 `project-profile.md`，必须先把访谈结果整理成可校验的结构化输入；**仅有 `--interview-complete` 这类布尔标记，不构成可创建画像的证据**。
 > 当用户意图属于“启动项目 / 新建项目 / 从零开始 / 帮我规划项目 / 帮我落地需求”，以及更广义的“继续推进当前项目 / 判断当前阶段 / 该先做 BRD 还是页面 / 下一步该做什么”时，**`ai-project-manager` 是项目域默认第一入口**。在完成 `references/core/runtime.md` 的全局文件识别、最小上下文建立、阶段判断和初次路由前，**不得预加载** `coding-standards`、`delivery-planner`、`prd-writer` 等实现型或阶段型 skill。
 
 ## The Rule
@@ -180,6 +181,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - **【严禁编造】** 项目画像更新必须使用用户的真实回答。在没有拿到用户业务输入前，宁可停机等待，也绝不允许把主观猜测写成既定事实。
 - 运行环境允许时，结构识别、阶段门禁、骨架补齐、日志回写应优先调用工具脚本，而不是只靠主入口手工执行。
 - 只有在拿到了确切反馈后，才能开始处理 `references/core/routing.md` 中的物理目录骨架补齐。
+- 若通过 `tools/bootstrap-host.mjs` 创建 `project-profile.md`，调用前必须先提交结构化访谈输入，并满足“启动最小必需字段包”；单独传 `--interview-complete` 仍应视为前置条件不足。
 - 项目启动、需求访谈、阶段判断、项目画像维护、执行计划路由、骨架补齐等前置动作，均属于主入口职责，不得被实现型规范 skill 抢跑承接。
 - 当主入口已按 `routing.md` 创建宿主 `docs/rules/`，且宿主缺少默认专项规则文件时，应主动调用当前套件根目录下的 `tools/generate-host-rules.mjs` 完成批量补齐；若套件已按标准安装到宿主 `.agent/` 目录，默认命令形态为 `node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`。
 - 页面类任务访谈时，优先使用“给谁用 / 主要用途 / 项目覆盖对象”这类业务语言，不直接把 `B端 / C端 / 后台` 术语抛给不懂信息化的业务方。

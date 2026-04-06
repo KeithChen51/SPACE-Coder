@@ -19,6 +19,10 @@ function writeFile(targetPath, content) {
     fs.writeFileSync(targetPath, content, 'utf8');
 }
 
+function writeJsonFile(targetPath, value) {
+    writeFile(targetPath, JSON.stringify(value, null, 2));
+}
+
 function readFile(targetPath) {
     return fs.readFileSync(targetPath, 'utf8');
 }
@@ -251,6 +255,89 @@ test('bootstrap-host initializes container root and creates safe scaffold', () =
     assert.ok(fs.existsSync(path.join(effectiveRoot, '.agent', 'skills')));
     assert.ok(fs.existsSync(path.join(effectiveRoot, 'project-rules.md')));
     assert.ok(result.files.deferred.some((item) => item.reason === 'profile_creation_not_requested'));
+});
+
+test('bootstrap-host refuses to create project-profile.md with only interview-complete flag', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-no-interview-');
+
+    assert.throws(
+        () =>
+            bootstrapHost({
+                hostRoot: workspaceRoot,
+                projectName: 'demo-host',
+                targetStage: '',
+                containerRoot: true,
+                dryRun: false,
+                json: false,
+                forceRules: false,
+                interviewComplete: true,
+                createProfileFile: true,
+                createRulesFile: false,
+                createPlanFile: false
+            }),
+        /--interview-json/
+    );
+});
+
+test('bootstrap-host refuses to create project-profile.md when interview JSON misses startup minimum fields', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-missing-fields-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, {
+        project_name: '演示项目',
+        project_one_liner: '帮助团队稳定推进项目'
+    });
+
+    assert.throws(
+        () =>
+            bootstrapHost({
+                hostRoot: workspaceRoot,
+                projectName: 'demo-host',
+                targetStage: '',
+                containerRoot: true,
+                dryRun: false,
+                json: false,
+                forceRules: false,
+                interviewComplete: true,
+                interviewJsonPath,
+                createProfileFile: true,
+                createRulesFile: false,
+                createPlanFile: false
+            }),
+        /Interview JSON is missing required startup fields/
+    );
+});
+
+test('bootstrap-host creates project-profile.md only after receiving complete interview JSON', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-complete-interview-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, {
+        project_name: '演示项目',
+        project_one_liner: '帮助团队稳定推进项目',
+        target_users: '运营人员',
+        main_problem: '推进信息分散',
+        collaboration_mode: '业务单人 + AI执行'
+    });
+
+    const result = bootstrapHost({
+        hostRoot: workspaceRoot,
+        projectName: 'demo-host',
+        targetStage: '',
+        containerRoot: true,
+        dryRun: false,
+        json: false,
+        forceRules: false,
+        interviewComplete: true,
+        interviewJsonPath,
+        createProfileFile: true,
+        createRulesFile: true,
+        createPlanFile: false
+    });
+
+    const effectiveRoot = path.join(workspaceRoot, 'demo-host');
+    assert.ok(fs.existsSync(path.join(effectiveRoot, 'project-profile.md')));
+    assert.ok(result.files.created.includes(path.join(effectiveRoot, 'project-profile.md')));
 });
 
 test('devlog-sync creates daily log, appends updates, and updates candidate pool', () => {
