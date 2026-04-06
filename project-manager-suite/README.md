@@ -136,27 +136,97 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 
 ```text
 project-manager-suite/
+├── package.json                   # Node 运行入口与测试脚本定义
 ├── README.md                      # 套件使用指南
 ├── docs/design/                   # （可选阅读）产品设计图纸与分层理念
-└── skills/                        # 实际运行时的能力目录
-    ├── ai-project-manager/            # [核心] 唯一总入口
-    │   ├── SKILL.md                   # 入口指令
-    │   ├── references/
-    │   │   ├── core/                  # 运行协议、全局文件协议、路由与骨架规则
-    │   │   ├── rules/                 # 前端/后端/数据库/调试等专项规则
-    │   │   ├── defaults/              # 默认技术栈与其他默认参数
-    │   │   └── _archive/              # 历史版本与废弃草案，不参与当前运行
-    │   └── assets/global-files/       # 全局文件默认骨架（画像、计划等）
-    ├── coding-standards/              # [子能力] 编码规范与研发执行
-    ├── toxic-commercial-pm/           # [子能力] 商业化业务需求文档 / BRD 收敛
-    ├── ui-ux-pro-max/                 # [子能力] 页面原型与视觉设计
-    ├── prd-writer/                    # [子能力] 页面确认后的完整 PRD 反推
-    ├── delivery-planner/              # [子能力] 任务拆解与交付规划
-    ├── prd-test-case-generator/       # [子能力] PRD 驱动测试用例生成
-    ├── test-case-runner/              # [子能力] 测试用例执行
-    ├── test-and-acceptance/           # [子能力] 验收收口
-    └── project-devlog/                # [子能力] 日志与状态回写
+├── docs/tooling/                  # 工具脚本使用与维护说明
+├── hooks/                         # 会话启动时的注入与平台 hook 入口
+├── lib/                           # 协议结构化实现与 bootstrap 组装层
+│   ├── ai-pm-protocol/            # 字段、阶段、路由、规则同步等协议层结构化配置
+│   └── bootstrap/                 # 平台注入与 bootstrap 组装逻辑
+├── skills/                        # 实际运行时的能力目录
+│   ├── ai-project-manager/            # [核心] 唯一总入口
+│   │   ├── SKILL.md                   # 入口指令
+│   │   ├── references/
+│   │   │   ├── core/                  # 运行协议、全局文件协议、路由与骨架规则
+│   │   │   ├── rules/                 # 前端/后端/数据库/调试等专项规则
+│   │   │   ├── defaults/              # 默认技术栈与其他默认参数
+│   │   │   └── _archive/              # 历史版本与废弃草案，不参与当前运行
+│   │   └── assets/global-files/       # 全局文件默认骨架（画像、计划等）
+│   ├── coding-standards/              # [子能力] 编码规范与研发执行
+│   ├── toxic-commercial-pm/           # [子能力] 商业化业务需求文档 / BRD 收敛
+│   ├── ui-ux-pro-max/                 # [子能力] 页面原型与视觉设计
+│   ├── prd-writer/                    # [子能力] 页面确认后的完整 PRD 反推
+│   ├── delivery-planner/              # [子能力] 任务拆解与交付规划
+│   ├── prd-test-case-generator/       # [子能力] PRD 驱动测试用例生成
+│   ├── test-case-runner/              # [子能力] 测试用例执行
+│   ├── test-and-acceptance/           # [子能力] 验收收口
+│   └── project-devlog/                # [子能力] 日志与状态回写
+├── tests/                         # 工具链与协议对齐测试
+└── tools/                         # 宿主初始化、校验、规则同步、日志回写、安装套件等脚本
 ```
+
+### 各目录的作用与使用场景
+
+- `README.md`
+  - 作用：对外说明套件是什么、怎么安装、怎么接到宿主项目里。
+  - 什么时候看：第一次接入、需要给别人解释套件结构、想确认标准使用方式时。
+
+- `package.json`
+  - 作用：定义 Node 侧的最小工程入口，例如测试脚本和模块类型配置。
+  - 什么时候看：要运行 `npm run test:ai-pm`、补充新的工具脚本命令、调整 Node 模块行为时。
+
+- `docs/design/`
+  - 作用：沉淀产品设计图纸、架构分层和为什么这么设计。
+  - 什么时候看：要理解整套机制的设计意图、准备重构主流程、需要做架构层讨论时。
+
+- `docs/tooling/`
+  - 作用：记录工具脚本的使用说明、维护方法和边界。
+  - 什么时候看：要跑脚本、排查脚本行为、维护工具链或补充自动化能力时。
+
+- `hooks/`
+  - 作用：提供平台侧会话启动注入入口，例如 session start hook。
+  - 什么时候看：要接 Claude/OpenCode/Codex 等平台、排查“为什么启动时自动注入 ai-project-manager”时。
+
+- `lib/`
+  - 作用：把协议文档中的稳定规则收口成结构化实现，供脚本和平台 bootstrap 复用。
+  - 什么时候看：要新增字段、调整阶段、修改路由规则、修复 hook/bootstrap 注入逻辑时。
+
+- `lib/ai-pm-protocol/`
+  - 作用：维护字段合同、阶段定义、路由规则、规则同步策略等协议层结构化配置。
+  - 什么时候看：你改的是“规则本身”，不是某个单一脚本的临时判断时。
+
+- `lib/bootstrap/`
+  - 作用：负责把 `ai-project-manager` 主入口能力组装成各平台可消费的 bootstrap 内容。
+  - 什么时候看：要改 session-start 注入内容、平台适配逻辑、统一启动文案时。
+
+- `skills/`
+  - 作用：存放实际面向项目推进的能力单元，是套件的主体能力层。
+  - 什么时候看：要新增/修改某个 skill、调整能力边界、扩展某阶段交付流程时。
+
+- `skills/ai-project-manager/`
+  - 作用：唯一总入口，负责识别全局文件、最小访谈、阶段判断、路由和回写。
+  - 什么时候看：任何“项目启动 / 继续推进 / 下一步做什么 / 当前处于哪个阶段”的问题都应先看这里。
+
+- `skills/*/references/`
+  - 作用：存放该 skill 的协议、规则、模板引用和补充说明。
+  - 什么时候看：要修改某个 skill 的行为规则，但不一定要改脚本实现时。
+
+- `skills/*/assets/`
+  - 作用：存放该 skill 会创建或复用的模板、默认文件骨架、静态素材。
+  - 什么时候看：要调整默认模板内容、生成文件外形或默认骨架时。
+
+- `tools/`
+  - 作用：提供宿主初始化、校验、阶段判断、规则同步、日志回写、安装套件等脚本化能力。
+  - 什么时候看：需要一键执行稳定动作，而不是靠主入口纯文本推理时。
+
+- `tests/`
+  - 作用：验证工具链主路径、协议实现和对齐关系是否被改坏。
+  - 什么时候看：改了协议、脚本、bootstrap、路由逻辑后，准备收口或怀疑回归时。
+
+- `.codex/`、`.opencode/`
+  - 作用：存放不同运行平台的安装说明或插件接入文件。
+  - 什么时候看：你要把套件接进对应平台，或排查平台侧为什么没有正确识别套件时。
 
 其中 `skills/ai-project-manager/references/` 建议按以下三层组织：
 
