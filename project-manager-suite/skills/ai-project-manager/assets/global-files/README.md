@@ -18,7 +18,7 @@
 
 ## 包含内容
 
-当前 starter pack 包含 3 类全局文件模板；状态回写默认由 `project-devlog` 在 `logs/` 下生成日志文件承接：
+当前 starter pack 的核心骨架包含 3 类全局文件模板；状态回写默认由 `project-devlog` 在 `logs/` 下生成日志文件承接：
 
 - `project-rules.md`
 - `project-profile.md`
@@ -82,7 +82,7 @@
 - 再决定是否进入某个子能力
 - 最后将结果回写到对应文件，或调用 `project-devlog` 写入日志文件
 
-因此，这套 starter pack 是主入口的运行骨架，不是附属模板集合。
+因此，这套 starter pack 的主骨架是 3 类全局文件加 `project-devlog`。若需要独立的规则升级候选池，应使用 `assets/devlog/rule-candidates-template.md` 这一复盘侧辅助模板，它不改变主骨架定义。
 
 ---
 
