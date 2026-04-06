@@ -153,7 +153,9 @@
 - `execution-plan.md` 属于启动必建骨架，是 AI 持续记忆系统中的当前执行计划载体；若宿主缺失，应在初始化时创建最小文件。
 - 若宿主 `docs/rules/` 为空或缺少默认专项规则文件，主入口在完成骨架目录创建后，应从 `skills/ai-project-manager/references/rules/` 自动补齐同名规则文件；执行时可调用 `project-manager-suite/tools/generate-host-rules.mjs` 工具脚本完成批量生成。
 - 已存在同名宿主规则文件时不得覆盖，除非显式执行强制刷新。
-- `bootstrap-host.mjs` V1 负责安全补骨架，不负责自动迁移整个套件到宿主 `.agent/`，也不负责删除原目录。
+- `bootstrap-host.mjs` V1 负责安全补骨架，不负责自动迁移整个套件到宿主 `.agent/`。
+- 若需要把当前套件固定到宿主内执行路径，应在骨架补齐后调用 `tools/install-suite-into-host.mjs` 安装到宿主 `.agent/project-manager-suite/`；该脚本应复用宿主已有 `.agent/`，若不存在则自动创建。
+- 默认不删除原套件目录；仅在显式 `--move` 时，安装成功后才删除源套件目录。
 
 ### 第二层：阶段触发目录（按需创建）
 只在进入对应阶段后补建：

@@ -8,6 +8,7 @@
 - `route-check.mjs`
 - `generate-host-rules.mjs`
 - `bootstrap-host.mjs`
+- `install-suite-into-host.mjs`
 - `devlog-sync.mjs`
 - `check-protocol-alignment.mjs`
 
@@ -32,7 +33,7 @@ npm run test:ai-pm
   例如修改 `SKILL.md`、`runtime.md`、`global-files-protocol.md`、`routing.md`，或调整 `lib/ai-pm-protocol/` 下的字段、阶段、路由配置。
 
 - 改了工具脚本之后  
-  例如修改 `route-check.mjs`、`bootstrap-host.mjs`、`devlog-sync.mjs`、`validate-global-files.mjs`。
+  例如修改 `route-check.mjs`、`bootstrap-host.mjs`、`install-suite-into-host.mjs`、`devlog-sync.mjs`、`validate-global-files.mjs`。
 
 - 一轮脚本化改造准备收口时  
   当你觉得“这轮改完了”，需要用测试确认主链路没有被改坏。

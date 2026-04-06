@@ -14,6 +14,7 @@
 | `validate-global-files.mjs` | 校验全局文件入口、结构和规则目录状态 | V1 可用 |
 | `route-check.mjs` | 判断当前阶段、推荐阶段、阶段门禁和阻断原因 | V1 可用 |
 | `bootstrap-host.mjs` | 安全补齐宿主骨架并复用规则同步 | V1 可用 |
+| `install-suite-into-host.mjs` | 将完整套件安装或同步到宿主 `.agent/project-manager-suite/` | V1 可用 |
 | `devlog-sync.mjs` | 每日日志新建/追加与规则候选池联动 | V1 可用 |
 | `check-protocol-alignment.mjs` | 检查协议文档与结构化实现的双向追踪是否一致 | V1 可用 |
 
@@ -26,13 +27,15 @@
 1. `validate-global-files.mjs`
 2. `route-check.mjs`
 3. `bootstrap-host.mjs`
-4. `devlog-sync.mjs`
+4. `install-suite-into-host.mjs`
+5. `devlog-sync.mjs`
 
 原因：
 
 - 先确认宿主当前是否健康
 - 再判断当前应该进入哪个阶段
 - 再补骨架和规则目录
+- 再把完整套件安装或同步到宿主内路径，固定后续执行入口
 - 最后做日志沉淀与规则候选联动
 
 ---
@@ -128,6 +131,36 @@
 - V1 不负责自动迁移整个套件到宿主 `.agent/`
 - V1 不负责自动删除旧套件目录
 - V1 不替代主入口完成访谈；调用方必须先完成访谈并提交结构化结果
+
+---
+
+## `install-suite-into-host.mjs`
+
+作用：
+
+- 将完整 `project-manager-suite` 安装或同步到宿主 `.agent/project-manager-suite/`
+- 复用宿主已有 `.agent/` 目录；若宿主尚未创建 `.agent/`，脚本会自动创建
+- 固定后续工具命令的宿主内执行路径
+
+当前策略：
+
+- 默认安装目标固定为宿主 `.agent/project-manager-suite/`
+- 若宿主 `.agent/` 已存在，复用该目录，不覆盖其他宿主资产
+- 默认支持对已安装套件执行“同步/升级”写入，不要求宿主是空目录
+- 若目标路径被未知目录占用，必须显式传 `--force` 才允许替换
+- 默认不删除源套件目录；仅在显式传 `--move` 时，安装成功后才删除源目录
+
+适用场景：
+
+- 新项目骨架已经建立，需要把完整套件装入宿主
+- 宿主已存在 `.agent/`，希望一键安装或升级 `project-manager-suite`
+- 联调完成后，希望把当前套件同步到宿主内固定路径
+
+当前边界：
+
+- V1 不负责判断项目阶段
+- V1 不替代 `bootstrap-host.mjs` 补齐宿主业务骨架
+- V1 默认只管理 `.agent/project-manager-suite/`，不接管宿主 `.agent/` 其他内容
 
 ---
 

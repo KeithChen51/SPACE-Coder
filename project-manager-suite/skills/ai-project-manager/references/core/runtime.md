@@ -127,7 +127,9 @@
 - 若通过 `bootstrap-host.mjs` 创建 `project-profile.md`，必须同时满足：主入口已完成访谈、调用方显式确认访谈结束、并提供包含“启动最小必需字段包”的结构化访谈输入。
 - 缺少宿主专项规则目录或默认专项规则文件时，应由主入口在创建 `docs/rules/` 后，自动从 `skills/ai-project-manager/references/rules/` 补齐默认规则文件；执行时可调用 `project-manager-suite/tools/generate-host-rules.mjs` 工具脚本完成批量生成；默认只创建缺失项，不覆盖宿主已存在内容。
 - 运行时读取专项规则时，应优先读取宿主 `docs/rules/`；仅当宿主缺失对应文件时，才回退到套件默认专项规则源。
-- 套件安装与迁移属于独立安装动作，不属于 `bootstrap-host` V1 的默认职责；骨架补齐不自动删除原套件目录，不自动执行迁移。
+- 套件安装与迁移属于独立安装动作，不属于 `bootstrap-host` V1 的默认职责；若需要将当前套件固定到宿主内路径，应在宿主骨架补齐后调用 `tools/install-suite-into-host.mjs` 安装到 `<host>/.agent/project-manager-suite/`。
+- `install-suite-into-host.mjs` 应复用宿主已有 `.agent/` 目录；若宿主尚无 `.agent/`，脚本可自动创建，但默认只管理 `.agent/project-manager-suite/`，不覆盖宿主 `.agent/` 下其他内容。
+- 默认不自动删除原套件目录；仅当调用方显式选择 `--move` 时，安装成功后才删除源套件目录。
 
 **字段来源口径**：
 - **用户确认**：信息需要用户拍板才成立（含自然对话中明确表达的），不限于模板式访谈

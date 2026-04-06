@@ -8,6 +8,7 @@ import { validateGlobalFiles } from '../tools/validate-global-files.mjs';
 import { routeCheck } from '../tools/route-check.mjs';
 import { generateHostRules } from '../tools/generate-host-rules.mjs';
 import { bootstrapHost } from '../tools/bootstrap-host.mjs';
+import { installSuiteIntoHost } from '../tools/install-suite-into-host.mjs';
 import { devlogSync } from '../tools/devlog-sync.mjs';
 
 function makeTempDir(prefix) {
@@ -241,6 +242,78 @@ test('generate-host-rules syncs default rules into host docs/rules', () => {
     assert.ok(result.results.created.length > 0);
     assert.ok(fs.existsSync(path.join(hostRoot, 'docs', 'rules', 'devlog.md')));
     assert.ok(readFile(path.join(hostRoot, 'docs', 'rules', 'devlog.md')).includes('<!-- generated-by: ai-project-manager -->'));
+});
+
+test('install-suite-into-host creates host .agent directory when it does not exist', () => {
+    const hostRoot = makeTempDir('pm-suite-install-host-');
+
+    const result = installSuiteIntoHost({
+        hostRoot,
+        force: false,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    const targetSuiteRoot = path.join(hostRoot, '.agent', 'project-manager-suite');
+    const manifestPath = path.join(targetSuiteRoot, '.install-manifest.json');
+
+    assert.equal(result.installMode, 'install');
+    assert.ok(fs.existsSync(path.join(hostRoot, '.agent')));
+    assert.ok(fs.existsSync(path.join(targetSuiteRoot, 'tools', 'bootstrap-host.mjs')));
+    assert.ok(fs.existsSync(path.join(targetSuiteRoot, 'skills', 'ai-project-manager', 'SKILL.md')));
+    assert.ok(fs.existsSync(manifestPath));
+    assert.equal(JSON.parse(readFile(manifestPath)).install_mode, 'install');
+});
+
+test('install-suite-into-host reuses existing .agent directory without touching other host assets', () => {
+    const hostRoot = makeTempDir('pm-suite-install-existing-agent-');
+    const existingAgentFile = path.join(hostRoot, '.agent', 'custom-plugin.txt');
+
+    writeFile(existingAgentFile, 'keep me');
+
+    const result = installSuiteIntoHost({
+        hostRoot,
+        force: false,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    const targetSuiteRoot = path.join(hostRoot, '.agent', 'project-manager-suite');
+
+    assert.ok(result.directories.reused.includes(path.join(hostRoot, '.agent')));
+    assert.ok(fs.existsSync(existingAgentFile));
+    assert.equal(readFile(existingAgentFile), 'keep me');
+    assert.ok(fs.existsSync(path.join(targetSuiteRoot, 'tools', 'install-suite-into-host.mjs')));
+    assert.ok(fs.existsSync(path.join(targetSuiteRoot, '.install-manifest.json')));
+});
+
+test('install-suite-into-host upgrades an existing host-installed suite in place', () => {
+    const hostRoot = makeTempDir('pm-suite-install-upgrade-');
+
+    const firstResult = installSuiteIntoHost({
+        hostRoot,
+        force: false,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    const secondResult = installSuiteIntoHost({
+        hostRoot,
+        force: false,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    const manifestPath = path.join(hostRoot, '.agent', 'project-manager-suite', '.install-manifest.json');
+
+    assert.equal(firstResult.installMode, 'install');
+    assert.equal(secondResult.installMode, 'upgrade');
+    assert.equal(JSON.parse(readFile(manifestPath)).install_mode, 'upgrade');
+    assert.ok(secondResult.files.overwritten.length > 0);
 });
 
 test('bootstrap-host initializes container root and creates safe scaffold', () => {

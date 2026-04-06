@@ -31,7 +31,23 @@
 
 由于套件各组件存在强关联，对外分发时必须作为**整体标准交付单位**。
 
-如果要在新项目中使用本套件，请**整体复制** `project-manager-suite` 文件夹到目标项目的 `.agent` 目录中，不可单独抽取某个字能力（如仅复制 `ai-project-manager` 目录）。
+如果要在新项目中使用本套件，请将完整 `project-manager-suite` 安装到目标项目的 `.agent/project-manager-suite` 目录中，不可单独抽取某个字能力（如仅复制 `ai-project-manager` 目录）。
+
+推荐安装方式有两种：
+
+- 直接整体复制到宿主 `.agent/project-manager-suite`
+- 在套件源码仓库或已安装套件中运行：
+
+```bash
+node project-manager-suite/tools/install-suite-into-host.mjs <host-project-root>
+```
+
+补充说明：
+
+- 安装脚本会复用宿主已有 `.agent/` 目录；若宿主没有 `.agent/`，脚本会自动创建
+- 安装脚本只管理 `.agent/project-manager-suite/`，不会覆盖宿主 `.agent/` 下其他插件或配置
+- 推荐先通过 `bootstrap-host.mjs` 完成宿主骨架补齐，再安装或同步套件到宿主内路径
+- 安装完成后，后续命令应优先使用宿主内套件路径，例如：`node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`
 
 接入宿主项目时，优先做的是**角色映射**，不是强制重命名现有文档：
 - 把宿主项目现有的规则入口映射为“全局规则文件”
