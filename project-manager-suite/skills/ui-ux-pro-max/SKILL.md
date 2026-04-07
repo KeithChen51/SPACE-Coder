@@ -1,10 +1,95 @@
 ---
 name: ui-ux-pro-max
-description: UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks.
+description: "UI/UX design intelligence. 67 styles, 96 palettes, 57 font pairings, 25 charts, 13 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, mobile app, .html, .tsx, .vue, .svelte. Elements: button, modal, navbar, sidebar, card, table, form, chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, flat design. Topics: color palette, accessibility, animation, layout, typography, font pairing, spacing, hover, shadow, gradient. Integrations: shadcn/ui MCP for component search and examples."
 ---
-# ui-ux-pro-max
+# UI/UX Pro Max - Design Intelligence
 
 Comprehensive design guide for web and mobile applications. Contains 67 styles, 96 color palettes, 57 font pairings, 99 UX guidelines, and 25 chart types across 13 technology stacks. Searchable database with priority-based recommendations.
+
+## When to Apply
+
+Reference these guidelines when:
+- Designing new UI components or pages
+- Choosing color palettes and typography
+- Reviewing code for UX issues
+- Building landing pages or dashboards
+- Implementing accessibility requirements
+
+## Rule Categories by Priority
+
+| Priority | Category | Impact | Domain |
+|----------|----------|--------|--------|
+| 1 | Accessibility | CRITICAL | `ux` |
+| 2 | Touch & Interaction | CRITICAL | `ux` |
+| 3 | Performance | HIGH | `ux` |
+| 4 | Layout & Responsive | HIGH | `ux` |
+| 5 | Typography & Color | MEDIUM | `typography`, `color` |
+| 6 | Animation | MEDIUM | `ux` |
+| 7 | Style Selection | MEDIUM | `style`, `product` |
+| 8 | Charts & Data | LOW | `chart` |
+
+## Quick Reference
+
+### 1. Accessibility (CRITICAL)
+
+- `color-contrast` - Minimum 4.5:1 ratio for normal text
+- `focus-states` - Visible focus rings on interactive elements
+- `alt-text` - Descriptive alt text for meaningful images
+- `aria-labels` - aria-label for icon-only buttons
+- `keyboard-nav` - Tab order matches visual order
+- `form-labels` - Use label with for attribute
+
+### 2. Touch & Interaction (CRITICAL)
+
+- `touch-target-size` - Minimum 44x44px touch targets
+- `hover-vs-tap` - Use click/tap for primary interactions
+- `loading-buttons` - Disable button during async operations
+- `error-feedback` - Clear error messages near problem
+- `cursor-pointer` - Add cursor-pointer to clickable elements
+
+### 3. Performance (HIGH)
+
+- `image-optimization` - Use WebP, srcset, lazy loading
+- `reduced-motion` - Check prefers-reduced-motion
+- `content-jumping` - Reserve space for async content
+
+### 4. Layout & Responsive (HIGH)
+
+- `viewport-meta` - width=device-width initial-scale=1
+- `readable-font-size` - Minimum 16px body text on mobile
+- `horizontal-scroll` - Ensure content fits viewport width
+- `z-index-management` - Define z-index scale (10, 20, 30, 50)
+
+### 5. Typography & Color (MEDIUM)
+
+- `line-height` - Use 1.5-1.75 for body text
+- `line-length` - Limit to 65-75 characters per line
+- `font-pairing` - Match heading/body font personalities
+
+### 6. Animation (MEDIUM)
+
+- `duration-timing` - Use 150-300ms for micro-interactions
+- `transform-performance` - Use transform/opacity, not width/height
+- `loading-states` - Skeleton screens or spinners
+
+### 7. Style Selection (MEDIUM)
+
+- `style-match` - Match style to product type
+- `consistency` - Use same style across all pages
+- `no-emoji-icons` - Use SVG icons, not emojis
+
+### 8. Charts & Data (LOW)
+
+- `chart-type` - Match chart type to data type
+- `color-guidance` - Use accessible color palettes
+- `data-table` - Provide table alternative for accessibility
+
+## How to Use
+
+Search specific domains using the CLI tool below.
+
+---
+
 
 ## Prerequisites
 
@@ -37,22 +122,6 @@ winget install Python.Python.3.12
 
 When user requests UI/UX work (design, build, create, implement, review, fix, improve), follow this workflow:
 
-### Step 0: Read Page Positioning From Project Context
-
-Before doing any design search or implementation, check whether the host project already has page-positioning fields such as:
-
-- `页面设计标签`
-- `当前页面主要给谁用`
-- `当前页面主要用途`
-
-Execution rules:
-- If `页面设计标签` is available, treat it as the authoritative design direction and align layout density, interaction complexity, visual tone, and information hierarchy accordingly.
-- If only business-language fields are available, infer the likely direction conservatively:
-  - external users / owners / customers / members -> `C端`
-  - internal operators + business processing / content viewing -> `B端`
-  - internal staff + system configuration / permissions / administration -> `后台`
-- If none of these signals are available and the page type materially affects the design direction, stop and ask for clarification instead of guessing.
-
 ### Step 1: Analyze User Requirements
 
 Extract key information from user request:
@@ -60,16 +129,6 @@ Extract key information from user request:
 - **Style keywords**: minimal, playful, professional, elegant, dark mode, etc.
 - **Industry**: healthcare, fintech, gaming, education, etc.
 - **Stack**: React, Vue, Next.js, or default to `html-tailwind`
-- **Page positioning**: `C端 / B端 / 后台` + who the page serves + whether the goal is business processing, system management, or content display
-
-### Page Positioning Heuristics
-
-Use the page-positioning signal to avoid design drift:
-
-- `C端`: prioritize emotional appeal, lower cognitive load, clearer primary CTA, lighter terminology, and mobile-first task flow.
-- `B端`: prioritize information density, operational efficiency, batch actions, status visibility, and clearer module grouping.
-- `后台`: prioritize configuration clarity, permissions/rules visibility, table-form workflows, and risk-prevention affordances.
-- If the user explicitly says the page is one type, that overrides heuristics.
 
 ### Step 2: Generate Design System (REQUIRED)
 
@@ -99,8 +158,8 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persi
 ```
 
 This creates:
-- `design-system/<project-slug>/MASTER.md` — Global Source of Truth with all design rules
-- `design-system/<project-slug>/pages/` — Folder for page-specific overrides
+- `design-system/MASTER.md` — Global Source of Truth with all design rules
+- `design-system/pages/` — Folder for page-specific overrides
 
 **With page-specific override:**
 ```bash
@@ -108,12 +167,12 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persi
 ```
 
 This also creates:
-- `design-system/<project-slug>/pages/dashboard.md` — Page-specific deviations from Master
+- `design-system/pages/dashboard.md` — Page-specific deviations from Master
 
 **How hierarchical retrieval works:**
-1. When building a specific page (e.g., "Checkout"), first check `design-system/<project-slug>/pages/checkout.md`
+1. When building a specific page (e.g., "Checkout"), first check `design-system/pages/checkout.md`
 2. If the page file exists, its rules **override** the Master file
-3. If not, use `design-system/<project-slug>/MASTER.md` exclusively
+3. If not, use `design-system/MASTER.md` exclusively
 
 ### Step 3: Supplement with Detailed Searches (as needed)
 
