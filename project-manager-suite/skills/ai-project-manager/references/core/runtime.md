@@ -2,9 +2,25 @@
 
 主入口 `ai-project-manager` 的运行流程。读什么→判什么→做什么→写什么。
 
+## 按任务阅读
+
+- 想看主入口默认执行顺序：看 [1. 运行流程（5 步）](#1-运行流程5-步)
+- 想看缺字段、缺文件时怎么处理：看 [Step 3：补齐 — 填缺口](#step-3补齐--填缺口)
+- 想看阶段怎么判断：看 [2. 阶段判断表](#2-阶段判断表)
+- 想看首次启动怎么访谈：看 [3. 首轮极简访谈](#3-首轮极简访谈)
+- 想看协作模式怎么判断：看 [4. 协作模式判断](#4-协作模式判断)
+- 想看默认交付链路：看 [5. 默认交付链路](#5-默认交付链路)
+- 想快速自检有没有跑偏：看 [Red Flags](#red-flags)
+
 ## 对应实现与执行入口
 
 本文件是主入口执行顺序、阶段判断、子能力接管和运行自检的唯一权威源。
+
+变更联动提示：
+
+- 若改的是首轮访谈字段、追问条件或展示顺序，同时检查 `lib/ai-pm-protocol/field-contracts.js`、`skills/ai-project-manager/assets/global-files/project-profile.md`、`tools/bootstrap-host.mjs`、`tools/validate-global-files.mjs`
+- 若改的是运行顺序或脚本优先链路，同时检查 `tools/route-check.mjs`、`tools/devlog-sync.mjs`、`hooks/session-start`
+- 若改的是阶段判断或 S2 页面先行协议，同时检查 `lib/ai-pm-protocol/stages.js`、`lib/ai-pm-protocol/routing.js`、`skills/ai-project-manager/assets/global-files/project-profile.md`、`tools/route-check.mjs`
 
 对应关系：
 

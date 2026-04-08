@@ -110,3 +110,12 @@ npm run test:ai-pm
 cd project-manager-suite
 node tools/check-protocol-alignment.mjs
 ```
+
+如果你还想让工具提示“本次改了哪些文件后，还应该同步检查哪些关联文件”，可显式传入变更文件：
+
+```bash
+cd project-manager-suite
+node tools/check-protocol-alignment.mjs --changed skills/ai-project-manager/references/core/runtime.md
+```
+
+如果你不传 `--changed`，脚本会优先尝试从当前 git 工作区自动识别变更文件，并输出同样的关联检查建议。

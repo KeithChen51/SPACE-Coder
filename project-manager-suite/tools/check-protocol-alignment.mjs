@@ -14,7 +14,9 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { changeImpactMap } from '../lib/ai-pm-protocol/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,19 +32,38 @@ const PROTOCOL_DOCS = [
 const STRUCTURED_ROOTS = ['lib/ai-pm-protocol', 'lib/bootstrap'];
 
 function printUsage() {
-    console.log('Usage: node project-manager-suite/tools/check-protocol-alignment.mjs [suite-root] [--json]');
+    console.log(
+        'Usage: node project-manager-suite/tools/check-protocol-alignment.mjs [suite-root] [--json] [--changed file-a,file-b]'
+    );
 }
 
 function parseArgs(argv) {
     const args = argv.slice(2);
     const options = {
         suiteRoot: DEFAULT_SUITE_ROOT,
-        json: false
+        json: false,
+        changedFiles: []
     };
 
-    for (const arg of args) {
+    for (let i = 0; i < args.length; i += 1) {
+        const arg = args[i];
+
         if (arg === '--json') {
             options.json = true;
+            continue;
+        }
+
+        if (arg === '--changed') {
+            const nextArg = args[i + 1];
+            if (!nextArg) {
+                throw new Error('Missing value for --changed');
+            }
+
+            options.changedFiles = nextArg
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean);
+            i += 1;
             continue;
         }
 
@@ -63,6 +84,61 @@ function normalizeRelative(rootDir, targetPath) {
 
 function buildIssue(severity, code, message, details = {}) {
     return { severity, code, message, ...details };
+}
+
+function normalizeRepoPath(inputPath) {
+    return inputPath.replace(/^\.\/+/, '').split(path.sep).join('/');
+}
+
+function detectGitChangedFiles(suiteRoot) {
+    try {
+        const repoRoot = execFileSync('git', ['-C', suiteRoot, 'rev-parse', '--show-toplevel'], {
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        }).trim();
+
+        const statusOutput = execFileSync('git', ['-C', repoRoot, 'status', '--short'], {
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        }).trim();
+
+        if (!statusOutput) {
+            return {
+                mode: 'git-auto',
+                repoRoot,
+                changedFiles: []
+            };
+        }
+
+        const changedFiles = statusOutput
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => {
+                const statusPrefix = line.slice(0, 3);
+                let filePath = line.slice(3).trim();
+
+                if (statusPrefix.startsWith('R') && filePath.includes(' -> ')) {
+                    filePath = filePath.split(' -> ').pop() || filePath;
+                }
+
+                return normalizeRepoPath(path.relative(suiteRoot, path.join(repoRoot, filePath)));
+            })
+            .filter((item) => item && !item.startsWith('..'))
+            .sort();
+
+        return {
+            mode: 'git-auto',
+            repoRoot,
+            changedFiles
+        };
+    } catch {
+        return {
+            mode: 'none',
+            repoRoot: null,
+            changedFiles: []
+        };
+    }
 }
 
 function extractStructuredImplementations(docContent) {
@@ -147,10 +223,79 @@ function collectStructuredFiles(suiteRoot) {
     return files.sort();
 }
 
-function checkProtocolAlignment({ suiteRoot = DEFAULT_SUITE_ROOT }) {
+function analyzeChangeImpact(changedFiles = []) {
+    const normalizedChangedFiles = changedFiles.map((item) => normalizeRepoPath(item));
+    const impactedFamilies = [];
+    const recommendedReviewFiles = new Set();
+    const unmatchedChangedFiles = [];
+
+    for (const changedFile of normalizedChangedFiles) {
+        let matched = false;
+
+        for (const [familyId, definition] of Object.entries(changeImpactMap)) {
+            const relatedPool = [
+                ...(definition.currentAuthority || []),
+                ...(definition.targetAuthority || []),
+                ...(definition.checkAlso || [])
+            ].map((item) => normalizeRepoPath(item));
+
+            if (!relatedPool.includes(changedFile)) {
+                continue;
+            }
+
+            matched = true;
+
+            let impactedFamily = impactedFamilies.find((item) => item.familyId === familyId);
+            if (!impactedFamily) {
+                impactedFamily = {
+                    familyId,
+                    description: definition.description,
+                    triggeredBy: [],
+                    currentAuthority: definition.currentAuthority || [],
+                    targetAuthority: definition.targetAuthority || [],
+                    checkAlso: definition.checkAlso || []
+                };
+                impactedFamilies.push(impactedFamily);
+            }
+
+            if (!impactedFamily.triggeredBy.includes(changedFile)) {
+                impactedFamily.triggeredBy.push(changedFile);
+            }
+
+            for (const relatedFile of relatedPool) {
+                if (relatedFile !== changedFile) {
+                    recommendedReviewFiles.add(relatedFile);
+                }
+            }
+        }
+
+        if (!matched) {
+            unmatchedChangedFiles.push(changedFile);
+        }
+    }
+
+    impactedFamilies.sort((a, b) => a.familyId.localeCompare(b.familyId));
+
+    return {
+        changedFiles: normalizedChangedFiles,
+        impactedFamilies,
+        recommendedReviewFiles: Array.from(recommendedReviewFiles).sort(),
+        unmatchedChangedFiles
+    };
+}
+
+function checkProtocolAlignment({ suiteRoot = DEFAULT_SUITE_ROOT, changedFiles = [] }) {
     const resolvedSuiteRoot = path.resolve(suiteRoot);
     const issues = [];
     const protocolMap = {};
+    const changeSource =
+        changedFiles.length > 0
+            ? {
+                  mode: 'explicit',
+                  repoRoot: null,
+                  changedFiles: changedFiles.map((item) => normalizeRepoPath(item))
+              }
+            : detectGitChangedFiles(resolvedSuiteRoot);
 
     for (const relativeDocPath of PROTOCOL_DOCS) {
         const absoluteDocPath = path.join(resolvedSuiteRoot, relativeDocPath);
@@ -262,11 +407,18 @@ function checkProtocolAlignment({ suiteRoot = DEFAULT_SUITE_ROOT }) {
         infos: issues.filter((item) => item.severity === 'info').length
     };
 
+    const changeImpact = {
+        source: changeSource.mode,
+        repoRoot: changeSource.repoRoot,
+        ...analyzeChangeImpact(changeSource.changedFiles)
+    };
+
     return {
         suiteRoot: resolvedSuiteRoot,
         protocolDocs: PROTOCOL_DOCS,
         protocolMap,
         scannedStructuredFiles: structuredFiles.map((item) => normalizeRelative(resolvedSuiteRoot, item)),
+        changeImpact,
         issues,
         summary
     };
@@ -285,6 +437,39 @@ function formatTextReport(result) {
     lines.push('', 'Mappings:');
     for (const [docPath, structuredFiles] of Object.entries(result.protocolMap)) {
         lines.push(`- ${docPath}: ${structuredFiles.length > 0 ? structuredFiles.join(', ') : 'none'}`);
+    }
+
+    if (result.changeImpact.changedFiles.length > 0) {
+        lines.push('', 'Change impact:');
+        lines.push(`- Source: ${result.changeImpact.source}`);
+        lines.push(`- Changed files: ${result.changeImpact.changedFiles.join(', ')}`);
+
+        if (result.changeImpact.impactedFamilies.length === 0) {
+            lines.push('- Impacted rule families: none matched');
+        } else {
+            lines.push('- Impacted rule families:');
+            for (const family of result.changeImpact.impactedFamilies) {
+                lines.push(
+                    `  - ${family.familyId}: triggered by ${family.triggeredBy.join(', ')} | review ${family.checkAlso.join(', ')}`
+                );
+            }
+        }
+
+        lines.push(
+            `- Recommended review files: ${
+                result.changeImpact.recommendedReviewFiles.length > 0
+                    ? result.changeImpact.recommendedReviewFiles.join(', ')
+                    : 'none'
+            }`
+        );
+
+        if (result.changeImpact.unmatchedChangedFiles.length > 0) {
+            lines.push(`- Unmatched changed files: ${result.changeImpact.unmatchedChangedFiles.join(', ')}`);
+        }
+    } else if (result.changeImpact.source === 'git-auto') {
+        lines.push('', 'Change impact:');
+        lines.push('- Source: git-auto');
+        lines.push('- Changed files: none detected in current git working tree');
     }
 
     lines.push('', 'Issues:');

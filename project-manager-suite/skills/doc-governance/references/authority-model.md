@@ -123,6 +123,33 @@ Treat these as governance smells:
 - a routing file explains runtime order
 - a runtime file explains scaffold installation strategy
 - an entry file restates full protocol details
+- a single long file has no reading index even though readers usually jump by task
+- high-frequency and low-frequency sections are mixed with no ordering or fold strategy
+
+## Single-file overload test
+
+Do not default to splitting a file just because it is long.
+
+For a long single file, check in this order:
+
+1. Does the file still have one clear primary role?
+2. Would a reading index solve most navigation cost?
+3. Can section reordering move high-frequency content earlier?
+4. Can low-frequency detail be folded or pushed to appendix-like sections?
+5. Only if the answers above are insufficient, propose a split.
+
+Preferred low-cost actions:
+
+- `Add index`: for jump-reading by task or audience
+- `Reorder`: put conclusion, quick path, or high-frequency rules first
+- `Fold`: collapse low-frequency detail without changing authority ownership
+- `Compress`: turn repeated prose into a table, checklist, or short summary
+
+Use split only when:
+
+- one file clearly carries multiple authority roles
+- readers must edit different sections with different change cadences
+- navigation fixes still leave the file hard to maintain
 
 ## Decision test
 
@@ -142,6 +169,10 @@ Use these labels in proposals:
 - `Move`: content belongs in another authority file
 - `Delete`: duplicated copy with no value
 - `Navigate`: replace with short pointer to authority file
+- `Add index`: add a task-based or audience-based reading index
+- `Reorder`: move high-frequency sections earlier
+- `Fold`: collapse low-frequency detail
+- `Compress`: reduce repeated or verbose explanation without changing ownership
 
 ## Recommended review order
 

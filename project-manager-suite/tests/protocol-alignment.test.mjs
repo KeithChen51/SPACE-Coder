@@ -44,7 +44,7 @@ export const example = true;
 }
 
 test('check-protocol-alignment passes on the current suite', () => {
-    const suiteRoot = path.resolve(process.cwd());
+    const suiteRoot = path.resolve(process.cwd(), 'project-manager-suite');
     const result = checkProtocolAlignment({ suiteRoot });
 
     assert.equal(result.summary.errors, 0);
@@ -87,4 +87,46 @@ test('check-protocol-alignment detects missing reverse link in a synthetic fixtu
 
     assert.ok(result.summary.errors > 0);
     assert.ok(result.issues.some((item) => item.code === 'missing_reverse_link'));
+});
+
+test('check-protocol-alignment degrades safely when suite root is not in a git repo', () => {
+    const suiteRoot = makeTempDir('pm-suite-no-git-');
+    const docPath = 'skills/ai-project-manager/references/core/runtime.md';
+    const skillPath = 'skills/ai-project-manager/SKILL.md';
+    const protocolPath = 'skills/ai-project-manager/references/core/global-files-protocol.md';
+    const routingPath = 'skills/ai-project-manager/references/core/routing.md';
+
+    writeFile(path.join(suiteRoot, docPath), buildProtocolDoc(['lib/ai-pm-protocol/stages.js']));
+    writeFile(path.join(suiteRoot, skillPath), buildProtocolDoc(['lib/ai-pm-protocol/bootstrap.js']));
+    writeFile(path.join(suiteRoot, protocolPath), buildProtocolDoc(['lib/ai-pm-protocol/field-contracts.js']));
+    writeFile(path.join(suiteRoot, routingPath), buildProtocolDoc(['lib/ai-pm-protocol/routing.js']));
+
+    writeFile(path.join(suiteRoot, 'lib/ai-pm-protocol/stages.js'), buildStructuredFile([docPath]));
+    writeFile(path.join(suiteRoot, 'lib/ai-pm-protocol/bootstrap.js'), buildStructuredFile([skillPath]));
+    writeFile(path.join(suiteRoot, 'lib/ai-pm-protocol/field-contracts.js'), buildStructuredFile([protocolPath]));
+    writeFile(path.join(suiteRoot, 'lib/ai-pm-protocol/routing.js'), buildStructuredFile([routingPath]));
+
+    const result = checkProtocolAlignment({ suiteRoot });
+
+    assert.equal(result.summary.errors, 0);
+    assert.equal(result.changeImpact.source, 'none');
+    assert.deepEqual(result.changeImpact.changedFiles, []);
+});
+
+test('check-protocol-alignment reports impacted files for changed startup interview sources', () => {
+    const suiteRoot = path.resolve(process.cwd(), 'project-manager-suite');
+    const result = checkProtocolAlignment({
+        suiteRoot,
+        changedFiles: ['skills/ai-project-manager/references/core/runtime.md']
+    });
+
+    assert.ok(result.changeImpact.impactedFamilies.some((item) => item.familyId === 'startupInterview'));
+    assert.ok(
+        result.changeImpact.recommendedReviewFiles.includes(
+            'skills/ai-project-manager/assets/global-files/project-profile.md'
+        )
+    );
+    assert.ok(
+        result.changeImpact.recommendedReviewFiles.includes('lib/ai-pm-protocol/field-contracts.js')
+    );
 });

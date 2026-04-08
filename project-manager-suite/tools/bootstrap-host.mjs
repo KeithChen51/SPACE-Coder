@@ -11,6 +11,13 @@
  * Related tools:
  * - tools/validate-global-files.mjs
  * - tools/generate-host-rules.mjs
+ *
+ * Change impact:
+ * - If startup interview requirements, profile template fields, or scaffold rules change, also check:
+ *   - lib/ai-pm-protocol/field-contracts.js
+ *   - skills/ai-project-manager/assets/global-files/project-profile.md
+ *   - skills/ai-project-manager/references/core/runtime.md
+ *   - skills/ai-project-manager/references/core/routing.md
  */
 import fs from 'fs';
 import path from 'path';

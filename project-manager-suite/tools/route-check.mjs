@@ -9,6 +9,12 @@
  * - lib/ai-pm-protocol/stages.js
  * - lib/ai-pm-protocol/routing.js
  * - lib/ai-pm-protocol/field-contracts.js
+ *
+ * Change impact:
+ * - If stage judgment, S2 gating, or startup/page field packages change, also check:
+ *   - skills/ai-project-manager/references/core/runtime.md
+ *   - skills/ai-project-manager/references/core/routing.md
+ *   - skills/ai-project-manager/assets/global-files/project-profile.md
  */
 import fs from 'fs';
 import path from 'path';

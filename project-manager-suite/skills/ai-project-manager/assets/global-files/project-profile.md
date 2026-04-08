@@ -1,5 +1,9 @@
 # 项目画像
 
+> 变更联动提示：
+> - 若调整字段标签、字段顺序、默认占位内容或阶段枚举，同时检查 `lib/ai-pm-protocol/field-contracts.js`、`lib/ai-pm-protocol/stages.js`、`tools/bootstrap-host.mjs`、`tools/route-check.mjs`
+> - 若变更来自首轮访谈规则调整，同时检查 `skills/ai-project-manager/references/core/runtime.md`
+
 > 字段来源标记：
 > - `【用户确认】`：优先来自用户明确确认、现有业务资料或宿主项目已成立事实
 > - `【系统推断】`：优先由主入口从仓库、文件角色映射、已有材料中推断

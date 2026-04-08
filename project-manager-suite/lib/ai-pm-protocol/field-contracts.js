@@ -5,6 +5,13 @@
  * Consumed by:
  * - tools/validate-global-files.mjs
  * - tools/route-check.mjs
+ *
+ * Change impact:
+ * - If startupMinimum or pageTaskRequired changes, also check:
+ *   - skills/ai-project-manager/assets/global-files/project-profile.md
+ *   - tools/validate-global-files.mjs
+ *   - tools/route-check.mjs
+ *   - tools/bootstrap-host.mjs
  */
 import { FIELD_LEVELS, FIELD_SOURCES, FILE_ROLE_IDS } from './constants.js';
 
