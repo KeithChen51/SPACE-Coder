@@ -9,7 +9,7 @@
  */
 const routeTargets = {
     S1: {
-        skill: 'toxic-commercial-pm',
+        skill: 'brd-writer',
         exclusiveDeliverable: true
     },
     S2: {

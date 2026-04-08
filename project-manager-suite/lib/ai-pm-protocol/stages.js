@@ -22,7 +22,7 @@ const stages = [
         name: '业务需求文档',
         signals: ['调研信息基本齐全', '需要形成可评审的业务需求文档'],
         minimumDeliverable: '业务需求文档 / BRD',
-        ownerSkill: 'toxic-commercial-pm',
+        ownerSkill: 'brd-writer',
         gatekeeping: ['startupMinimum']
     },
     {

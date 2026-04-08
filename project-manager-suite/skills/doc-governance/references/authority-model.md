@@ -151,6 +151,34 @@ Use split only when:
 - readers must edit different sections with different change cadences
 - navigation fixes still leave the file hard to maintain
 
+## Bidirectional index test
+
+For a layered doc system, do not stop at one-way navigation by default.
+
+Check:
+
+1. Can readers move from the entry file to the authority file quickly?
+2. Can maintainers who open the authority file directly see what it serves, what implements it, and what else changes with it?
+3. If the answer to 1 is yes but 2 is no, the system still needs a backward index.
+
+Use:
+
+- `Forward index`
+  - entry -> authority
+  - overview -> detail
+  - task question -> target section or file
+- `Backward index`
+  - authority -> entry
+  - authority -> structured implementation
+  - authority -> tools
+  - authority -> change-impact neighbors
+
+Bidirectional indexing is especially useful when:
+
+- there are 3 or more documentation layers
+- AI or humans often open deep files directly
+- change-impact is distributed across docs, structured rules, templates, and tools
+
 ## Decision test
 
 For any rule, ask:
@@ -161,6 +189,31 @@ For any rule, ask:
 
 If question 1 has more than one answer, the boundary is still unclear.
 
+## Governance automation escalation
+
+Do not automate governance checks too early.
+
+Escalate in this order:
+
+1. Manual review
+2. Scan
+3. Structured impact map
+4. Alignment checker
+5. Blocking lint / CI
+
+Recommend escalation when:
+
+- the same governance mistake repeats
+- the signal is stable and machine-checkable
+- missing it creates real maintenance drift
+
+Examples:
+
+- repeated headings or repeated keyword families -> scan
+- “changed authority but forgot downstream files” -> structured impact map
+- protocol doc and structured implementation drift -> alignment checker
+- chronic repeated violations in team workflow -> lint or CI
+
 ## Refactor actions
 
 Use these labels in proposals:
@@ -169,6 +222,8 @@ Use these labels in proposals:
 - `Move`: content belongs in another authority file
 - `Delete`: duplicated copy with no value
 - `Navigate`: replace with short pointer to authority file
+- `Add forward index`: add entry-to-authority navigation
+- `Add backward index`: add authority-to-entry / implementation / change-impact navigation
 - `Add index`: add a task-based or audience-based reading index
 - `Reorder`: move high-frequency sections earlier
 - `Fold`: collapse low-frequency detail

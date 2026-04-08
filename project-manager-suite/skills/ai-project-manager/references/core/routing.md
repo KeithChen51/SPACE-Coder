@@ -64,7 +64,7 @@
 
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|
-| `toxic-commercial-pm` (业务需求文档 / BRD) | S1 | `skills/toxic-commercial-pm/` |
+| `brd-writer` (业务需求文档 / BRD) | S1 | `skills/brd-writer/` |
 | `prd-writer` (页面确认后的完整版 PRD 反推与沉淀) | S2 | `skills/prd-writer/` |
 | `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
 | `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
