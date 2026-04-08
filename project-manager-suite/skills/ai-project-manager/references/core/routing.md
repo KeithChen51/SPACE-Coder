@@ -60,12 +60,14 @@
 |-----------------------------------------------|--------------|
 | `coding-standards` (涉及代码/结构/SQL/测试时加载) | `skills/coding-standards/` |
 | `project-devlog` (每轮有实质产出、阶段切换、需要收口时加载) | `skills/project-devlog/` |
-| `ui-ux-pro-max` (涉及页面原型、视觉方向、交互原型时优先加载) | `skills/ui-ux-pro-max/` |
+| `ui-ux-pro-max` (页面设计类专项能力，由 `page-designer` 编排调用) | `skills/ui-ux-pro-max/` |
 
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|
 | `brd-writer` (业务需求文档 / BRD) | S1 | `skills/brd-writer/` |
-| `prd-writer` (页面确认后的完整版 PRD 反推与沉淀) | S2 | `skills/prd-writer/` |
+| `page-designer` (页面代码与页面交付清单编排) | S2 | `skills/page-designer/` |
+| `foundation-builder` (术语表 / Schema / API 技术地基设计) | S2 | `skills/foundation-builder/` |
+| `prd-writer` (消费页面与 foundation 产物，沉淀 AI 可编码 PRD) | S2 | `skills/prd-writer/` |
 | `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
 | `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
 | `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |

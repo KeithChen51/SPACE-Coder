@@ -468,7 +468,12 @@ function resolveNextAction({ validationResult, recommendedStage, blockers }) {
     }
 
     if (recommendedStage && routeTargets[recommendedStage]) {
-        return `可进入 ${recommendedStage}，默认交由 ${routeTargets[recommendedStage].skill}`;
+        const routeTarget = routeTargets[recommendedStage];
+        if (Array.isArray(routeTarget.followUpSkills) && routeTarget.followUpSkills.length > 0) {
+            return `可进入 ${recommendedStage}，默认先交由 ${routeTarget.skill}，后续按链路进入 ${routeTarget.followUpSkills.join(' -> ')}`;
+        }
+
+        return `可进入 ${recommendedStage}，默认交由 ${routeTarget.skill}`;
     }
 
     return '停留主入口继续澄清上下文';

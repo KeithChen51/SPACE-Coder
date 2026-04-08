@@ -217,12 +217,12 @@ test('route-check blocks S2 routing when stage transition writeback is missing',
         profileOverrides: {
             current_stage: 'S1',
             recommended_stage: 'S1',
-            current_round_deliverable: '页面原型 / 页面代码'
+            current_round_deliverable: '页面代码 / 页面交付清单'
         },
         planOverrides: {
             current_stage: 'S1',
             current_goal: '进入页面设计阶段',
-            next_tasks: '调用 ui-ux-pro-max'
+            next_tasks: '调用 page-designer'
         }
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });

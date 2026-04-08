@@ -27,10 +27,10 @@ const stages = [
     },
     {
         id: STAGE_IDS.S2,
-        name: '页面构建与完整版 PRD',
-        signals: ['已有业务需求文档', '需要先通过页面原型固化结构和交互，再沉淀完整 PRD'],
-        minimumDeliverable: '首轮：页面原型 / 页面代码 + 待确认项；确认后：完整版 PRD',
-        ownerSkill: 'ui-ux-pro-max -> prd-writer',
+        name: '页面设计、技术地基与完整版 PRD',
+        signals: ['已有业务需求文档', '需要先固化页面代码与页面交付清单，再反推技术地基并沉淀完整 PRD'],
+        minimumDeliverable: '首轮：页面代码 / 页面交付清单 + 待确认项；页面确认后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD',
+        ownerSkill: 'page-designer -> foundation-builder -> prd-writer',
         gatekeeping: ['startupMinimum', 'pageTaskRequired', 'pagePrototypeConfirmedForPrd']
     },
     {
@@ -74,8 +74,8 @@ const stageDecisionRules = [
     '用户要求拆任务、拆开发任务、制定开发计划时进入 S3',
     '用户要求实现某模块但上下文不足时，先补上下文再进入 S3/S4',
     '当前阶段与推荐阶段冲突时，先解释差异再更新画像',
-    'S2 页面原型未产出前，不得提前交付完整版 PRD',
-    'S2 页面原型未确认前，不得进入 S3'
+    'S2 页面代码或页面交付清单未产出前，不得提前交付 foundation 或完整版 PRD',
+    'S2 页面未确认或 foundation 未完成前，不得进入 S3'
 ];
 
 const globalCompanionAbilities = [

@@ -13,8 +13,8 @@ const routeTargets = {
         exclusiveDeliverable: true
     },
     S2: {
-        skill: 'ui-ux-pro-max',
-        followUpSkill: 'prd-writer',
+        skill: 'page-designer',
+        followUpSkills: ['foundation-builder', 'prd-writer'],
         exclusiveDeliverable: true,
         prerequisites: ['pageTaskRequired'],
         confirmationRequiredBeforeFollowUp: true
@@ -49,7 +49,7 @@ const gatingRules = {
         blockOnMissing: true
     },
     pagePrototypeConfirmedForPrd: {
-        description: 'S2 中页面原型必须经用户确认后，才允许进入 prd-writer',
+        description: 'S2 中页面产物必须经用户确认后，才允许进入 foundation-builder 与 prd-writer',
         evidence: ['page_prototype_exists', 'user_confirmation_explicit'],
         blockOnMissing: true
     },
