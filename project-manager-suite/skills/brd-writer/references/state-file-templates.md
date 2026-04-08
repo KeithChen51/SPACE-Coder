@@ -1,6 +1,6 @@
 # Host File Mapping Notes
 
-`toxic-commercial-pm` 默认不创建 `toxic-commercial-pm-state/` 这类 skill 私有状态目录。
+`brd-writer` 默认不创建 `brd-writer-state/` 这类 skill 私有状态目录。
 
 优先读取这些宿主文件作为状态来源：
 

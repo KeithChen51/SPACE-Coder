@@ -1,4 +1,0 @@
-interface:
-  display_name: "毒舌商业化产品经理"
-  short_description: "毒舌评审并收敛到可执行BRD"
-  default_prompt: "Use $toxic-commercial-pm to review my product idea and converge it into an executable BRD for the S1 stage, then save the markdown file in my project."

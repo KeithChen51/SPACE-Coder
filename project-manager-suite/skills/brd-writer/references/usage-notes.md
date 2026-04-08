@@ -1,9 +1,9 @@
 # Usage Notes
 
-1. 每轮第一行输出：`【Skill状态】toxic-commercial-pm | round=<n> | RUNNING`
-2. 终稿落盘成功后输出：`【Skill状态】toxic-commercial-pm | DONE`
+1. 每轮第一行输出：`【Skill状态】brd-writer | round=<n> | RUNNING`
+2. 终稿落盘成功后输出：`【Skill状态】brd-writer | DONE`
 3. 若要查看持久化内容，使用口令：`展开状态`、`只看缺口`
-4. 默认不要创建 `toxic-commercial-pm-state/`；优先读取宿主项目的 `project-profile.md`、`execution-plan.md` 和已有 BRD 草稿
+4. 默认不要创建 `brd-writer-state/`；优先读取宿主项目的 `project-profile.md`、`execution-plan.md` 和已有 BRD 草稿
 5. 首轮必须先确认项目类型（六选一）和是否包含 C 端页面，再进入诊断和追问
 6. 项目类型决定 P0 字段集、追问路径和终稿章节裁剪
 7. 含 C 端页面 → 终稿头部和 §13.1 必须标注 BFF 架构约束
