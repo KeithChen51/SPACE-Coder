@@ -1,18 +1,18 @@
 # 产品设计流水线（BRD → PRD）
 
-本文件描述从需求到 PRD 的完整设计流水线，包含 4 个 Skill 的职责、依赖和产物。
+本文件描述从项目画像到 PRD 的完整设计流水线，包含 5 个 Skill 的职责、依赖和产物。
 
 ## 流水线总览
 
 ```
-S1 阶段                S2 阶段
-────────    ──────────────────────────────────────────────
+S0 阶段         S1 阶段                S2 阶段
+──────────    ────────    ──────────────────────────────────────────────
 
-brd-writer → page-designer → foundation-builder → prd-writer
-   │              │                  │                 │
-   ▼              ▼                  ▼                 ▼
-  BRD        页面代码         术语表/Schema/API    功能列表/主PRD/子PRD
-            交付清单            交付清单
+ai-project-manager → brd-writer → page-designer → foundation-builder → prd-writer
+        │                │              │                  │                 │
+        ▼                ▼              ▼                  ▼                 ▼
+  project-profile       BRD        页面代码         术语表/Schema/API    功能列表/主PRD/子PRD
+                                  交付清单            交付清单
 ```
 
 ---
@@ -21,7 +21,11 @@ brd-writer → page-designer → foundation-builder → prd-writer
 
 **职责**：通过结构化访谈收敛需求，输出可执行的 BRD（Business Requirements Document）。
 
-**依赖文件**：无（流水线起点，由用户输入驱动）
+**依赖文件**：
+
+| 文件 | 来源 |
+|------|------|
+| `project-profile.md` | ai-project-manager |
 
 **产出文件**：
 
@@ -106,16 +110,17 @@ brd-writer → page-designer → foundation-builder → prd-writer
 
 下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖）：
 
-| 产物 | brd-writer | page-designer | foundation-builder | prd-writer |
-|------|:---:|:---:|:---:|:---:|
-| BRD | 产出 | ✓ | ✓ | ✓ |
-| 页面代码 | | 产出 | ✓ | ✓ |
-| page-delivery | | 产出 | ✓ | ✓ |
-| page-spec-entities | | 产出 | | |
-| foundation-glossary | | | 产出 | ✓ |
-| foundation-schema | | | 产出 | ✓ |
-| foundation-api | | | 产出 | ✓ |
-| foundation-delivery | | | 产出 | ✓ |
-| prd-feature-list | | | | 产出 |
-| prd-main | | | | 产出 |
-| prd-子文档 | | | | 产出 |
+| 产物 | ai-project-manager | brd-writer | page-designer | foundation-builder | prd-writer |
+|------|:---:|:---:|:---:|:---:|:---:|
+| project-profile | 产出 | ✓（硬依赖） | | | |
+| BRD | | 产出 | ✓ | ✓ | ✓ |
+| 页面代码 | | | 产出 | ✓ | ✓ |
+| page-delivery | | | 产出 | ✓ | ✓ |
+| page-spec-entities | | | 产出 | | |
+| foundation-glossary | | | | 产出 | ✓ |
+| foundation-schema | | | | 产出 | ✓ |
+| foundation-api | | | | 产出 | ✓ |
+| foundation-delivery | | | | 产出 | ✓ |
+| prd-feature-list | | | | | 产出 |
+| prd-main | | | | | 产出 |
+| prd-子文档 | | | | | 产出 |
