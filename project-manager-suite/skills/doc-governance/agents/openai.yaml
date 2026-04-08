@@ -1,0 +1,4 @@
+interface:
+  display_name: "文档治理"
+  short_description: "治理规则文档、协议文档与 skill 文档的边界、重合与唯一权威源"
+  default_prompt: "使用 $doc-governance 帮我检查这几份文档的重复内容，并给出唯一权威源和重构方案。"
