@@ -153,7 +153,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 
 - **流程调度型**：`ai-project-manager`，负责识别全局文件、补齐最小上下文、判断阶段、路由子能力和回写状态
 - **阶段交付型**：`brd-writer`、`page-designer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-test-case-generator`、`test-case-runner`，负责承接某一阶段的正式交付物，例如 BRD、页面代码、技术地基、PRD、开发计划、测试用例和测试结果
-- **专项执行型**：`ui-ux-pro-max`、`coding-standards`、`project-devlog`，负责页面生成、研发执行规范、状态回写等专项工作，不承担主流程调度
+- **专项执行型**：`coding-standards`、`project-devlog`，负责研发执行规范、状态回写等专项工作，不承担主流程调度
 
 当前主链路中的能力职责如下：
 
@@ -161,10 +161,9 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 |------|----------|--------------|
 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
 | `brd-writer` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
-| `page-designer` | 编排生成页面代码、页面交付清单和必要的中间文件 | S2 首轮 |
+| `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单和中间文件 | S2 首轮 |
 | `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面确认后 |
 | `prd-writer` | 基于页面与 foundation 产物沉淀 AI 可编码 PRD | S2 foundation 完成后 |
-| `ui-ux-pro-max` | 作为 `page-designer` 的底层页面生成能力，提供视觉方向和交互页面生成 | S2 内部专项 |
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
 | `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S5 |
@@ -197,9 +196,8 @@ project-manager-suite/
 │   │   └── assets/global-files/   # 全局文件默认骨架（画像、计划等）
 │   ├── coding-standards/          # [子能力] 编码规范与研发执行
 │   ├── brd-writer/                # [子能力] 业务需求文档 / BRD 收敛
-│   ├── page-designer/             # [子能力] 页面代码与页面交付清单编排
+│   ├── page-designer/             # [子能力] 页面设计（内置设计知识库 + BM25 搜索）
 │   ├── foundation-builder/        # [子能力] 术语表 / Schema / API 技术地基设计
-│   ├── ui-ux-pro-max/             # [专项能力] page-designer 编排调用的页面生成能力
 │   ├── prd-writer/                # [子能力] 基于页面与 foundation 的 PRD 反推
 │   ├── delivery-planner/          # [子能力] 任务拆解与交付规划
 │   ├── prd-test-case-generator/   # [子能力] PRD 驱动测试用例生成

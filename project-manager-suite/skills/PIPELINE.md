@@ -35,9 +35,9 @@ ai-project-manager → brd-writer → page-designer → foundation-builder → p
 
 ---
 
-## 2. page-designer — 页面设计编排
+## 2. page-designer — 页面设计
 
-**职责**：基于 BRD 编排 ui-ux-pro-max 生成可交互的 Vue 3 前端页面。C+B 项目先出 C 端再反推控制台，纯 B 项目直接出 B 端。
+**职责**：基于 BRD 产出可交互的前端页面（技术栈从 tech-stack.md 读取，内置设计知识库）。C+B 项目先出 C 端再反推控制台，纯 B 项目直接出 B 端。
 
 **依赖文件**：
 
