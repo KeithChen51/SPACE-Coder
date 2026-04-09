@@ -152,7 +152,9 @@ Phase 3/4 交互描述的执行方法，四条线交叉覆盖：
 
 ### 5.3 CRUD 完整性（实体→操作）
 
-对页面中涉及的每个业务实体，检查增删改查操作是否齐全。缺失 = `design_gap`。
+仅对「管理实体的页面」执行（如列表页、表单页、实体详情编辑页）。非 CRUD 页面（dashboard、只读详情页、审批页、流程页、数据报表页）跳过本检查。
+
+对适用页面中涉及的每个业务实体，检查增删改查操作是否齐全。缺失 = `design_gap`。
 
 ### 5.4 业务态覆盖（元素→兜底）
 
@@ -199,7 +201,7 @@ foundation-builder 在设计 Schema/API 时，必须检查引用的语义条目 
 | 3 | C 端交互描述：逐页分模块描述页面，产出结构化语义条目，执行四条检查线，冻结确认 | `explainer-c-interaction-<slug>.md` +（有差异时）`explainer-c-gap-<slug>.md` | 所有语义条目 locked 后进入 Phase 4 |
 | 4 | B 端交互描述：同上逻辑 | `explainer-b-interaction-<slug>.md` +（有差异时）`explainer-b-gap-<slug>.md` | 所有语义条目 locked 后进入 Phase 5 |
 | 5 | B 端权限矩阵：梳理角色与页面/菜单的可见性 | `explainer-b-permission-<slug>.md` | 确认后进入 Phase 6 |
-| 6 | 回环判断：汇总差异文件中非 resolved 条目，有 design_gap/logic_conflict 则建议回环 page-designer，全部 resolved/out_of_scope 则标记完成 | 无新文件 | 用户决定是否回环 |
+| 6 | 回环判断：回填 explainer-flow 产物索引为真实路径；汇总差异文件中非 resolved 条目，有 design_gap/logic_conflict 则建议回环 page-designer，全部 resolved/out_of_scope 则标记完成 | 无新文件 | 用户决定是否回环 |
 
 ### 纯 B 项目（5 Phase）
 

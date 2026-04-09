@@ -136,7 +136,9 @@ Phase 3/4 交互描述的执行方法，四条线交叉覆盖：
 
 ### 5.3 CRUD 完整性（实体→操作）
 
-对页面中涉及的每个业务实体，检查增删改查操作是否齐全。缺失 = `design_gap`。
+仅对「管理实体的页面」执行（如列表页、表单页、实体详情编辑页）。非 CRUD 页面（dashboard、只读详情页、审批页、流程页、数据报表页）跳过本检查。
+
+对适用页面中涉及的每个业务实体，检查增删改查操作是否齐全。缺失 = `design_gap`。
 
 ### 5.4 业务态覆盖（元素→兜底）
 
@@ -201,6 +203,7 @@ Phase 5: B 端权限矩阵
   → 产出 explainer-b-permission → 用户确认
   ↓
 Phase 6: 回环判断
+  → 回填 explainer-flow 中的产物索引（将占位路径替换为真实文件路径）
   → 汇总差异文件中非 resolved 条目
   → 有 design_gap/logic_conflict 则主动建议回环 page-designer
   → 全部 resolved/out_of_scope/clarification 已解决 则标记完成

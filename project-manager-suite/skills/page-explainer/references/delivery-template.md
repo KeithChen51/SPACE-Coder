@@ -6,6 +6,12 @@
 
 所有交互描述和权限矩阵完成并获用户确认后进入。
 
+## 产物索引回填
+
+进入本 Phase 后，首先回填 `explainer-flow-<slug>.md` 中的产物索引表：
+- 将 Phase 2 时写入的占位路径替换为 Phase 3/4/5 产出的真实文件路径
+- 确保所有交互文件和权限文件的路径真实存在
+
 ## 回环判断流程
 
 1. 检查是否存在差异文件（`explainer-c-gap-<slug>.md` 和/或 `explainer-b-gap-<slug>.md`）
