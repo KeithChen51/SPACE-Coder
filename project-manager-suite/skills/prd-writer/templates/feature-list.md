@@ -12,6 +12,9 @@
   - BRD 文件：产品背景、用户画像
   - page-delivery：页面路由表
   - 页面代码：区块结构、交互元素
+  - explainer-flow：用户流程全貌
+  - explainer-interaction：结构化交互语义（仅 locked 条目）
+  - explainer-b-permission：B 端权限矩阵
   - foundation-glossary：统一术语
 
   ═══════════════════════════════════════════════════════════════
@@ -27,7 +30,7 @@
 
 > 生成时间: {YYYY-MM-DD HH:MM}
 > 来源: prd-writer Phase 2
-> 上游: page-delivery-{slug} + foundation-glossary-{slug}
+> 上游: page-delivery-{slug} + explainer-flow-{slug} + explainer-interaction-{slug} + foundation-glossary-{slug}
 
 ---
 

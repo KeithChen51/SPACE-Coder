@@ -12,6 +12,8 @@ Phase 4 API 已获用户确认、Schema 使用接口已回填后进入。
 - 已确认的 Schema（`foundation-schema-<slug>.md`）
 - 已确认的 API（`foundation-api-<slug>.md`）
 - 页面代码文件（Vue 3 组件）
+- 已冻结的交互语义（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`，仅 locked 条目）
+- B 端权限矩阵（`explainer-b-permission-<slug>.md`）
 
 ## 检查矩阵
 
@@ -22,8 +24,11 @@ Phase 4 API 已获用户确认、Schema 使用接口已回填后进入。
 | C3 | API ↔ Schema 覆盖 | API 响应/请求中的每个业务字段，在 Schema 中有对应列（或可由多列计算得出） |
 | C4 | 术语一致性 | glossary 中定义的术语，在 Schema 表名/字段名和 API 路径/字段名中一致使用 |
 | C5 | 孤立检测 | Schema 中有表/字段未被任何 API 消费 → 标记为可疑 |
+| C6 | 交互语义 ↔ API 覆盖 | explainer 交互语义中每个 locked 条目的 system_behavior（涉及数据读写的），在 API 中有对应接口支撑 |
+| C7 | 交互语义 ↔ Schema 覆盖 | explainer 交互语义中 validation 字段定义的校验规则，在 Schema 字段约束中有对应体现 |
+| C8 | 权限矩阵 ↔ API | explainer-b-permission 中定义的角色可见性，在 API 层有对应的权限控制接口或标注 |
 
-**纯 B 项目**：跳过 C1，只执行 C2~C5。
+**纯 B 项目**：跳过 C1，只执行 C2~C8。
 
 ## 追溯表格式
 
@@ -109,6 +114,9 @@ Phase 4 API 已获用户确认、Schema 使用接口已回填后进入。
 - API ↔ Schema 覆盖率: 30/30 (100%)
 - 术语一致性: 全部通过
 - 孤立项: 无（或：2 项经用户确认保留）
+- 交互语义→API 覆盖率: x/x (100%)
+- 交互语义→Schema 覆盖率: x/x (100%)
+- 权限矩阵→API 覆盖率: x/x (100%)
 ```
 
 ## 用户确认要点

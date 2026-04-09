@@ -32,6 +32,9 @@
 | 产物 | 文件 | 来源 Skill |
 |------|------|-----------|
 | 功能列表 | [prd-feature-list-{slug}.md](...) | prd-writer |
+| 用户流程 | [explainer-flow-{slug}.md](...) | page-explainer |
+| 交互语义 | [explainer-c-interaction-{slug}.md](...) / [explainer-b-interaction-{slug}.md](...) | page-explainer |
+| B 端权限矩阵 | [explainer-b-permission-{slug}.md](...) | page-explainer |
 | 术语表 | [foundation-glossary-{slug}.md](...) | foundation-builder |
 | 数据库 Schema | [foundation-schema-{slug}.md](...) | foundation-builder |
 | API 接口 | [foundation-api-{slug}.md](...) | foundation-builder |

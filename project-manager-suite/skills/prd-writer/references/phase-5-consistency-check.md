@@ -9,6 +9,9 @@ Phase 4 所有子文档完成并获用户确认后进入。
 ## 输入
 
 - 所有已产出的子 PRD 文件
+- `explainer-flow-<slug>.md`（用户流程）
+- `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`（交互语义，仅 locked 条目）
+- `explainer-b-permission-<slug>.md`（B 端权限矩阵）
 - `foundation-glossary-<slug>.md`（术语表）
 - `foundation-schema-<slug>.md`（数据库 Schema）
 - `foundation-api-<slug>.md`（API 接口设计）
@@ -24,6 +27,9 @@ Phase 4 所有子文档完成并获用户确认后进入。
 | P3 | 子 PRD 术语 ↔ 术语表 | 子 PRD 中出现的业务术语在 foundation-glossary 中有定义 |
 | P4 | 子 PRD ↔ 功能列表 | 功能列表中的每个区块都有对应子 PRD，无遗漏 |
 | P5 | 主 PRD 索引 ↔ 子 PRD | 主 PRD 子 PRD 索引表与实际产出的子文档一致 |
+| P6 | 子 PRD 交互 ↔ 交互语义 | 子 PRD 中描述的交互行为与 explainer 交互语义中对应的 locked 条目一致，不自行重新定义 |
+| P7 | 子 PRD 权限 ↔ 权限矩阵 | 子 PRD 中涉及的角色权限描述与 explainer-b-permission 矩阵一致 |
+| P8 | 功能列表流程 ↔ 用户流程 | 功能列表中的页面覆盖范围与 explainer-flow 中定义的用户流程一致，无遗漏流程 |
 
 ## 检查方式
 
@@ -101,5 +107,8 @@ Phase 4 所有子文档完成并获用户确认后进入。
 - P3 术语覆盖: x/x (100%)
 - P4 功能列表→子PRD: x/x (100%)
 - P5 主PRD索引完整: ✓
+- P6 交互语义一致: x/x (100%)
+- P7 权限矩阵一致: x/x (100%)
+- P8 流程覆盖: x/x (100%)
 - 需回溯 foundation-builder: 无 / 列表
 ```
