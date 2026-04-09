@@ -18,13 +18,14 @@ description: 设计数据库 Schema、API 接口和术语表。page-designer 的
 
 | # | 规则 | 原因 |
 |---|------|------|
-| H1 | BRD + page-delivery 文件必须存在才启动 | 无上游产物无法推导 |
+| H1 | BRD + page-delivery + explainer 产物必须存在才启动 | 无上游产物无法推导 |
 | H2 | 术语表必须在 Schema 之前完成并确认 | Schema 命名依赖统一术语 |
 | H3 | Schema 必须在 API 之前完成并确认 | API 的请求/响应字段源自表结构 |
 | H4 | Schema 设计必须遵循 `coding-standards/references/05-mysql-table.md` | 不自创规范 |
 | H5 | API 设计必须遵循 `coding-standards/references/09-api-design.md` | 不自创规范 |
 | H6 | 每个 Phase 产出后必须等用户确认再进入下一 Phase | 防止错误传播 |
 | H7 | 用户提供的外部已有文件，融合后必须标注废弃 | 防止下游误用 |
+| H8 | 引用 explainer 交互语义时，仅消费 status=locked 的条目；若引用了 open 项，必须在产物中标注「依据未冻结，待上游确认」 | 防止未冻结描述下沉为权威设计 |
 
 ## 3) 上游输入
 
@@ -33,6 +34,9 @@ description: 设计数据库 Schema、API 接口和术语表。page-designer 的
 | brd-writer | `BRD-<slug>-*.md` | 是 | 项目类型、是否含 C 端、核心业务模型 |
 | page-designer | `page-delivery-<slug>.md` | 是 | 页面路由表、文件路径、架构信息 |
 | page-designer | 实际页面代码文件（Vue 3 组件） | 是 | 从 delivery 中的文件路径读取，分析页面渲染/提交的数据结构 |
+| page-explainer | `explainer-flow-<slug>.md` | 是 | 用户流程全貌，辅助理解数据流向 |
+| page-explainer | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | 是 | 结构化交互语义（仅消费 locked 条目），辅助 API 设计 |
+| page-explainer | `explainer-b-permission-<slug>.md` | 是 | 权限模型，影响 Schema 和 API 设计 |
 | 用户提供 | 已有数据库/接口文件（可选） | 否 | 现有表结构、接口定义 |
 | 自身前次产出 | `foundation-*-<slug>.md` | 否 | 增量更新时读取 |
 
@@ -52,7 +56,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-designer 的
 ## 5) 工作流概览（6 Phase）
 
 ```
-前置：校验 BRD + page-delivery 存在 → 检测自身前次产物（判定首次/增量）
+前置：校验 BRD + page-delivery + explainer 产物存在 → 检测自身前次产物（判定首次/增量）
   ↓
 Phase 1: 输入收集（见 §7）
   → 读取上游产物 → 询问已有文件 → 判定首次/增量模式
@@ -99,12 +103,14 @@ Phase 1 逻辑简单，直接在此定义：
 
 1. 搜索 `BRD-<slug>-*.md`，不存在则**中止**，提示用户先完成 brd-writer
 2. 搜索 `page-delivery-<slug>.md`，不存在则**中止**，提示用户先完成 page-designer
-3. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-4. 从 BRD 读取：项目类型、是否含 C 端、核心业务模型
-5. 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在
+3. 搜索 `explainer-flow-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
+4. 搜索 `explainer-b-permission-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
+5. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+6. 从 BRD 读取：项目类型、是否含 C 端、核心业务模型
+7. 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在
    - 存在 → 增量模式，加载 `references/incremental-update.md`
    - 不存在 → 首次模式
-6. 询问用户是否有已有数据库/接口文件
+8. 询问用户是否有已有数据库/接口文件
    - 有 → 读取，加载 `references/existing-files-evaluation.md`
    - 无 → 继续
 
@@ -130,7 +136,7 @@ Phase 完成时：
 
 ## 9) 禁止事项
 
-1. 没有 BRD + page-delivery 文件就开始设计
+1. 没有 BRD + page-delivery + explainer 产物就开始设计
 2. 跳过术语表直接设计 Schema
 3. 跳过 Schema 直接设计 API
 4. 自创规范不引用 coding-standards
