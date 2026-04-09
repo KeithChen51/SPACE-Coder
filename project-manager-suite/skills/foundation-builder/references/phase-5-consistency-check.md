@@ -86,6 +86,40 @@ Phase 4 API 已获用户确认、Schema 使用接口已回填后进入。
 | product | internal_memo | 无 | ⚠️ 可疑 |
 ```
 
+### 交互语义 ↔ API 覆盖检查（C6）
+
+逐个 explainer 交互语义中 locked 条目，提取 system_behavior 涉及数据读写的条目，检查 API 中是否有对应接口支撑：
+
+```markdown
+| 语义 id | trigger | system_behavior | 需要的 API | API 中存在 |
+|---------|---------|-----------------|-----------|-----------|
+| order-list.filter.status-dropdown.1 | 选择 | 按状态筛选列表 | GET /api/admin/orders?status= | ✓ |
+| order-detail.action.cancel-btn.1 | 点击 | 提交取消请求 | PUT /api/admin/orders/:id/cancel | ✗ |
+```
+
+### 交互语义 ↔ Schema 覆盖检查（C7）
+
+逐个 explainer 交互语义中 locked 条目，提取 validation 字段非 `none` 的条目，检查 Schema 字段约束是否对应：
+
+```markdown
+| 语义 id | validation | 对应表.列 | Schema 约束 | 一致 |
+|---------|-----------|----------|------------|------|
+| product-form.basic.name-input.1 | 必填，最多50字 | product.name | VARCHAR(50) NOT NULL | ✓ |
+| product-form.basic.price-input.1 | 金额>0 | product.price | DECIMAL(10,2) | ⚠️ 缺 >0 约束 |
+```
+
+### 权限矩阵 ↔ API 覆盖检查（C8）
+
+对 explainer-b-permission 中每个角色×页面组合，检查 API 层是否有对应的权限控制标注：
+
+```markdown
+| 页面 | 角色 | 可见性 | 关联 API | API 权限标注 | 一致 |
+|------|------|--------|---------|-------------|------|
+| 订单管理 | 运营 | ✓ | GET /api/admin/orders | role: operator | ✓ |
+| 订单管理 | 客服 | ✗ | GET /api/admin/orders | role: operator | ✓ (客服不在允许列表) |
+| 系统配置 | 运营 | ✗ | GET /api/admin/config | role: admin | ✓ (运营不在允许列表) |
+```
+
 ## 修正流程
 
 发现不一致时：
@@ -95,11 +129,17 @@ Phase 4 API 已获用户确认、Schema 使用接口已回填后进入。
    - 漏设计：Schema 缺列 或 API 缺接口/字段
    - 命名不统一：术语表的命名未在 Schema/API 中一致使用
    - 多余字段：Schema 有列但无页面消费（可能是预留字段，需确认）
+   - 交互语义缺 API 支撑：explainer 定义了交互但 API 未提供对应接口
+   - 校验规则不匹配：explainer validation 与 Schema 字段约束不对应
+   - 权限缺失：explainer 权限矩阵中的角色约束在 API 层没有体现
 3. **修正对应产物**：
    - 缺列 → 回溯修改 Schema
    - 缺接口/字段 → 回溯修改 API
    - 命名不统一 → 回溯修改 Schema/API，以术语表为准
    - 多余字段 → 与用户确认后决定保留或删除
+   - 交互语义缺 API → 回溯修改 API 补充接口
+   - 校验不匹配 → 回溯修改 Schema 补充约束
+   - 权限缺失 → 回溯修改 API 补充权限标注
 4. **重新执行检查矩阵** — 直到全部通过（所有项为 ✓ 或经用户确认的 ⚠️）
 5. **将检查结果写入交付清单** — 作为一致性自查结果附录
 
