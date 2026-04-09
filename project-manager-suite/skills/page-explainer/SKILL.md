@@ -1,6 +1,6 @@
 ---
 name: page-explainer
-description: 页面交互解释。page-designer 的直接下游，foundation-builder 的直接上游。以用户流程为骨架、逐页交互为血肉，产出结构化行为语义规格，冻结后供下游作为权威依据。主动识别交互盲区。B 端额外输出页面级权限矩阵。
+description: Use when page-designer 页面已确认，需要在进入 foundation-builder 之前产出结构化交互语义、权限矩阵和差异分析。识别交互盲区，冻结后供下游作为权威依据。
 ---
 
 # Page Explainer Skill
