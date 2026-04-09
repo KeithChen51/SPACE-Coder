@@ -20,7 +20,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 | # | 规则 | 原因 |
 |---|------|------|
-| H1 | 10 个上游文件全部存在才启动 | 直接引用，不走间接 |
+| H1 | §3 列出的所有上游文件全部存在才启动 | 直接引用，不走间接 |
 | H2 | 功能列表必须在主文档之前完成 | 主文档引用功能列表 |
 | H3 | 主文档必须在子文档之前完成 | 子文档依赖主文档的全局语境 |
 | H4 | 每份子文档完成后回填主文档的双向引用 | 保持索引同步 |
@@ -92,11 +92,14 @@ Phase 5: 一致性自查
 
 1. 搜索 `BRD-<slug>-*.md`，不存在则**中止**
 2. 搜索 `page-delivery-<slug>.md`，不存在则**中止**
-3. 搜索 `foundation-delivery-<slug>.md`，不存在则**中止**
-4. 从 foundation-delivery 中获取 glossary/schema/api 文件路径，逐个校验存在
-5. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-6. 从 BRD 读取：产品背景、用户画像、是否含 C 端
-7. 判定 C+B / 纯 B 路径
+3. 搜索 `explainer-flow-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
+4. 搜索 `explainer-b-permission-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
+5. 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`），不存在则**中止**
+6. 搜索 `foundation-delivery-<slug>.md`，不存在则**中止**
+7. 从 foundation-delivery 中获取 glossary/schema/api 文件路径，逐个校验存在
+8. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+9. 从 BRD 读取：产品背景、用户画像、是否含 C 端
+10. 判定 C+B / 纯 B 路径
 
 ## 8) 状态标记（强制）
 
