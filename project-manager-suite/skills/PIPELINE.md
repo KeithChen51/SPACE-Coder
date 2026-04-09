@@ -1,18 +1,18 @@
 # 产品设计流水线（BRD → PRD）
 
-本文件描述从项目画像到 PRD 的完整设计流水线，包含 5 个 Skill 的职责、依赖和产物。
+本文件描述从项目画像到 PRD 的完整设计流水线，包含 6 个 Skill 的职责、依赖和产物。
 
 ## 流水线总览
 
 ```
 S0 阶段         S1 阶段                S2 阶段
-──────────    ────────    ──────────────────────────────────────────────
+──────────    ────────    ──────────────────────────────────────────────────────────
 
-ai-project-manager → brd-writer → page-designer → foundation-builder → prd-writer
-        │                │              │                  │                 │
-        ▼                ▼              ▼                  ▼                 ▼
-  project-profile       BRD        页面代码         术语表/Schema/API    功能列表/主PRD/子PRD
-                                  交付清单            交付清单
+ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer
+        │                │              │                │                  │                 │
+        ▼                ▼              ▼                ▼                  ▼                 ▼
+  project-profile       BRD        页面代码       流程/交互语义/权限   术语表/Schema/API    功能列表/主PRD/子PRD
+                                  交付清单        差异(可选)            交付清单
 ```
 
 ---
@@ -56,7 +56,34 @@ ai-project-manager → brd-writer → page-designer → foundation-builder → p
 
 ---
 
-## 3. foundation-builder — 技术地基设计
+## 3. page-explainer — 页面交互解释
+
+**职责**：以用户流程为骨架、逐页交互为血肉，产出结构化行为语义规格（含冻结门禁），主动识别交互盲区。B 端额外输出页面级权限矩阵。发现差异时按分类产出修改建议供 page-designer 回环。
+
+**依赖文件**：
+
+| 文件 | 来源 |
+|------|------|
+| `BRD-<slug>-*.md` | brd-writer |
+| `page-delivery-<slug>.md` | page-designer |
+| 页面代码文件（Vue 3 组件） | page-designer |
+
+**产出文件**：
+
+| 产物 | 文件名 | 说明 |
+|------|--------|------|
+| 用户流程图 | `explainer-flow-<slug>.md` | 按用户任务组织的流程描述 + 产物索引 |
+| C 端交互描述 | `explainer-c-interaction-<slug>.md` | 结构化语义条目，含 locked/open 状态（仅 C+B） |
+| B 端交互描述 | `explainer-b-interaction-<slug>.md` | 结构化语义条目，含 locked/open 状态 |
+| B 端权限矩阵 | `explainer-b-permission-<slug>.md` | 角色 × 页面/菜单可见性 |
+| C 端差异 | `explainer-c-gap-<slug>.md` | 分类差异条目（仅 C+B，有差异时） |
+| B 端差异 | `explainer-b-gap-<slug>.md` | 分类差异条目（有差异时） |
+
+**下游消费规则**：只有 `status: locked` 的语义条目，foundation-builder 和 prd-writer 才能当权威依据。
+
+---
+
+## 4. foundation-builder — 技术地基设计
 
 **职责**：消费已确认的前端页面代码，反推并设计术语表、数据库 Schema 和 API 接口。不写代码，不生成 DDL。
 
@@ -67,6 +94,9 @@ ai-project-manager → brd-writer → page-designer → foundation-builder → p
 | `BRD-<slug>-*.md` | brd-writer |
 | `page-delivery-<slug>.md` | page-designer |
 | 页面代码文件（Vue 3 组件） | page-designer |
+| `explainer-flow-<slug>.md` | page-explainer |
+| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer |
+| `explainer-b-permission-<slug>.md` | page-explainer |
 | 已有数据库/接口文件（可选） | 用户提供 |
 
 **产出文件**：
@@ -80,7 +110,7 @@ ai-project-manager → brd-writer → page-designer → foundation-builder → p
 
 ---
 
-## 4. prd-writer — PRD 撰写
+## 5. prd-writer — PRD 撰写
 
 **职责**：基于页面代码和技术地基，产出面向 AI 编程的 PRD 规格文件。PRD 不是给人看的，是 AI 拿到后能直接编码的基准规格。
 
@@ -91,6 +121,9 @@ ai-project-manager → brd-writer → page-designer → foundation-builder → p
 | `BRD-<slug>-*.md` | brd-writer |
 | `page-delivery-<slug>.md` | page-designer |
 | 页面代码文件（Vue 3 组件） | page-designer |
+| `explainer-flow-<slug>.md` | page-explainer |
+| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer |
+| `explainer-b-permission-<slug>.md` | page-explainer |
 | `foundation-glossary-<slug>.md` | foundation-builder |
 | `foundation-schema-<slug>.md` | foundation-builder |
 | `foundation-api-<slug>.md` | foundation-builder |
@@ -110,17 +143,20 @@ ai-project-manager → brd-writer → page-designer → foundation-builder → p
 
 下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖）：
 
-| 产物 | ai-project-manager | brd-writer | page-designer | foundation-builder | prd-writer |
-|------|:---:|:---:|:---:|:---:|:---:|
-| project-profile | 产出 | ✓（硬依赖） | | | |
-| BRD | | 产出 | ✓ | ✓ | ✓ |
-| 页面代码 | | | 产出 | ✓ | ✓ |
-| page-delivery | | | 产出 | ✓ | ✓ |
-| page-spec-entities | | | 产出 | | |
-| foundation-glossary | | | | 产出 | ✓ |
-| foundation-schema | | | | 产出 | ✓ |
-| foundation-api | | | | 产出 | ✓ |
-| foundation-delivery | | | | 产出 | ✓ |
-| prd-feature-list | | | | | 产出 |
-| prd-main | | | | | 产出 |
-| prd-子文档 | | | | | 产出 |
+| 产物 | ai-project-manager | brd-writer | page-designer | page-explainer | foundation-builder | prd-writer |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|
+| project-profile | 产出 | ✓（硬依赖） | | | | |
+| BRD | | 产出 | ✓ | ✓ | ✓ | ✓ |
+| 页面代码 | | | 产出 | ✓ | ✓ | ✓ |
+| page-delivery | | | 产出 | ✓ | ✓ | ✓ |
+| page-spec-entities | | | 产出 | | | |
+| explainer-flow | | | | 产出 | ✓ | ✓ |
+| explainer-interaction | | | | 产出 | ✓（仅 locked） | ✓（仅 locked） |
+| explainer-b-permission | | | | 产出 | ✓ | ✓ |
+| foundation-glossary | | | | | 产出 | ✓ |
+| foundation-schema | | | | | 产出 | ✓ |
+| foundation-api | | | | | 产出 | ✓ |
+| foundation-delivery | | | | | 产出 | ✓ |
+| prd-feature-list | | | | | | 产出 |
+| prd-main | | | | | | 产出 |
+| prd-子文档 | | | | | | 产出 |
