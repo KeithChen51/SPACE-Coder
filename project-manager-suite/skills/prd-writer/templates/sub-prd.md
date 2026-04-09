@@ -21,19 +21,27 @@
     - 页面组件(.vue) + composable(.js) + 服务层(services)
     - 管理台页面组件(.vue)（如果有属于本区块的管理页）
 
-  Step 3：阅读 foundation 产物 — 查找本区块涉及的：
+  Step 3：阅读 explainer 产物 — 查找本区块涉及的：
+    - explainer-flow 中的用户流程（该区块所在页面参与了哪些流程）
+    - explainer-interaction 中的交互语义条目（仅 locked 条目，按 source_page + source_module 筛选）
+    - explainer-b-permission 中的权限矩阵（该区块所在页面的角色可见性）
+
+  Step 4：阅读 foundation 产物 — 查找本区块涉及的：
     - foundation-glossary 中的术语
     - foundation-schema 中的表结构
     - foundation-api 中的接口定义
 
-  Step 4：按下方模板结构撰写
+  Step 5：按下方模板结构撰写
 
-  Step 5：边界自检 — 写完后按 references/anti-patterns.md 逐项检查
+  Step 6：边界自检 — 写完后按 references/anti-patterns.md 逐项检查
 
   ═══════════════════════════════════════════════════════════════
   关键规则
   ═══════════════════════════════════════════════════════════════
 
+  - 交互行为必须引用 explainer-interaction 中已 locked 的语义条目，不重新定义
+  - 用户流程描述必须与 explainer-flow 一致
+  - B 端页面权限描述必须与 explainer-b-permission 矩阵一致
   - 术语必须使用 foundation-glossary 中的定义
   - Schema/API 信息只引用 foundation 产物，不重新定义
   - 接口契约引用 foundation-api 中的定义，子 PRD 只补充本区块的业务说明
@@ -41,7 +49,7 @@
 -->
 
 > **文档版本**: 1.0 | **最后更新**: {日期}
-> **关联文档**: [主文档](prd-main-{slug}.md) · {相邻区块 PRD 链接} · [术语表](foundation-glossary-{slug}.md) · [Schema](foundation-schema-{slug}.md) · [API](foundation-api-{slug}.md)
+> **关联文档**: [主文档](prd-main-{slug}.md) · {相邻区块 PRD 链接} · [用户流程](explainer-flow-{slug}.md) · [交互语义](explainer-{c/b}-interaction-{slug}.md) · [权限矩阵](explainer-b-permission-{slug}.md) · [术语表](foundation-glossary-{slug}.md) · [Schema](foundation-schema-{slug}.md) · [API](foundation-api-{slug}.md)
 
 ---
 
