@@ -20,7 +20,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 | # | 规则 | 原因 |
 |---|------|------|
-| H1 | 7 个上游文件全部存在才启动 | 直接引用，不走间接 |
+| H1 | 10 个上游文件全部存在才启动 | 直接引用，不走间接 |
 | H2 | 功能列表必须在主文档之前完成 | 主文档引用功能列表 |
 | H3 | 主文档必须在子文档之前完成 | 子文档依赖主文档的全局语境 |
 | H4 | 每份子文档完成后回填主文档的双向引用 | 保持索引同步 |
@@ -35,10 +35,13 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | 1 | `BRD-<slug>-*.md` | brd-writer | 产品背景、用户画像、业务模型 |
 | 2 | `page-delivery-<slug>.md` | page-designer | 页面路由表、文件路径清单 |
 | 3 | 页面代码文件（Vue 3 组件） | page-designer | 从 delivery 中列出的路径逐个读取 |
-| 4 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
-| 5 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema |
-| 6 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计 |
-| 7 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
+| 4 | `explainer-flow-<slug>.md` | page-explainer | 用户流程全貌 |
+| 5 | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | 结构化交互语义（仅消费 locked 条目） |
+| 6 | `explainer-b-permission-<slug>.md` | page-explainer | 权限模型 |
+| 7 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
+| 8 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema |
+| 9 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计 |
+| 10 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
 
 缺任何一个就**中止**，提示用户先完成对应上游 skill。
 
@@ -54,7 +57,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 ```
 Phase 1: 输入收集（见 §7）
-  → 校验 7 个上游文件 → 读取页面代码 + foundation 产物 → 判定 C+B/纯B
+  → 校验 10 个上游文件 → 读取页面代码 + foundation 产物 → 判定 C+B/纯B
   ↓
 Phase 2: 功能列表
   → 加载 templates/feature-list.md
