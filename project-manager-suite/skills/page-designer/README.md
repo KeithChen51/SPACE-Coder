@@ -39,11 +39,16 @@ BRD 文件是强依赖，不存在则不启动。
 ```
 page-designer/
 ├── SKILL.md        # skill 定义
+├── brand/          # 公司品牌约束 (C 端专用)
+│   ├── company-color-spec.md    # 主色 + 功能色 + 中性色
+│   ├── company-font-spec.md     # 字族 + 9 级字号阶梯
+│   ├── company-radius-spec.md   # 4 级语义化圆角
+│   └── company-icon-spec.md     # 图标尺寸/粗细/热区/状态/命名
 ├── scripts/        # BM25 搜索引擎
 │   ├── core.py     # 搜索核心 + CSV 配置
 │   ├── search.py   # CLI 入口
 │   └── design_system.py  # 设计系统生成器
-├── design-db/      # 设计知识库 (CSV)
+├── design-db/      # 通用设计知识库 (CSV, BM25 可搜索)
 │   ├── styles.csv, colors.csv, typography.csv, ...
 │   └── stacks/     # 13 个技术栈指南
 └── references/
