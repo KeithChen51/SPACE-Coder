@@ -22,72 +22,13 @@
 
 文件名：`explainer-c-interaction-<slug>.md` 或 `explainer-b-interaction-<slug>.md`
 
-```markdown
-# <C端/B端> 交互描述 - <项目名称>
-
-> 生成时间: YYYY-MM-DD HH:MM
-> Skill: page-explainer
-> 依据: page-delivery + 页面代码
-
-## <页面名称>
-
-> 路由: <路由>
-> 文件: <文件路径>
-> 页面目的: <一句话>
-> 覆盖角色: <角色列表>
-
-### 页面描述
-
-本页面由以下模块组成：
-
-**<模块1名称>**: <用大白话描述这个模块长什么样、包含什么内容>
-
-**<模块2名称>**: <同上>
-
-### 交互语义
-
-#### <模块1名称>
-
-| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | permission | fallback | status |
-|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|------------|----------|--------|
-| order-list.filter.status-dropdown.1 | 运营人员 | /admin/orders | 筛选栏 | 状态下拉框 | none | 选择 | 按所选状态筛选列表 | 列表刷新，仅显示该状态的订单 | none | all | 空数据态: 显示「暂无该状态的订单」 | open |
-
-#### <模块2名称>
-<!-- 同上 -->
-
----
-
-## <下一个页面>
-<!-- 同上结构 -->
-```
+模板：读取 `templates/interaction.md`
 
 ## 差异文件结构
 
 文件名：`explainer-c-gap-<slug>.md` 或 `explainer-b-gap-<slug>.md`
 
-仅在发现差异时产出。
-
-```markdown
-# <C端/B端> 交互差异 - <项目名称>
-
-> 生成时间: YYYY-MM-DD HH:MM
-> Skill: page-explainer
-
-## 差异清单
-
-### GAP-001: <简述>
-
-- **分类**: `design_gap` / `logic_conflict` / `clarification` / `out_of_scope`
-- **所在页面**: <页面名> (<路由>)
-- **所在模块**: <模块名>
-- **所在元素**: <元素名>
-- **现状**: <当前页面是什么情况>
-- **预期**: <合理的交互预期是什么>
-- **修改建议**: <具体建议 page-designer 怎么改>
-
-### GAP-002: <简述>
-<!-- 同上 -->
-```
+仅在发现差异时产出。模板：读取 `templates/gap.md`
 
 ## 冻结流程
 
