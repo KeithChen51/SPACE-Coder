@@ -1,6 +1,6 @@
 ---
 name: page-designer
-description: 基于 BRD 产出可交互的前端页面。内置设计知识库（67 风格、96 配色、57 字体、25 图表、13 技术栈），技术栈从 tech-stack.md 读取。C+B 项目先出 C 端再基于实体中间文件反推控制台；纯 B 项目直接出 B 端。
+description: 基于 BRD 产出可交互的前端页面。内置设计知识库（67 风格、96 配色、57 字体、25 图表、13 技术栈）+ 公司品牌约束（C 端专用：颜色、字体、圆角、图标）。技术栈从 tech-stack.md 读取。C+B 项目先出 C 端再基于实体中间文件反推控制台；纯 B 项目直接出 B 端。
 ---
 
 # Page Designer Skill
@@ -47,6 +47,30 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
    - **设计工具库的 `--stack` 参数**（根据框架映射：Vue 3 → `vue`，React → `react`，等）
 
 禁止硬编码技术栈。所有技术选型必须可追溯到 `tech-stack.md` 或宿主项目配置。
+
+### 2c) 公司品牌约束（C 端专用）
+
+本 skill 内置了公司品牌设计规范，位于 `brand/` 目录：
+
+| 文件 | 覆盖领域 | 约束内容 |
+|------|---------|---------|
+| company-color-spec.md | 颜色 | 主色 #2290FD、功能色 5 色、中性色 9 级 |
+| company-font-spec.md | 字体 | 字族（苹方/思源黑体）、9 级字号阶梯（含字重+颜色绑定） |
+| company-radius-spec.md | 圆角 | 4 级语义化圆角（4/8/12/16pt） |
+| company-icon-spec.md | 图标 | 尺寸(24/32px)、粗细(1.5pt)、圆角(2pt)、热区(2倍)、状态、命名规则 |
+
+适用规则：
+- **仅 C 端页面生效**。B 端控制台不受此约束，使用 tech-stack.md 指定的 UI 组件库默认值。
+- brand/ 中有定义的 token（颜色、字体、圆角、图标），**强制使用公司值**。
+- brand/ 中未覆盖的维度（风格方向、布局模式、动效、UX 指南、图表），**使用 design-db 搜索结果**。
+
+### 2d) 可选输入（回环场景）
+
+以下文件仅在回环（loop-back）时读取，首次执行时不要求存在：
+
+| 来源 | 文件 | 必需 | 说明 |
+|------|------|------|------|
+| page-explainer | `explainer-c-gap-<slug>.md` / `explainer-b-gap-<slug>.md` | 否 | 回环时读取 design_gap/logic_conflict 类型的差异条目，按修改建议调整页面 |
 
 ## 3) 路径分叉
 
@@ -139,18 +163,24 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 
 1. 基于 BRD 中的用户画像、业务模型和页面定位，组装搜索关键词。
 2. 若有参考截图，将提取的视觉风格约束加入关键词。
-3. 执行设计系统生成：
+3. 执行设计系统生成（获取风格方向、布局模式、动效等通用推荐）：
    ```bash
-   python3 skills/page-designer/scripts/search.py "<关键词>" --design-system --persist -p "<项目名称>"
+   python3 skills/page-designer/scripts/search.py "<关键词>" --design-system -p "<项目名称>"
    ```
-4. 按需补充单域搜索获取更多细节：
+   > 注意：此处不带 `--persist`，仅获取推荐结果，不直接落盘。
+4. 读取 `brand/` 目录下全部 4 个品牌约束文件。
+5. 合成最终 C 端设计系统，手动写入 `design-system/<project>/MASTER.md`：
+   - **颜色**：使用 company-color-spec.md 的完整色板（主色 + 功能色 + 中性色），替换 BM25 推荐配色。
+   - **字体**：使用 company-font-spec.md 的字族和 9 级字号阶梯，替换 BM25 推荐字体配对。
+   - **圆角**：使用 company-radius-spec.md 的 4 级圆角值（4/8/12/16pt），替换硬编码组件圆角。组件 Specs 中的 border-radius 改用圆角变量引用（如 `var(--radius-md)`）。
+   - **图标规则**：使用 company-icon-spec.md 的全部约束，作为新 section 写入 MASTER.md。
+   - **其余维度保留 BM25 推荐**：风格方向（Style）、布局模式（Pattern/Sections）、动效（Key Effects）、间距变量、阴影层级、反模式、Pre-Delivery Checklist。
+6. 按需补充单域搜索获取更多细节：
    ```bash
-   # 示例：补充字体选择
-   python3 skills/page-designer/scripts/search.py "elegant luxury" --domain typography
    # 示例：补充 UX 指南
    python3 skills/page-designer/scripts/search.py "animation accessibility" --domain ux
    ```
-5. 获取技术栈实现指南：
+7. 获取技术栈实现指南：
    ```bash
    python3 skills/page-designer/scripts/search.py "layout responsive form" --stack <tech-stack.md 对应的 stack>
    ```
@@ -217,7 +247,23 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 
 #### Phase 2: 设计系统确定
 
-同路径 1 Phase 2。
+1. 基于 BRD 中的用户画像、业务模型和页面定位，组装搜索关键词。
+2. 若有参考截图，将提取的视觉风格约束加入关键词。
+3. 执行设计系统生成并持久化：
+   ```bash
+   python3 skills/page-designer/scripts/search.py "<关键词>" --design-system --persist -p "<项目名称>"
+   ```
+4. 按需补充单域搜索获取更多细节：
+   ```bash
+   python3 skills/page-designer/scripts/search.py "animation accessibility" --domain ux
+   ```
+5. 获取技术栈实现指南：
+   ```bash
+   python3 skills/page-designer/scripts/search.py "layout responsive form" --stack <tech-stack.md 对应的 stack>
+   ```
+   > stack 参数映射：Vue 3 → `vue`，React → `react`，Next.js → `nextjs`，Svelte → `svelte`，等。
+
+> 纯 B 项目不读取 brand/ 品牌约束。B 端使用 tech-stack.md 指定的 UI 组件库默认值。
 
 #### Phase 3: B 端页面设计
 
@@ -361,7 +407,7 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 2. mock 数据必须贴近真实场景，不用 Lorem ipsum。
 3. C+B 项目中，控制台的每个管理模块都能追溯到实体中间文件中的对应实体。
 4. 交付清单中的文件路径必须是真实存在的绝对路径。
-5. 设计系统必须通过内置工具库生成并持久化，不能手写。
+5. 设计系统必须基于内置工具库的搜索结果生成。C+B 项目需叠加 brand/ 品牌约束后手动合成 MASTER.md；纯 B 项目通过 --persist 直接生成。
 
 ## 12) Pre-Delivery Checklist
 
@@ -397,3 +443,11 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 - [ ] 表单输入有 label
 - [ ] 颜色不是唯一的信息指示手段
 - [ ] 尊重 `prefers-reduced-motion`
+
+### 品牌合规（仅 C 端）
+- [ ] 主色为 #2290FD，功能色/中性色均来自 company-color-spec.md
+- [ ] 字族为苹方/思源黑体，字号阶梯遵循 company-font-spec.md 的 9 级定义
+- [ ] 圆角值仅使用 4/8/12/16pt 四级，场景匹配 company-radius-spec.md
+- [ ] 图标尺寸仅 24/32px，stroke-width 1.5pt，热区为图标 2 倍
+- [ ] 图标按压态 opacity: 0.5，置灰态 opacity: 0.3
+- [ ] 无 design-db 推荐配色/字体残留（被品牌值完全替换）
