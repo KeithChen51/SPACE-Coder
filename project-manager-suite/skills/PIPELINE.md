@@ -1,25 +1,38 @@
 # 产品设计流水线（BRD → PRD）
 
-本文件描述从项目画像到 PRD 的完整设计流水线，包含 6 个 Skill 的职责、依赖和产物。
+本文件描述从项目画像到 PRD 的完整设计流水线，包含 6 个执行 Skill + 2 个调度 Skill 的职责、依赖和产物。
 
 ## 流水线总览
 
 ```
-S0 阶段         S1 阶段                S2 阶段
-──────────    ────────    ──────────────────────────────────────────────────────────
+S0 阶段         S1 阶段                          S2 阶段
+──────────    ────────    ────────────────────────────────────────────────────────────────────────
 
+                                    page-chief 调度                     prd-chief 调度
+                               ┌─────────────────────┐           ┌──────────────────────┐
 ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer
-        │                │              │                │                  │                 │
-        ▼                ▼              ▼                ▼                  ▼                 ▼
-  project-profile       BRD        页面代码       流程/交互语义/权限   术语表/Schema/API    功能列表/主PRD/子PRD
-                                  交付清单        差异(可选)            交付清单
+        │                │         │                │                  │                 │
+        ▼                ▼         ▼                ▼                  ▼                 ▼
+  project-profile       BRD    页面代码       流程/交互语义/权限   术语表/Schema/API    功能列表/主PRD/子PRD
+                               交付清单        差异(可选)            交付清单
 ```
+
+### 调度层说明
+
+| 调度 Skill | 管辖范围 | 职责 | 自身产物 |
+|-----------|---------|------|---------|
+| `page-chief` | page-designer → page-explainer | 观察产物文件状态，判断下一步子 skill；有 gap 时判定回环（上限 3 轮） | 无（纯调度，不产出文件） |
+| `prd-chief` | foundation-builder → prd-writer | 校验上游产物链完整性，线性推进 foundation → PRD | 无（纯调度，不产出文件） |
+
+调度层不向子 skill 传递指令，子 skill 不感知调度层存在。调度层只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成。
 
 ---
 
 ## 1. brd-writer — 业务需求文档
 
 **职责**：通过结构化访谈收敛需求，输出可执行的 BRD（Business Requirements Document）。
+
+**slug 约定**：`project_slug` 由 brd-writer 在 Phase A 确定（英文短语、全小写、连字符分隔），写入台账头部。**流水线中所有下游 skill 的产物文件必须使用同一个 slug**，确保产物可通过文件名关联。
 
 **依赖文件**：
 
@@ -29,9 +42,10 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 **产出文件**：
 
-| 产物 | 文件名 |
-|------|--------|
-| BRD 文件 | `BRD-<slug>-<YYYYMMDD-HHMM>.md` |
+| 产物 | 文件名 | 说明 |
+|------|--------|------|
+| BRD 决策台账 | `brd-ledger-<slug>.md` | 过程产物：P0 字段确认状态、冲突记录、轮次变更日志、充分性快照 |
+| BRD 文件 | `BRD-<slug>-<YYYYMMDD-HHMM>.md` | 最终交付物 |
 
 ---
 
@@ -141,22 +155,23 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 ## 依赖关系矩阵
 
-下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖）：
+下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖，👁 = 观察但不修改）：
 
-| 产物 | ai-project-manager | brd-writer | page-designer | page-explainer | foundation-builder | prd-writer |
-|------|:---:|:---:|:---:|:---:|:---:|:---:|
-| project-profile | 产出 | ✓（硬依赖） | | | | |
-| BRD | | 产出 | ✓ | ✓ | ✓ | ✓ |
-| 页面代码 | | | 产出 | ✓ | ✓ | ✓ |
-| page-delivery | | | 产出 | ✓ | ✓ | ✓ |
-| page-spec-entities | | | 产出 | | | |
-| explainer-flow | | | | 产出 | ✓ | ✓ |
-| explainer-interaction | | | | 产出 | ✓（仅 locked） | ✓（仅 locked） |
-| explainer-b-permission | | | | 产出 | ✓ | ✓ |
-| foundation-glossary | | | | | 产出 | ✓ |
-| foundation-schema | | | | | 产出 | ✓ |
-| foundation-api | | | | | 产出 | ✓ |
-| foundation-delivery | | | | | 产出 | ✓ |
-| prd-feature-list | | | | | | 产出 |
-| prd-main | | | | | | 产出 |
-| prd-子文档 | | | | | | 产出 |
+| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| project-profile | 产出 | ✓（硬依赖） | | | | | | |
+| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ |
+| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ |
+| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ |
+| page-spec-entities | | | | 产出 | | | | |
+| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ |
+| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） |
+| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ |
+| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | |
+| foundation-glossary | | | | | | 👁 | 产出 | ✓ |
+| foundation-schema | | | | | | 👁 | 产出 | ✓ |
+| foundation-api | | | | | | 👁 | 产出 | ✓ |
+| foundation-delivery | | | | | | 👁 | 产出 | ✓ |
+| prd-feature-list | | | | | | 👁 | | 产出 |
+| prd-main | | | | | | 👁 | | 产出 |
+| prd-子文档 | | | | | | 👁 | | 产出 |

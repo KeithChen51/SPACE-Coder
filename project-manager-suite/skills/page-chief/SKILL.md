@@ -50,7 +50,7 @@ page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在
 | page-explainer | `explainer-b-permission-<slug>.md` | 存在 |
 | page-explainer | `explainer-*-gap-<slug>.md`（若存在） | 无 design_gap / logic_conflict 未解决条目 |
 
-**C+B 项目额外检查**：
+**包含 C 端页面时额外检查**：
 
 | 来源 | 检查文件 | 合格条件 |
 |------|---------|---------|
@@ -110,7 +110,7 @@ START
 
 1. 搜索 `BRD-<slug>-*.md`
 2. 不存在 → **中止**，输出：`请先完成 brd-writer 产出 BRD 文件`
-3. 存在 → 从 BRD 中读取项目类型（C+B / 纯B），记录为 `project_type`，进入 Stage 2
+3. 存在 → 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`，进入 Stage 2
 
 ### Stage 2: page-designer
 
@@ -123,15 +123,15 @@ START
 ### Stage 3: page-explainer
 
 1. 指示：`下一步请执行 page-explainer`
-2. 按 `project_type` 检查完整产物集是否全部存在：
+2. 按 `has_c_end` 检查完整产物集是否全部存在：
 
-   **C+B 项目必须存在**：
+   **包含 C 端页面时必须存在**：
    - `explainer-flow-<slug>.md`
    - `explainer-c-interaction-<slug>.md`
    - `explainer-b-interaction-<slug>.md`
    - `explainer-b-permission-<slug>.md`
 
-   **纯 B 项目必须存在**：
+   **不包含 C 端页面时必须存在**：
    - `explainer-flow-<slug>.md`
    - `explainer-b-interaction-<slug>.md`
    - `explainer-b-permission-<slug>.md`

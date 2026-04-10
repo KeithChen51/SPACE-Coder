@@ -100,13 +100,13 @@ START
 
 重建 page-chief 的出口条件，确认页面环节已真正收口：
 
-1. 从 BRD 中读取项目类型（C+B / 纯B），记录为 `project_type`
+1. 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`
 2. 检查文件存在性：
    - `BRD-<slug>-*.md`
    - `page-delivery-<slug>.md` + delivery 中列出的页面代码文件
    - `explainer-flow-<slug>.md`
    - `explainer-b-interaction-<slug>.md` + `explainer-b-permission-<slug>.md`
-   - C+B 项目额外：`explainer-c-interaction-<slug>.md`
+   - 包含 C 端页面时额外：`explainer-c-interaction-<slug>.md`
 3. 检查内容合格性：
    - 所有 interaction 文件中的语义条目 status 是否全部为 `locked`
    - 若存在 gap 文件（`explainer-*-gap-<slug>.md`），是否无 `design_gap` / `logic_conflict` 未解决条目
