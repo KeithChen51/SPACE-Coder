@@ -545,3 +545,331 @@ export function buildFieldSet(projectType, hasCPage, isCommercial) {
 
   return [...UNIVERSAL_P0, ...typeFields, ...pageFields];
 }
+
+// ─────────────────────────────────────────────
+// Phase migration graph
+// ref: SKILL.md §6
+// ─────────────────────────────────────────────
+
+/**
+ * Allowed phase transitions.
+ * Keys are "from" phases; values are arrays of allowed "to" phases.
+ * Conditions noted in comments but not enforced here — callers apply guard logic.
+ */
+export const PHASE_GRAPH = {
+  B:    ['C'],
+  C:    ['D.5', 'E'],      // D.5 when should_trigger_d5; E when D.5 already passed
+  'D.5': ['E', 'C'],       // E when premises passed; C when premises failed
+  E:    ['E.5', 'C'],      // E.5 when all gates pass; C when gates fail
+  'E.5': ['F', 'C'],       // F when user confirmed; C when user wants modifications
+  F:    ['DONE'],          // save-brd success
+  DONE: ['C'],             // reopen for iteration
+};
+
+/**
+ * Check whether a phase transition is valid.
+ * @param {string} from - current phase
+ * @param {string} to   - target phase
+ * @returns {boolean}
+ */
+export function isValidTransition(from, to) {
+  const allowed = PHASE_GRAPH[from];
+  return Array.isArray(allowed) && allowed.includes(to);
+}
+
+// ─────────────────────────────────────────────
+// Chapter cropping matrix
+// ref: references/brd-template.md §各项目类型的章节裁剪规则
+// ─────────────────────────────────────────────
+
+/**
+ * CHAPTER_MATRIX — keyed by template chapter number (1–13).
+ * Each entry:
+ *   title            : default Chinese chapter title
+ *   commercial_only  : true → skip unless isCommercial
+ *   page_dependent   : true → skip unless hasPages
+ *   types            : per-type config { status: 'required'|'skip'|'conditional', title_override? }
+ */
+export const CHAPTER_MATRIX = {
+  1: {
+    title: '项目背景与机会判断',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '项目背景与改造动因' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '项目背景与集成目的' },
+      operational:    { status: 'required' },
+      compliance:     { status: 'required', title_override: '项目背景与法规要求' },
+    },
+  },
+  2: {
+    title: '商业目标与成功标准',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '改造目标指标' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '集成目标' },
+      operational:    { status: 'required', title_override: '效率目标' },
+      compliance:     { status: 'required', title_override: '合规达标标准' },
+    },
+  },
+  3: {
+    title: '利益相关角色与核心场景',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '利益相关角色与当前系统痛点' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '利益相关角色与上下游系统画像' },
+      operational:    { status: 'required', title_override: '内部用户角色与当前工作流' },
+      compliance:     { status: 'required', title_override: '利益相关角色与合规影响范围' },
+    },
+  },
+  4: {
+    title: '核心价值主张',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'skip' },
+      extension:      { status: 'required' },
+      integration:    { status: 'skip' },
+      operational:    { status: 'skip' },
+      compliance:     { status: 'skip' },
+    },
+  },
+  5: {
+    title: '市场与竞品差异化',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'skip' },
+      extension:      { status: 'conditional' },
+      integration:    { status: 'skip' },
+      operational:    { status: 'skip' },
+      compliance:     { status: 'skip' },
+    },
+  },
+  6: {
+    title: '核心价值模型',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '改造价值模型' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '集成价值模型' },
+      operational:    { status: 'required' },
+      compliance:     { status: 'required', title_override: '合规达标模型' },
+    },
+  },
+  7: {
+    title: '商业化路径与收入模型',
+    commercial_only: true,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'conditional' },  // only when commercial
+      transformation: { status: 'skip' },
+      extension:      { status: 'conditional' },  // only when commercial
+      integration:    { status: 'skip' },
+      operational:    { status: 'skip' },
+      compliance:     { status: 'skip' },
+    },
+  },
+  8: {
+    title: 'MVP 范围',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '改造范围（分期）' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '集成范围' },
+      operational:    { status: 'required' },
+      compliance:     { status: 'required', title_override: '整改范围' },
+    },
+  },
+  9: {
+    title: '备选方案对比',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '备选技术方案对比' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required' },
+      operational:    { status: 'conditional' },
+      compliance:     { status: 'conditional' },
+    },
+  },
+  10: {
+    title: '关键前提假设',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '关键前提假设（兼容性）' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '关键前提假设（第三方稳定性）' },
+      operational:    { status: 'conditional' },
+      compliance:     { status: 'conditional' },
+    },
+  },
+  11: {
+    title: '关键风险与兜底策略',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required', title_override: '关键风险与兜底策略（迁移风险）' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required', title_override: '关键风险与兜底策略（第三方风险）' },
+      operational:    { status: 'conditional' },
+      compliance:     { status: 'required' },
+    },
+  },
+  12: {
+    title: '阶段性里程碑',
+    commercial_only: false,
+    page_dependent: false,
+    types: {
+      innovation:     { status: 'required' },
+      transformation: { status: 'required' },
+      extension:      { status: 'required' },
+      integration:    { status: 'required' },
+      operational:    { status: 'required' },
+      compliance:     { status: 'required', title_override: '阶段性里程碑（含合规 deadline）' },
+    },
+  },
+  13: {
+    title: '页面定位与架构约束',
+    commercial_only: false,
+    page_dependent: true,
+    types: {
+      innovation:     { status: 'conditional' },
+      transformation: { status: 'conditional' },
+      extension:      { status: 'conditional' },
+      integration:    { status: 'skip' },          // pure B2B, no C-side
+      operational:    { status: 'required' },      // always has backend pages
+      compliance:     { status: 'conditional' },
+    },
+  },
+};
+
+/**
+ * Compute the chapter plan for a given project context.
+ *
+ * @param {string}  projectType  - one of: innovation|transformation|extension|integration|operational|compliance
+ * @param {boolean} isCommercial - whether the project involves direct monetization
+ * @param {boolean} hasPages     - derived via deriveHasPages()
+ * @returns {Array<{ template_number: number, title: string, status: string, reason?: string }>}
+ */
+export function getChapterPlan(projectType, isCommercial, hasPages) {
+  const plan = [];
+
+  for (const [numStr, chapter] of Object.entries(CHAPTER_MATRIX)) {
+    const num = Number(numStr);
+    const typeConfig = chapter.types[projectType];
+
+    // Unknown project type — mark skip
+    if (!typeConfig) {
+      plan.push({ template_number: num, title: chapter.title, status: 'skip', reason: 'unknown project type' });
+      continue;
+    }
+
+    // commercial_only filter
+    if (chapter.commercial_only && !isCommercial) {
+      plan.push({ template_number: num, title: chapter.title, status: 'skip', reason: 'non-commercial project' });
+      continue;
+    }
+
+    // page_dependent filter
+    if (chapter.page_dependent && !hasPages) {
+      plan.push({ template_number: num, title: chapter.title, status: 'skip', reason: 'project has no pages' });
+      continue;
+    }
+
+    // Type-level skip
+    if (typeConfig.status === 'skip') {
+      plan.push({ template_number: num, title: chapter.title, status: 'skip' });
+      continue;
+    }
+
+    const resolvedTitle = typeConfig.title_override ?? chapter.title;
+    plan.push({ template_number: num, title: resolvedTitle, status: typeConfig.status });
+  }
+
+  return plan;
+}
+
+// ─────────────────────────────────────────────
+// Appendix downstream dependency mapping
+// ref: references/brd-template.md §附录：下游交接清单
+// ─────────────────────────────────────────────
+
+export const APPENDIX_DEPENDENCIES = [
+  {
+    downstream_skill: 'page-designer',
+    fields: [
+      { semantic_name: '利益相关角色',       template_chapters: [3],  optional: false },
+      { semantic_name: '各角色痛点与场景',   template_chapters: [3],  optional: false },
+      { semantic_name: '核心价值模型',       template_chapters: [6],  optional: false },
+      { semantic_name: '付费触发点',         template_chapters: [7],  optional: true  },
+      { semantic_name: '页面定位与架构约束', template_chapters: [13], optional: false },
+    ],
+  },
+  {
+    downstream_skill: 'page-explainer',
+    fields: [
+      { semantic_name: '核心价值主张',       template_chapters: [4],  optional: true  },
+      { semantic_name: '利益相关角色诉求',   template_chapters: [3],  optional: false },
+      { semantic_name: '各端定位',           template_chapters: [13], optional: false },
+    ],
+  },
+  {
+    downstream_skill: 'foundation-builder',
+    fields: [
+      { semantic_name: '指标体系',             template_chapters: [2],  optional: true  },
+      { semantic_name: '核心价值模型',         template_chapters: [6],  optional: false },
+      { semantic_name: '关键风险与兜底策略',   template_chapters: [11], optional: false },
+      { semantic_name: '是否包含C端页面',      template_chapters: [],   optional: false }, // header field
+    ],
+  },
+  {
+    downstream_skill: 'prd-writer',
+    fields: [
+      { semantic_name: '目标与成功标准',       template_chapters: [2],  optional: false },
+      { semantic_name: '竞品差异化',           template_chapters: [5],  optional: true  },
+      { semantic_name: 'MVP范围',              template_chapters: [8],  optional: false },
+      { semantic_name: '功能验收标准 DoD',     template_chapters: [8],  optional: true  },
+    ],
+  },
+];
+
+// ─────────────────────────────────────────────
+// Rule conflict definitions
+// ─────────────────────────────────────────────
+
+export const RULE_CONFLICTS = [
+  {
+    id: 'integration_no_c_page',
+    check: (header, fieldId) => header.project_type === 'integration' && fieldId === 'has_c_page',
+    description: '集成型不允许 C 端页面',
+  },
+  {
+    id: 'no_commercial_monetization',
+    check: (header, fieldId) => !header.is_commercial && fieldId.includes('monetization'),
+    description: '非直接商业化项目不能锁定变现字段',
+  },
+  {
+    id: 'no_pages_page_field',
+    check: (header, fieldId) => !header.has_pages && fieldId.startsWith('page_'),
+    description: '无页面项目不能锁定页面定位字段',
+  },
+];
