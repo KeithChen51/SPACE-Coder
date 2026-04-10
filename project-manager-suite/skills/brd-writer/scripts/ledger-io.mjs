@@ -4,6 +4,9 @@
  * Not a CLI entry point. Imported by ledger-mutate/query/render.
  */
 
+import fs from 'fs';
+import path from 'path';
+
 // ─────────────────────────────────────────────
 // Schema version
 // ─────────────────────────────────────────────
@@ -873,3 +876,342 @@ export const RULE_CONFLICTS = [
     description: '无页面项目不能锁定页面定位字段',
   },
 ];
+
+// ─────────────────────────────────────────────
+// Timestamp helper
+// ─────────────────────────────────────────────
+
+/**
+ * Return current local time as "YYYY-MM-DD HH:MM" (no seconds, no timezone).
+ * @returns {string}
+ */
+function nowTimestamp() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm   = String(d.getMonth() + 1).padStart(2, '0');
+  const dd   = String(d.getDate()).padStart(2, '0');
+  const hh   = String(d.getHours()).padStart(2, '0');
+  const mi   = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+// ─────────────────────────────────────────────
+// readLedger
+// ─────────────────────────────────────────────
+
+/**
+ * Read and parse a ledger JSON file.
+ * Throws if the schema_version does not match SCHEMA_VERSION.
+ *
+ * @param {string} jsonPath - absolute path to ledger JSON file
+ * @returns {Object} parsed ledger data
+ */
+export function readLedger(jsonPath) {
+  const raw = fs.readFileSync(jsonPath, 'utf8');
+  const data = JSON.parse(raw);
+  const version = data.schema_version;
+  if (version !== SCHEMA_VERSION) {
+    throw new Error(
+      `Schema version mismatch: file has ${version}, scripts expect ${SCHEMA_VERSION}. Migration needed.`
+    );
+  }
+  return data;
+}
+
+// ─────────────────────────────────────────────
+// writeLedger
+// ─────────────────────────────────────────────
+
+/**
+ * Write ledger data to JSON (atomic) and render Markdown sidecar.
+ * Markdown write is best-effort; failure is logged but not thrown.
+ *
+ * @param {string} jsonPath - absolute path to ledger JSON file
+ * @param {Object} data     - ledger data object (mutated: last_updated is set)
+ * @param {string} slug     - project slug (used for Markdown filename)
+ */
+export function writeLedger(jsonPath, data, slug) {
+  data.header.last_updated = nowTimestamp();
+
+  const tmp = `${jsonPath}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
+  fs.renameSync(tmp, jsonPath);
+
+  const dir = path.dirname(jsonPath);
+  const mdPath = path.join(dir, `brd-ledger-${slug}.md`);
+  try {
+    const mdContent = renderMarkdown(data);
+    fs.writeFileSync(mdPath, mdContent, 'utf8');
+  } catch (err) {
+    console.warn(`[ledger-io] Warning: Markdown render failed (JSON is authoritative): ${err.message}`);
+  }
+}
+
+// ─────────────────────────────────────────────
+// createEmptyLedger
+// ─────────────────────────────────────────────
+
+/**
+ * Create and return an initial (empty) ledger JSON object.
+ *
+ * @param {string}  projectName  - human-readable project name
+ * @param {string}  slug         - URL-safe project identifier
+ * @param {string}  projectType  - one of: innovation|transformation|extension|integration|operational|compliance
+ * @param {boolean} hasCPage     - whether project has C-side pages
+ * @param {boolean} isCommercial - whether project involves direct monetization
+ * @returns {Object} ledger data object
+ */
+export function createEmptyLedger(projectName, slug, projectType, hasCPage, isCommercial) {
+  const hasPages = deriveHasPages(projectType, hasCPage);
+  const fieldDefs = buildFieldSet(projectType, hasCPage, isCommercial);
+
+  const META_IDS = new Set(['project_type', 'has_c_page', 'is_commercial']);
+  const metaValues = {
+    project_type:  projectType,
+    has_c_page:    String(hasCPage),
+    is_commercial: String(isCommercial),
+  };
+
+  const fields = fieldDefs.map((def) => {
+    const instance = {
+      id:           def.id,
+      display_name: def.display_name,
+      field_type:   def.field_type,
+      value_type:   def.value_type,
+    };
+    if (def.value_type === 'structured' && def.schema) {
+      instance.value_schema = def.schema;
+    }
+    if (META_IDS.has(def.id)) {
+      instance.value       = metaValues[def.id];
+      instance.status      = 'locked';
+      instance.lock_round  = 0;
+      instance.methodology = 'Phase A 定性';
+    } else {
+      instance.value       = null;
+      instance.status      = 'open';
+      instance.lock_round  = null;
+      instance.methodology = null;
+    }
+    return instance;
+  });
+
+  const hasDodField = fieldDefs.some((f) => f.id.includes('dod'));
+
+  const gates = [
+    { id: 'field_completeness', applicable: true,       status: null, remarks: null },
+    { id: 'consistency',        applicable: true,       status: null, remarks: null },
+    { id: 'scope',              applicable: true,       status: null, remarks: null },
+    { id: 'methodology',        applicable: true,       status: null, remarks: null },
+    { id: 'role',               applicable: true,       status: null, remarks: null },
+    { id: 'executability',      applicable: hasDodField, status: null, remarks: null },
+    { id: 'measurement',        applicable: true,       status: null, remarks: null },
+    { id: 'page',               applicable: hasPages,   status: null, remarks: null },
+  ];
+
+  return {
+    schema_version: SCHEMA_VERSION,
+    header: {
+      project_name:          projectName,
+      slug,
+      project_type:          projectType,
+      has_c_page:            hasCPage,
+      is_commercial:         isCommercial,
+      has_pages:             hasPages,
+      current_phase:         'B',
+      current_round:         0,
+      created_at:            nowTimestamp(),
+      last_updated:          null,
+      reopen_count:          0,
+      pending_brd_filename:  null,
+      brd_filename:          null,
+      d5_state: {
+        last_result:                    null,
+        last_triggered_at_round:        null,
+        fields_changed_since_last_d5:   false,
+      },
+    },
+    fields,
+    conflicts:    [],
+    changelog:    [],
+    gates,
+    chapter_plan: null,
+  };
+}
+
+// ─────────────────────────────────────────────
+// renderMarkdown
+// ─────────────────────────────────────────────
+
+/**
+ * Render ledger data to a Markdown string.
+ *
+ * @param {Object} data - ledger data object
+ * @returns {string} Markdown content
+ */
+export function renderMarkdown(data) {
+  const { header, fields, conflicts, changelog, gates } = data;
+  const slug = header.slug;
+  const lines = [];
+
+  // Anti-edit marker
+  lines.push(
+    `<!-- 此文件由 ledger-state-${slug}.json 自动生成，请勿手动编辑。修改请通过 brd-writer 脚本操作 JSON 源文件。 -->`
+  );
+  lines.push('');
+
+  // Header section
+  lines.push(`# BRD Ledger — ${header.project_name}`);
+  lines.push('');
+  lines.push(`- **Slug**: ${slug}`);
+  lines.push(`- **Skill**: brd-writer`);
+  lines.push(`- **Phase**: ${header.current_phase}`);
+  lines.push(`- **Round**: ${header.current_round}`);
+  lines.push(`- **Created**: ${header.created_at}`);
+  lines.push(`- **Last Updated**: ${header.last_updated ?? '—'}`);
+  lines.push('');
+
+  // §1 P0 Fields table
+  lines.push('## §1 P0 字段总览');
+  lines.push('');
+  lines.push('| # | 字段名 | 值 | 状态 | 锁定轮次 | 方法论 |');
+  lines.push('|---|--------|----|------|----------|--------|');
+  fields.forEach((f, idx) => {
+    let rawVal = f.value;
+    let displayVal;
+    if (rawVal === null || rawVal === undefined) {
+      displayVal = '—';
+    } else if (typeof rawVal === 'object') {
+      displayVal = JSON.stringify(rawVal);
+    } else {
+      displayVal = String(rawVal);
+    }
+    if (displayVal.length > 60) {
+      displayVal = displayVal.slice(0, 60) + '...';
+    }
+    const status     = f.status      ?? '—';
+    const lockRound  = f.lock_round  != null ? String(f.lock_round) : '—';
+    const methodology = f.methodology ?? '—';
+    lines.push(`| ${idx + 1} | ${f.display_name} | ${displayVal} | ${status} | ${lockRound} | ${methodology} |`);
+  });
+  lines.push('');
+
+  // §2 Conflicts table
+  lines.push('## §2 冲突记录');
+  lines.push('');
+  if (!conflicts || conflicts.length === 0) {
+    lines.push('（无冲突）');
+  } else {
+    lines.push('| 冲突 ID | 描述 |');
+    lines.push('|---------|------|');
+    conflicts.forEach((c) => {
+      lines.push(`| ${c.id ?? '—'} | ${c.description ?? '—'} |`);
+    });
+  }
+  lines.push('');
+
+  // §3 Changelog
+  lines.push('## §3 变更日志');
+  lines.push('');
+  if (!changelog || changelog.length === 0) {
+    lines.push('（无变更记录）');
+  } else {
+    changelog.forEach((entry) => {
+      const actionLabels = {
+        rollback:    '（回滚）',
+        batch_lock:  '（Phase B 批量锁定）',
+        reopen:      '（重新打开）',
+      };
+      const label = actionLabels[entry.action] ?? '';
+      lines.push(`### Round ${entry.round} — ${entry.action}${label}`);
+      lines.push(`- **时间**: ${entry.timestamp ?? '—'}`);
+      if (entry.methodology) {
+        lines.push(`- **方法论**: ${entry.methodology}`);
+      }
+      if (entry.requester_quote) {
+        lines.push(`- **需求原话**: ${entry.requester_quote}`);
+      }
+      if (entry.changes && entry.changes.length > 0) {
+        lines.push('- **变更内容**:');
+        entry.changes.forEach((ch) => {
+          lines.push(`  - \`${ch.field_id}\`: ${JSON.stringify(ch.old_value)} → ${JSON.stringify(ch.new_value)}`);
+        });
+      }
+      lines.push('');
+    });
+  }
+
+  // §4 Gates table
+  lines.push('## §4 质量门');
+  lines.push('');
+  lines.push('| 质量门 | 适用 | 状态 | 备注 |');
+  lines.push('|--------|------|------|------|');
+  (gates ?? []).forEach((g) => {
+    const applicable = g.applicable ? '是' : '否';
+    const status     = g.status  ?? '—';
+    const remarks    = g.remarks ?? '—';
+    lines.push(`| ${g.id} | ${applicable} | ${status} | ${remarks} |`);
+  });
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ─────────────────────────────────────────────
+// invalidateDerivedState
+// ─────────────────────────────────────────────
+
+/**
+ * Invalidate derived state after any field value change (lock or rollback).
+ * Resets chapter_plan and all gates, then recomputes fields_changed_since_last_d5.
+ *
+ * @param {Object} data - ledger data object (mutated in place)
+ */
+export function invalidateDerivedState(data) {
+  // Reset chapter plan
+  data.chapter_plan = null;
+
+  // Reset all gates
+  if (Array.isArray(data.gates)) {
+    data.gates.forEach((g) => {
+      g.status  = null;
+      g.remarks = null;
+    });
+  }
+
+  // Recompute fields_changed_since_last_d5
+  const d5State = data.header.d5_state;
+  const lastTriggeredRound = d5State.last_triggered_at_round;
+
+  // If D.5 has never been triggered, don't touch the flag (lock sets it directly)
+  if (lastTriggeredRound === null || lastTriggeredRound === undefined) {
+    return;
+  }
+
+  // Scan changelog entries after lastTriggeredRound
+  // Build a map of effective changes (accounting for rollbacks)
+  const changelog = data.changelog ?? [];
+  const effectiveChanges = new Map(); // field_id → latest effective new_value
+
+  for (const entry of changelog) {
+    if (entry.round <= lastTriggeredRound) continue;
+
+    if (entry.action === 'rollback') {
+      // Rollback removes previously recorded changes for those fields
+      if (Array.isArray(entry.changes)) {
+        entry.changes.forEach((ch) => {
+          effectiveChanges.delete(ch.field_id);
+        });
+      }
+    } else {
+      // lock, batch_lock, reopen, etc. — record the change
+      if (Array.isArray(entry.changes)) {
+        entry.changes.forEach((ch) => {
+          effectiveChanges.set(ch.field_id, ch.new_value);
+        });
+      }
+    }
+  }
+
+  d5State.fields_changed_since_last_d5 = effectiveChanges.size > 0;
+}
