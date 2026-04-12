@@ -424,15 +424,6 @@ export const PAGE_FIELDS = [
   },
   // ref: p0-fields.md 页面#5
   {
-    id: 'page_structure',
-    display_name: '单页整合vs多入口拆分',
-    field_type: 'fact',
-    value_type: 'text',
-    section: 'page',
-    condition: null,
-  },
-  // ref: p0-fields.md 页面#6
-  {
     id: 'page_downstream_boundary',
     display_name: '下游待确认边界',
     field_type: 'fact',
