@@ -262,13 +262,13 @@ function cmdLint(ledger) {
     }
 
     if (failedMeasurement.length === 0) {
-      needs_ai_review.push('measurement_quality');
+      needs_ai_review.push('measurement');
     } else {
       fail.push('measurement');
       details.measurement = {
         reason: `字段值为空或结构不完整: ${failedMeasurement.join(', ')}`,
       };
-      needs_ai_review.push('measurement_quality');
+      needs_ai_review.push('measurement');
     }
   }
 
@@ -296,13 +296,13 @@ function cmdLint(ledger) {
     );
 
     if (missingMethodology.length === 0) {
-      needs_ai_review.push('methodology_quality');
+      needs_ai_review.push('methodology');
     } else {
       fail.push('methodology');
       details.methodology = {
         reason: `字段 ${missingMethodology.map((f) => f.id).join(', ')} 的 methodology 列为空`,
       };
-      needs_ai_review.push('methodology_quality');
+      needs_ai_review.push('methodology');
     }
   }
 
@@ -317,14 +317,14 @@ function cmdLint(ledger) {
       painField && painField.status === 'locked';
 
     if (bothLocked) {
-      needs_ai_review.push('role_quality');
+      needs_ai_review.push('role');
     } else {
       fail.push('role');
       const missing = [];
       if (!roleField || roleField.status !== 'locked') missing.push('stakeholder_roles');
       if (!painField || painField.status !== 'locked') missing.push('core_pain_points');
       details.role = { reason: `字段 ${missing.join(', ')} 未锁定` };
-      needs_ai_review.push('role_quality');
+      needs_ai_review.push('role');
     }
   }
 
