@@ -230,37 +230,7 @@ function cmdLint(ledger) {
     }
   }
 
-  // ── Gate 3: executability ──
-  // Script check: DoD fields exist and non-empty (if applicable)
-  // AI reviews: DoD content quality
-  {
-    const applicable = isGateApplicable('executability');
-    if (!applicable) {
-      pass.push('executability');
-    } else {
-      const dodFields = fields.filter((f) => f.id.includes('dod'));
-      const allDodFilled = dodFields.length > 0 && dodFields.every((f) => {
-        if (f.status !== 'locked') return false;
-        if (f.value === null || f.value === undefined || f.value === '') return false;
-        return true;
-      });
-      if (allDodFilled) {
-        needs_ai_review.push('executability');
-      } else {
-        fail.push('executability');
-        const emptyDod = dodFields.filter(
-          (f) => f.status !== 'locked' || !f.value
-        ).map((f) => f.id);
-        details.executability = {
-          reason: emptyDod.length > 0
-            ? `DoD 字段未填写或未锁定: ${emptyDod.join(', ')}`
-            : 'DoD 字段不存在',
-        };
-      }
-    }
-  }
-
-  // ── Gate 4: measurement ──
+  // ── Gate 3: measurement ──
   // Script check: structured fields — all sub-fields non-empty; text fields — non-empty
   // AI reviews: quality
   {

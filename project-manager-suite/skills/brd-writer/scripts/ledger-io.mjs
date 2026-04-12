@@ -183,15 +183,6 @@ export const TYPE_SPECIFIC_P0 = {
       section: 'innovation',
       condition: null,
     },
-    // ref: p0-fields.md 创新#18
-    {
-      id: 'innovation_dod',
-      display_name: '功能验收标准（DoD）',
-      field_type: 'decision',
-      value_type: 'text',
-      section: 'innovation',
-      condition: null,
-    },
   ],
 
   // ref: p0-fields.md §改造型追加P0
@@ -257,15 +248,6 @@ export const TYPE_SPECIFIC_P0 = {
       condition: null,
     },
     // ref: p0-fields.md 扩展#15
-    {
-      id: 'extension_dod',
-      display_name: '功能验收标准（DoD）',
-      field_type: 'decision',
-      value_type: 'text',
-      section: 'extension',
-      condition: null,
-    },
-    // ref: p0-fields.md 扩展#16
     {
       id: 'extension_monetization',
       display_name: '变现模式与付费触发点',
@@ -334,15 +316,6 @@ export const TYPE_SPECIFIC_P0 = {
       field_type: 'decision',
       value_type: 'structured',
       schema: ['dimension', 'baseline', 'target'],
-      section: 'operational',
-      condition: null,
-    },
-    // ref: p0-fields.md 运营#13
-    {
-      id: 'operational_dod',
-      display_name: '功能验收标准（DoD）',
-      field_type: 'decision',
-      value_type: 'text',
       section: 'operational',
       condition: null,
     },
@@ -778,7 +751,6 @@ export const APPENDIX_DEPENDENCIES = [
       { semantic_name: '目标与成功标准',       template_chapters: [2],  optional: false },
       { semantic_name: '竞品差异化',           template_chapters: [5],  optional: true  },
       { semantic_name: 'MVP范围',              template_chapters: [8],  optional: false },
-      { semantic_name: '功能验收标准 DoD',     template_chapters: [8],  optional: true  },
     ],
   },
 ];
@@ -924,15 +896,12 @@ export function createEmptyLedger(projectName, slug, projectType, hasCPage, isCo
     return instance;
   });
 
-  const hasDodField = fieldDefs.some((f) => f.id.includes('dod'));
-
   const gates = [
     { id: 'field_completeness', applicable: true,       status: null, remarks: null },
     { id: 'consistency',        applicable: true,       status: null, remarks: null },
     { id: 'scope',              applicable: true,       status: null, remarks: null },
     { id: 'methodology',        applicable: true,       status: null, remarks: null },
     { id: 'role',               applicable: true,       status: null, remarks: null },
-    { id: 'executability',      applicable: hasDodField, status: null, remarks: null },
     { id: 'measurement',        applicable: true,       status: null, remarks: null },
     { id: 'page',               applicable: hasPages,   status: null, remarks: null },
   ];
