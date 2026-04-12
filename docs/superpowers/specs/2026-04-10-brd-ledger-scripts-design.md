@@ -113,7 +113,7 @@ JSON 中使用英文稳定 ID 作为字段键，不使用中文字段名。中�
 - `integration_goal`（集成目标——可能多个维度）
 
 字段 ID 命名规则：
-- 通用 P0：`project_type`, `has_c_page`, `is_commercial`, `project_background`, `stakeholder_roles`, `core_pain_points`, `core_value_model`, `scope_definition`, `key_risks`, `milestones`
+- 通用 P0：`project_type`, `has_c_page`, `is_commercial`, `project_background`, `stakeholder_roles`, `core_pain_points`, `core_value_model`, `scope_definition`, `key_risks`, `project_timeline`
 - 类型追加 P0：以类型前缀 + 语义命名，如 `innovation_target_user_scenario`, `transformation_current_pain`, `integration_upstream_downstream`
 - 页面定位：`page_coverage`, `page_target_users`, `page_primary_use`, `page_positioning`, `page_structure`, `page_downstream_boundary`
 
@@ -446,7 +446,7 @@ node ledger-query.mjs progress --ledger <path>
   "rate": "85%",
   "current_phase": "C",
   "current_round": 12,
-  "open_field_ids": ["scope_definition", "key_risks", "milestones"],
+  "open_field_ids": ["scope_definition", "key_risks", "project_timeline"],
   "unresolved_conflicts": 0,
   "should_trigger_d5": false,
   "d5_state": {
@@ -586,7 +586,7 @@ AI 将最终保留的模板章节编号传入 `--include`。脚本完成以下�
     { "final_number": 6, "template_number": 9, "title": "备选方案对比" },
     { "final_number": 7, "template_number": 10, "title": "关键前提假设" },
     { "final_number": 8, "template_number": 11, "title": "关键风险与兜底策略" },
-    { "final_number": 9, "template_number": 12, "title": "阶段性里程碑" }
+    { "final_number": 9, "template_number": 12, "title": "项目周期" }
   ],
   "appendix": [
     {

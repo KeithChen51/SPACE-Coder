@@ -102,8 +102,8 @@ export const UNIVERSAL_P0 = [
   },
   // ref: p0-fields.md #10
   {
-    id: 'milestones',
-    display_name: '阶段性里程碑',
+    id: 'project_timeline',
+    display_name: '项目周期',
     field_type: 'fact',
     value_type: 'text',
     section: 'universal',
@@ -675,7 +675,7 @@ export const CHAPTER_MATRIX = {
     },
   },
   12: {
-    title: '阶段性里程碑',
+    title: '项目周期',
     commercial_only: false,
     page_dependent: false,
     types: {
@@ -684,7 +684,7 @@ export const CHAPTER_MATRIX = {
       extension:      { status: 'required' },
       integration:    { status: 'required' },
       operational:    { status: 'required' },
-      compliance:     { status: 'required', title_override: '阶段性里程碑（含合规 deadline）' },
+      compliance:     { status: 'required', title_override: '项目周期（含合规 deadline）' },
     },
   },
   13: {
