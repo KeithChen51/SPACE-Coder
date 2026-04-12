@@ -156,6 +156,17 @@ function cmdLock(opts) {
     }
   }
 
+  // Single-focus enforcement: Phase C/D only allow 1 field per lock call.
+  // Phase B batch lock is the only exception (AI calls lock before set-phase to C).
+  const phase = data.header.current_phase;
+  if (phase !== 'B' && fieldsToLock.length > 1) {
+    fail({
+      success: false,
+      error: 'single_focus_violation',
+      message: `当前阶段 ${phase}：单焦点原则要求每轮只锁定 1 个字段，收到 ${fieldsToLock.length} 个。Phase B 批量锁定除外。`,
+    });
+  }
+
   // Rule conflict detection
   const header = data.header;
   const detectedConflicts = [];
