@@ -34,7 +34,7 @@ const templatesDir = path.join(suiteRoot, 'skills', 'ai-project-manager', 'asset
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S0|S1|S2|S3|S4|S5|S6] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
+        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S0|S1|S2|S3|S4|S5|S6|S7] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
     );
 }
 

@@ -152,7 +152,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 从 skill 角色来看，当前主链路中的能力可以先分成 3 类：
 
 - **流程调度型**：`ai-project-manager`，负责识别全局文件、补齐最小上下文、判断阶段、路由子能力和回写状态
-- **阶段交付型**：`brd-writer`、`page-designer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-test-case-generator`、`test-case-runner`，负责承接某一阶段的正式交付物，例如 BRD、页面代码、技术地基、PRD、开发计划、测试用例和测试结果
+- **阶段交付型**：`brd-writer`、`page-designer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-test-case-generator`、`test-case-runner`、`security-scan`，负责承接某一阶段的正式交付物，例如 BRD、页面代码、技术地基、PRD、开发计划、测试用例、测试结果和上线前安全闸门报告
 - **专项执行型**：`coding-standards`、`project-devlog`，负责研发执行规范、状态回写等专项工作，不承担主流程调度
 
 当前主链路中的能力职责如下：
@@ -168,6 +168,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
 | `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S5 |
 | `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S6 |
+| `security-scan` | 在生产放行前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
 | `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | 验收阶段 |
 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
 

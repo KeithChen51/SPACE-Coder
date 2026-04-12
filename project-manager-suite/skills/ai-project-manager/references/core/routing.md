@@ -1,6 +1,7 @@
 # 路由条件与项目骨架
 
 本文件定义主入口的路由决策条件、能力映射以及宿主项目骨架补齐规则。
+主入口身份、适用边界与核心红线，统一以上位规则 `SKILL.md` 为准；本文件不重复定义。
 
 协作模式、身份识别字段和访谈口径以 `global-files-protocol.md` 与 `runtime.md` 为准，本文件不重复定义。
 阶段判断、进入子能力的必要条件、S2 页面先行协议与运行自检，统一以 `runtime.md` 为准，本文件不重复维护。
@@ -71,6 +72,7 @@
 | `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
 | `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
 | `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |
+| `security-scan` (上线前固定安全闸门扫描与放行结论) | S7 | `skills/security-scan/` |
 
 | S2 内部执行能力（由调度层接管，不作为主入口默认直连目标） | 所属阶段 | 默认实现路径 |
 |--------------------------------------------------|----------|--------------|

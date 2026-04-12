@@ -35,6 +35,10 @@ const routeTargets = {
     S6: {
         skill: 'test-case-runner',
         exclusiveDeliverable: true
+    },
+    S7: {
+        skill: 'security-scan',
+        exclusiveDeliverable: true
     }
 };
 
@@ -78,6 +82,11 @@ const gatingRules = {
     testCasesReady: {
         description: '进入 S6 前，测试用例必须已准备好',
         evidence: ['test_case_files_exist'],
+        blockOnMissing: true
+    },
+    securityScanReady: {
+        description: '进入 S7 前，应至少具备测试执行证据，并已进入发布前安全闸门语境',
+        evidence: ['test_execution_reports_exist', 'release_gate_signal_present'],
         blockOnMissing: true
     },
     stageWritebackBeforeRouting: {

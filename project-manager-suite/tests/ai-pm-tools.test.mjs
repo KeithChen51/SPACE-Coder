@@ -234,6 +234,53 @@ test('route-check blocks S2 routing when stage transition writeback is missing',
     assert.equal(result.gateChecks.pageTaskRequired.pass, true);
 });
 
+test('route-check enters S7 when release signal and test execution reports are ready', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S6',
+            recommended_stage: 'S7',
+            current_round_deliverable: '安全扫描报告 + PASS / BLOCK / WAIVER 结论',
+            largest_uncertainty: '上线前安全闸门待执行'
+        },
+        planOverrides: {
+            current_stage: 'S6',
+            current_goal: '完成最终安全检查并准备上线',
+            next_tasks: '触发 security-scan'
+        },
+        logContent: '记录 S7 阶段切换与发布前安全扫描准备'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'reports', 'tester-a', 'index.md'), '# 测试执行报告');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'reports', 'tester-a', '测试验收-核心流程.md'), '# 核心流程测试报告');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S7' });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'security-scan');
+    assert.equal(result.gateChecks.securityScanReady.pass, true);
+});
+
+test('route-check blocks S7 when release gate evidence is missing', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S6',
+            recommended_stage: 'S7',
+            current_round_deliverable: '安全扫描报告 + PASS / BLOCK / WAIVER 结论'
+        },
+        planOverrides: {
+            current_stage: 'S6',
+            current_goal: '准备上线'
+        },
+        logContent: '记录 S7 阶段切换与发布前安全扫描准备'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S7' });
+
+    assert.equal(result.canEnter, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'security_scan_inputs_missing'));
+});
+
 test('generate-host-rules syncs default rules into host docs/rules', () => {
     const hostRoot = makeTempDir('pm-suite-rules-');
 

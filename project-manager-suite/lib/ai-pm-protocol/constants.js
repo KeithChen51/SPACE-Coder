@@ -25,7 +25,8 @@ const STAGE_IDS = {
     S3: 'S3',
     S4: 'S4',
     S5: 'S5',
-    S6: 'S6'
+    S6: 'S6',
+    S7: 'S7'
 };
 
 export { FIELD_LEVELS, FIELD_SOURCES, FILE_ROLE_IDS, STAGE_IDS };

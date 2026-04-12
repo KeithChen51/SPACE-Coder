@@ -37,12 +37,13 @@ const STAGE_ORDER = [
     STAGE_IDS.S3,
     STAGE_IDS.S4,
     STAGE_IDS.S5,
-    STAGE_IDS.S6
+    STAGE_IDS.S6,
+    STAGE_IDS.S7
 ];
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S1|S2|S3|S4|S5|S6] [--json]'
+        'Usage: node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S1|S2|S3|S4|S5|S6|S7] [--json]'
     );
 }
 
@@ -108,7 +109,7 @@ function isPlaceholderText(value) {
 function extractStageId(text) {
     if (!text) return null;
     if (isPlaceholderText(text)) return null;
-    const match = String(text).match(/\b(S[0-6])\b/);
+    const match = String(text).match(/\b(S[0-7])\b/);
     return match ? match[1] : null;
 }
 
@@ -535,6 +536,25 @@ function inspectPrdArtifacts(hostRoot) {
     };
 }
 
+function inspectTestExecutionArtifacts(hostRoot) {
+    const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
+    const relativeFiles = markdownFiles.map((filePath) => ({
+        filePath,
+        relativePath: normalizePathForMatch(hostRoot, filePath)
+    }));
+
+    const indexReports = relativeFiles.filter((item) => /^docs\/test-case\/reports\/[^/]+\/index\.md$/.test(item.relativePath));
+    const blockReports = relativeFiles.filter((item) => /^docs\/test-case\/reports\/[^/]+\/测试验收-.+\.md$/.test(item.relativePath));
+    const defectsFile = relativeFiles.find((item) => item.relativePath === 'docs/test-case/reports/defects.md');
+
+    return {
+        indexReportCount: indexReports.length,
+        blockReportCount: blockReports.length,
+        defectsFileExists: Boolean(defectsFile),
+        reportsReady: indexReports.length > 0 && blockReports.length > 0
+    };
+}
+
 function extractProfileContext(content) {
     if (!content) {
         return {
@@ -637,6 +657,23 @@ function hasPageTaskSignal(profileContext, planContext) {
     return /页面|原型|前端|界面|UI|UX|后台配置页|C端|H5|小程序/.test(textPool);
 }
 
+function hasSecurityGateSignal(profileContext, planContext) {
+    const textPool = [
+        profileContext.fields.current_round_deliverable,
+        profileContext.fields.largest_uncertainty,
+        ...planContext.currentGoal,
+        ...planContext.nextTasks,
+        ...planContext.inProgressTasks,
+        ...planContext.completionCriteria
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return /上线|发版|生产发布|发布生产|go-live|go live|release|安全放行|最终安全检查|security gate|security scan/i.test(
+        textPool
+    );
+}
+
 function isPageDesignTagResolved(value) {
     if (isMissingValue(value)) return false;
     return /(C端|B端|后台)/.test(value);
@@ -653,6 +690,10 @@ function inferRecommendedStage(profileContext, planContext) {
 
     if (planContext.currentStage) {
         return planContext.currentStage;
+    }
+
+    if (hasSecurityGateSignal(profileContext, planContext)) {
+        return STAGE_IDS.S7;
     }
 
     if (hasPageTaskSignal(profileContext, planContext)) {
@@ -731,6 +772,7 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
     const s2Artifacts = inspectS2Artifacts(hostRoot);
     const foundationArtifacts = inspectFoundationArtifacts(hostRoot);
     const prdArtifacts = inspectPrdArtifacts(hostRoot);
+    const testExecutionArtifacts = inspectTestExecutionArtifacts(hostRoot);
 
     checks.startupMinimum = {
         pass: collectMissingFields(fieldPackages.startupMinimum, values).length === 0,
@@ -785,6 +827,23 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
         };
     }
 
+    if (targetStage === STAGE_IDS.S7) {
+        const releaseGateSignalPresent =
+            hasSecurityGateSignal(profileContext, planContext) ||
+            profileContext.fields.current_stage === STAGE_IDS.S7 ||
+            profileContext.fields.recommended_stage === STAGE_IDS.S7;
+
+        checks.securityScanReady = {
+            pass: testExecutionArtifacts.reportsReady && releaseGateSignalPresent,
+            evidence: {
+                indexReportCount: testExecutionArtifacts.indexReportCount,
+                blockReportCount: testExecutionArtifacts.blockReportCount,
+                defectsFileExists: testExecutionArtifacts.defectsFileExists,
+                releaseGateSignalPresent
+            }
+        };
+    }
+
     checks.stageWritebackBeforeRouting = {
         pass: hasRecentStageWriteback(hostRoot, validationResult, targetStage),
         evidence: validationResult.authority[FILE_ROLE_IDS.DEVLOG]
@@ -823,6 +882,13 @@ function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gat
         reasons.push({
             code: 'development_plan_missing',
             message: gatingRules.developmentPlanReady.description
+        });
+    }
+
+    if (targetStage === STAGE_IDS.S7 && gateChecks.securityScanReady && !gateChecks.securityScanReady.pass) {
+        reasons.push({
+            code: 'security_scan_inputs_missing',
+            message: gatingRules.securityScanReady.description
         });
     }
 
@@ -896,6 +962,10 @@ function resolveNextActionWithContext({ validationResult, targetStage, resolvedR
             }
             return '可进入 S2，页面环节已收口，下一步进入 prd-chief，并继续推进 prd-writer';
         }
+    }
+
+    if (targetStage === STAGE_IDS.S7 && resolvedRouteTarget?.skill === 'security-scan') {
+        return '可进入 S7，默认交由 security-scan，输出固定结构的安全扫描报告和 PASS / BLOCK / WAIVER 结论';
     }
 
     if (targetStage && resolvedRouteTarget) {

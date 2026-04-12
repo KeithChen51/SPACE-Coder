@@ -46,7 +46,7 @@ const changeImpactMap = {
             'skills/ai-project-manager/references/core/runtime.md',
             'skills/ai-project-manager/references/core/routing.md'
         ],
-        targetAuthority: ['lib/ai-pm-protocol/stages.js'],
+        targetAuthority: ['lib/ai-pm-protocol/constants.js', 'lib/ai-pm-protocol/stages.js'],
         checkAlso: [
             'skills/ai-project-manager/assets/global-files/project-profile.md',
             'tools/route-check.mjs'

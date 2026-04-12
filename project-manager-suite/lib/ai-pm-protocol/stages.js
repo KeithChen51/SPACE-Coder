@@ -64,6 +64,14 @@ const stages = [
         minimumDeliverable: '验收结论 + 不符合项清单 + 补缺建议 + 阶段收口建议',
         ownerSkill: 'test-case-runner',
         gatekeeping: ['testCasesReady']
+    },
+    {
+        id: STAGE_IDS.S7,
+        name: '上线前安全扫描',
+        signals: ['已进入发布前收口', '需要在生产放行前完成固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论'],
+        minimumDeliverable: '安全扫描报告 + PASS / BLOCK / WAIVER 结论 + 输入证据缺口说明',
+        ownerSkill: 'security-scan',
+        gatekeeping: ['securityScanReady']
     }
 ];
 
@@ -76,7 +84,8 @@ const stageDecisionRules = [
     '当前阶段与推荐阶段冲突时，先解释差异再更新画像',
     'S2 页面代码或页面交付清单未产出前，主入口必须先停留在 page-chief 链路内',
     'S2 页面环节未被 page-chief 判定 DONE 前，不得进入 prd-chief、foundation-builder、prd-writer 或 S3',
-    'S2 只有页面环节已收口后，才允许切换到 prd-chief；只有 foundation 完成后，才允许继续推进 prd-writer'
+    'S2 只有页面环节已收口后，才允许切换到 prd-chief；只有 foundation 完成后，才允许继续推进 prd-writer',
+    'S7 只能作为发布前固定安全闸门使用；未完成 security-scan 报告前，不得把项目判定为可上线'
 ];
 
 const globalCompanionAbilities = [
