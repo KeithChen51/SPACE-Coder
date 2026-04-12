@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 
 import { checkProtocolAlignment } from '../tools/check-protocol-alignment.mjs';
+
+const TEST_FILE_PATH = fileURLToPath(import.meta.url);
+const CURRENT_SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
 
 function makeTempDir(prefix) {
     return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -44,8 +48,7 @@ export const example = true;
 }
 
 test('check-protocol-alignment passes on the current suite', () => {
-    const suiteRoot = path.resolve(process.cwd(), 'project-manager-suite');
-    const result = checkProtocolAlignment({ suiteRoot });
+    const result = checkProtocolAlignment({ suiteRoot: CURRENT_SUITE_ROOT });
 
     assert.equal(result.summary.errors, 0);
 });
@@ -114,9 +117,8 @@ test('check-protocol-alignment degrades safely when suite root is not in a git r
 });
 
 test('check-protocol-alignment reports impacted files for changed startup interview sources', () => {
-    const suiteRoot = path.resolve(process.cwd(), 'project-manager-suite');
     const result = checkProtocolAlignment({
-        suiteRoot,
+        suiteRoot: CURRENT_SUITE_ROOT,
         changedFiles: ['skills/ai-project-manager/references/core/runtime.md']
     });
 
@@ -128,5 +130,18 @@ test('check-protocol-alignment reports impacted files for changed startup interv
     );
     assert.ok(
         result.changeImpact.recommendedReviewFiles.includes('lib/ai-pm-protocol/field-contracts.js')
+    );
+});
+
+test('check-protocol-alignment matches ai-project-manager SKILL.md changes to an impact family', () => {
+    const result = checkProtocolAlignment({
+        suiteRoot: CURRENT_SUITE_ROOT,
+        changedFiles: ['skills/ai-project-manager/SKILL.md']
+    });
+
+    assert.ok(result.changeImpact.impactedFamilies.some((item) => item.familyId === 'entryIdentity'));
+    assert.equal(result.changeImpact.unmatchedChangedFiles.includes('skills/ai-project-manager/SKILL.md'), false);
+    assert.ok(
+        result.changeImpact.recommendedReviewFiles.includes('skills/ai-project-manager/references/core/runtime.md')
     );
 });

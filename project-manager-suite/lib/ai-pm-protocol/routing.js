@@ -13,11 +13,12 @@ const routeTargets = {
         exclusiveDeliverable: true
     },
     S2: {
-        skill: 'page-designer',
-        followUpSkills: ['foundation-builder', 'prd-writer'],
+        skill: 'page-chief',
+        followUpSkills: ['prd-chief'],
+        internalSkills: ['page-designer', 'page-explainer', 'foundation-builder', 'prd-writer'],
         exclusiveDeliverable: true,
         prerequisites: ['pageTaskRequired'],
-        confirmationRequiredBeforeFollowUp: true
+        handoffGate: 'pageStageClosedForPrd'
     },
     S3: {
         skill: 'delivery-planner',
@@ -48,9 +49,15 @@ const gatingRules = {
         fields: ['coverage_scope', 'page_primary_user', 'page_primary_purpose', 'page_design_tag'],
         blockOnMissing: true
     },
-    pagePrototypeConfirmedForPrd: {
-        description: 'S2 中页面产物必须经用户确认后，才允许进入 foundation-builder 与 prd-writer',
-        evidence: ['page_prototype_exists', 'user_confirmation_explicit'],
+    pageStageClosedForPrd: {
+        description: 'S2 中只有页面环节被 page-chief 判定收口后，才允许切换到 prd-chief',
+        evidence: [
+            'page_delivery_exists',
+            'page_code_files_exist',
+            'explainer_files_complete',
+            'interaction_status_locked',
+            'no_unresolved_design_gap_or_logic_conflict'
+        ],
         blockOnMissing: true
     },
     fullPrdReady: {

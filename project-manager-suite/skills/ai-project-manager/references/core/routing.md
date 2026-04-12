@@ -48,6 +48,7 @@
 > **进入子能力的必要条件**：阶段明确、上下文统一、目标已超出主入口判断职责、且能带来具体交付物；详细门禁以 `runtime.md` 为准。
 > **独占执行规则**：一旦进入子能力，当前阶段正式交付物由目标 skill 独占产出；主入口不得继续代写该阶段正文。
 > **页面前置规则**：凡是页面类任务，进入 S2 前必须先由主入口主动补齐“页面任务必补字段包”；S2 的详细运行规则以 `runtime.md` 为准。
+> **S2 默认路由规则**：命中 S2 时，主入口默认先进入 `page-chief`；只有页面环节已由 `page-chief` 判定 DONE，才允许切换到 `prd-chief`。
 
 ---
 
@@ -65,12 +66,18 @@
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|
 | `brd-writer` (业务需求文档 / BRD) | S1 | `skills/brd-writer/` |
-| `page-designer` (页面代码与页面交付清单编排) | S2 | `skills/page-designer/` |
-| `foundation-builder` (术语表 / Schema / API 技术地基设计) | S2 | `skills/foundation-builder/` |
-| `prd-writer` (消费页面与 foundation 产物，沉淀 AI 可编码 PRD) | S2 | `skills/prd-writer/` |
+| `page-chief` (S2 页面环节调度：`page-designer` → `page-explainer`，必要时回环) | S2 | `skills/page-chief/` |
+| `prd-chief` (S2 PRD 环节调度：`foundation-builder` → `prd-writer`) | S2 | `skills/prd-chief/` |
 | `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
 | `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
 | `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |
+
+| S2 内部执行能力（由调度层接管，不作为主入口默认直连目标） | 所属阶段 | 默认实现路径 |
+|--------------------------------------------------|----------|--------------|
+| `page-designer` (页面代码与页面交付清单编排) | S2 | `skills/page-designer/` |
+| `page-explainer` (页面交互语义、权限矩阵与 gap 收口) | S2 | `skills/page-explainer/` |
+| `foundation-builder` (术语表 / Schema / API 技术地基设计) | S2 | `skills/foundation-builder/` |
+| `prd-writer` (消费页面与 foundation 产物，沉淀 AI 可编码 PRD) | S2 | `skills/prd-writer/` |
 
 ---
 

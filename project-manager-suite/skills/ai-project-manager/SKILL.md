@@ -11,7 +11,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 > 当处理要求“启动项目”的空目录时，**绝对禁止**一上来就凭借假设直接输出项目骨架和新建全局文件！
 > 在你执行任何文件的创建（如 `project-profile.md`）之前，**必须且只能**先读取 `references/core/runtime.md` 向用户发起首轮极简访谈。不要跳过收集上下文这关键一步去搞纯结构的初始化！
 > 若后续要调用 `tools/bootstrap-host.mjs` 创建 `project-profile.md`，必须先把访谈结果整理成可校验的结构化输入；**仅有 `--interview-complete` 这类布尔标记，不构成可创建画像的证据**。
-> 当用户意图属于“启动项目 / 新建项目 / 从零开始 / 帮我规划项目 / 帮我落地需求”，以及更广义的“继续推进当前项目 / 判断当前阶段 / 该先做 BRD 还是页面 / 下一步该做什么”时，**`ai-project-manager` 是项目域默认第一入口**。在完成 `references/core/runtime.md` 的全局文件识别、最小上下文建立、阶段判断和初次路由前，**不得预加载** `coding-standards`、`delivery-planner`、`prd-writer` 等实现型或阶段型 skill。
+> 当用户意图属于“启动项目 / 新建项目 / 从零开始 / 帮我规划项目 / 帮我落地需求”，以及更广义的“继续推进当前项目 / 判断当前阶段 / 该先做 BRD 还是页面 / 下一步该做什么”时，**`ai-project-manager` 是项目域默认第一入口**。在完成 `references/core/runtime.md` 的全局文件识别、最小上下文建立、阶段判断和初次路由前，**不得预加载** `coding-standards`、`delivery-planner`、`page-chief`、`prd-chief`、`prd-writer` 等实现型或阶段型 skill。
 
 ## The Rule
 
@@ -72,7 +72,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 
 - 缺项目画像先访谈，不能先建文件
 - 命中 S1 后不得直接做 BRD 以外的正式阶段产物
-- 命中 S2 后必须先由 `page-designer` 产出页面代码并等待人工确认，再进入 `foundation-builder`，最后才进入 `prd-writer`
+- 命中 S2 后必须先由 `page-chief` 调度页面环节（`page-designer` → `page-explainer`，必要时回环）并完成收口，再由 `prd-chief` 调度 PRD 环节（`foundation-builder` → `prd-writer`）
 - 宿主项目已有权威文件时，不重复新建第二权威源
 
 **弹性规则**：允许按项目上下文调整
@@ -151,6 +151,7 @@ description: 面向业务团队的项目总入口。只要对话涉及项目启�
 - 页面类任务访谈时，优先使用“给谁用 / 主要用途 / 项目覆盖对象”这类业务语言，不直接把 `B端 / C端 / 后台` 术语抛给不懂信息化的业务方。
 - `页面设计标签` 属于主入口标准化回写字段，不要求业务方自己说出；若无法稳定归一，宁可写 `待确认` 继续补问，也不要强行进入 S2。
 - 命中 S1 后，主入口不得直接代写 BRD；命中 S2 后，主入口不得直接代做页面代码、技术地基或完整版 PRD；命中 S3/S4/S5/S6 后，同理不得直接代做该阶段正式交付物。
+- 命中 S2 后，主入口不得绕过 `page-chief` 直接把 `page-designer`、`page-explainer`、`foundation-builder`、`prd-writer` 串成非受控链路；页面环节未收口前，也不得跳过 `page-explainer` 或提前进入 `prd-chief`。
 - 能从 runtime 或现有全局文件恢复的信息，不向用户重复追问。
 - 没有最小交付物标准的能力，不应直接进入默认路由链路。
 - 只有当主入口已明确判定任务进入代码实现、接口设计、SQL 变更、自动化测试或测试用例文档维护阶段时，才按需加载 `coding-standards`。

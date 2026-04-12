@@ -179,13 +179,13 @@ skill 优先级（**先后顺序不可混淆**）：
 3. **专项执行型最后**：页面、研发、日志等专项 skill 只在命中具体执行任务时进入。
 
 刚性规则 / 弹性规则：
-- **刚性规则**：缺画像先访谈；命中阶段后不得越权代做；S2 必须先页面代码、再技术地基、最后 PRD；已有权威文件不重复新建第二权威源。
+- **刚性规则**：缺画像先访谈；命中阶段后不得越权代做；S2 必须先由 `page-chief` 调度完成页面环节（`page-designer` → `page-explainer`，必要时回环），再由 `prd-chief` 调度完成 PRD 环节（`foundation-builder` → `prd-writer`）；已有权威文件不重复新建第二权威源。
 - **弹性规则**：访谈问题顺序、材料读取深度、待确认项数量、页面类任务的追问措辞可按上下文调整。
 
 页面任务识别与牵引规则（**必须主动执行，不依赖用户主动提及**）：
 1. 只要当前轮交付物已经开始收敛到页面、原型、App 页面整合、H5、小程序页面或前端界面，主入口必须主动补齐“页面任务必补字段包”。
 2. 不得把“这是 C 端还是 B 端”这类标签，寄希望于业务方自行主动说出；系统必须先问清“给谁用、主要用途”，再由主入口归一。
-3. 若 `项目覆盖对象`、`当前页面主要给谁用`、`当前页面主要用途` 任一缺失，或 `页面设计标签` 仍为 `待确认`，主入口不得进入 S2，不得调用 `page-designer`。
+3. 若 `项目覆盖对象`、`当前页面主要给谁用`、`当前页面主要用途` 任一缺失，或 `页面设计标签` 仍为 `待确认`，主入口不得进入 S2，不得进入 `page-chief`。
 4. 主入口必须把业务语言回答归一成 `页面设计标签` 回写到画像中，供后续页面设计类 skill 直接读取。
 
 页面设计标签归一规则（默认口径）：
@@ -197,11 +197,12 @@ skill 优先级（**先后顺序不可混淆**）：
 
 **S2 特殊强约束：**
 - 当当前阶段命中 **S2 页面设计、技术地基与完整版 PRD** 时，必须先确认“页面任务必补字段包”已补齐。
-- 当当前阶段命中 **S2 页面设计、技术地基与完整版 PRD** 时，**第一动作必须是先调用 `page-designer` 产出页面代码 / 页面交付清单**；`ui-ux-pro-max` 仅作为 `page-designer` 的内部页面生成能力，不是主入口直连目标。
+- 当当前阶段命中 **S2 页面设计、技术地基与完整版 PRD** 时，**第一动作必须是先进入 `page-chief`**，由其调度 `page-designer` 产出页面代码 / 页面交付清单；`ui-ux-pro-max` 仅作为 `page-designer` 的内部页面生成能力，不是主入口直连目标。
 - S2 首轮默认交付物必须是：**页面代码 / 页面交付清单 + 待确认项**。
-- 页面产物经用户明确确认前，主入口只能继续调用 `page-designer` 迭代页面；**不得提前进入 `foundation-builder` 或 `prd-writer`**。
-- 页面确认后，主入口必须先调用 `foundation-builder` 产出术语表 / Schema / API / foundation 交付清单；仅在技术地基完成后，才允许调用 `prd-writer` 产出功能列表、主 PRD 和子 PRD。
-- 若当前仅有需求摘要或 BRD，没有页面代码 / 页面交付清单，主入口不得把 S2 判定为“已开始完成”；若缺少 foundation 产物，同样不得把 S2 判定为“可进入 PRD 终稿”。
+- 仅有页面代码 / 页面交付清单，不代表页面环节已完成；在 `page-explainer` 产物未齐、交互语义未全部 `locked`、或仍有未解决 `design_gap` / `logic_conflict` 时，主入口必须继续停留在 `page-chief` 调度链路内。
+- 只有当 `page-chief` 基于文件状态判定页面环节已收口后，主入口才允许进入 `prd-chief`，再由其线性调度 `foundation-builder` 和 `prd-writer`。
+- 进入 `prd-chief` 后，必须先由 `foundation-builder` 产出术语表 / Schema / API / foundation 交付清单；仅在技术地基完成后，才允许由 `prd-writer` 产出功能列表、主 PRD 和子 PRD。
+- 若当前仅有需求摘要或 BRD，没有页面代码 / 页面交付清单，主入口不得把 S2 判定为“已开始完成”；若页面环节尚未被 `page-chief` 判定 DONE，或缺少 foundation 产物，同样不得把 S2 判定为“可进入 PRD 终稿”。
 
 ### Step 5：回写 — 写回正确的全局文件
 
@@ -238,7 +239,7 @@ skill 优先级（**先后顺序不可混淆**）：
 |------|----------|------------------|----------|
 | **S0 需求调研** | 需求仍停留在访谈和业务理解层；尚未形成正式需求文档 | 需求清单 | 主入口继续承载 |
 | **S1 业务需求文档** | 调研信息已基本齐全；需要形成可评审的业务需求文档 | 业务需求文档 / BRD | 默认进入 `brd-writer` 能力，由其独占产出 BRD |
-| **S2 页面设计、技术地基与完整版 PRD** | 已有业务需求文档；需要先固化页面代码与页面交付清单，再反推术语表 / Schema / API，最后沉淀 AI 可直接编码的 PRD | 首轮：页面代码 / 页面交付清单 + 待确认项；页面确认后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD | 先进入 `page-designer` 独占产出页面代码与页面交付清单；页面确认后进入 `foundation-builder` 独占产出技术地基；最后进入 `prd-writer` 独占产出 PRD |
+| **S2 页面设计、技术地基与完整版 PRD** | 已有业务需求文档；需要先完成页面代码、交互语义冻结与页面环节收口，再反推术语表 / Schema / API，最后沉淀 AI 可直接编码的 PRD | 首轮：页面代码 / 页面交付清单 + 待确认项；页面环节收口后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD | 先进入 `page-chief` 调度页面环节（`page-designer` → `page-explainer`，必要时回环）；页面环节 DONE 后进入 `prd-chief` 调度 PRD 环节（`foundation-builder` → `prd-writer`） |
 | **S3 任务拆解与开发计划** | 完整版 PRD 已形成；需要拆成开发任务并形成开发计划 | 任务清单 + 执行顺序建议 + 待确认项 | 进入 `delivery-planner` 能力，由其独占产出开发计划 |
 | **S4 开发执行** | 开发计划已明确；可以进入编码、联调和实现 | 当前任务的执行结果 + 任务状态更新 + 问题/决策记录 | 进入 `coding-standards` 能力，由其独占承接开发执行 |
 | **S5 测试用例生成** | 开发执行已完成，或当前版本已具备可验证基础；需要基于 PRD 生成标准化测试用例 | 单域测试用例文件 + 验收矩阵 + 版本历史 | 进入 `prd-test-case-generator` 能力，由其独占产出测试用例 |
@@ -250,29 +251,42 @@ skill 优先级（**先后顺序不可混淆**）：
 3. 用户要求"先给方案"→ S1 或 S2；要求"拆任务""拆开发任务""制定开发计划"→ S3
 4. 用户要求实现某模块但上下文不足，先补最少上下文再进入 S3/S4
 5. `当前阶段`（画像已有） vs `当前最适合进入的阶段`（主入口综合判断）冲突时，先解释差异再更新画像
-6. 命中 S2 时，若页面代码或 `page-delivery` 尚未产出，则本轮只能交付页面代码 / 页面交付清单，不得提前交付 foundation 或 PRD
-7. 命中 S2 时，若页面已产出但尚未获得用户确认，则本轮只能收集修改意见并继续由 `page-designer` 迭代，不得进入 `foundation-builder`、`prd-writer` 或 S3
+6. 命中 S2 时，若页面代码或 `page-delivery` 尚未产出，则本轮只能停留在 `page-chief` 链路内，由其先调度 `page-designer` 产出页面代码 / 页面交付清单，不得提前交付 foundation 或 PRD
+7. 命中 S2 时，若 `page-designer` 产物已存在，但 `page-chief` 尚未判定 DONE（包括页面方向未确认、`page-explainer` 产物未齐、交互语义存在 `open`、或仍有未解决 gap），则本轮只能继续页面环节，不得进入 `prd-chief`、`foundation-builder`、`prd-writer` 或 S3
+8. 命中 S2 时，只有 `page-chief` 已 DONE，才允许进入 `prd-chief`；只有 `foundation-builder` 已完成，才允许由 `prd-chief` 继续推进 `prd-writer`
 
 ### 2.2 S2 设计流水线协议
 
-S2 不是单纯“写方案文档”的阶段，而是 **页面代码 → 技术地基 → 完整版 PRD** 的联动阶段，且顺序必须固定：
+S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → PRD 环节收口** 的联动阶段，且顺序必须固定：
 
-1. 先基于 BRD 调用 `page-designer` 产出页面代码、页面交付清单，以及必要的中间文件
-2. 将页面产物展示给用户确认
-3. 用户确认后，再调用 `foundation-builder` 反推术语表、数据库 Schema、API 接口和 foundation 交付清单
-4. 技术地基完成后，再调用 `prd-writer` 基于页面代码和 foundation 产物产出功能列表、主 PRD 和子 PRD
-5. 完整版 PRD 形成后，才允许进入 S3 任务拆解
+1. 先基于 BRD 进入 `page-chief`，由其观察文件状态并调度 `page-designer`
+2. `page-designer` 先产出页面代码、页面交付清单，以及必要的中间文件；页面方向需先获得用户明确确认
+3. 页面方向确认后，仍留在 `page-chief` 链路内，由其调度 `page-explainer` 产出流程、交互语义、权限矩阵和 gap 文件
+4. 只有当 `page-chief` 判定页面环节已收口时，才允许切换到 `prd-chief`
+5. 进入 `prd-chief` 后，必须先调用 `foundation-builder` 反推术语表、数据库 Schema、API 接口和 foundation 交付清单
+6. 技术地基完成后，才允许由 `prd-chief` 调度 `prd-writer` 基于页面代码、交互语义和 foundation 产物产出功能列表、主 PRD 和子 PRD
+7. 完整版 PRD 形成后，才允许进入 S3 任务拆解
+
+**页面环节收口标准：**
+- `page-delivery-<slug>.md` 已存在，且其中列出的页面代码文件全部存在
+- `page-explainer` 必需产物已存在：`explainer-flow`、交互文件、`explainer-b-permission`；含 C 端项目还需 `explainer-c-interaction`
+- 所有 interaction 文件中的语义条目状态均为 `locked`
+- 若存在 gap 文件，其中不得残留未解决的 `design_gap` / `logic_conflict`
+- 以上条件满足后，由 `page-chief` 判定 DONE，才允许进入 `prd-chief`
 
 **人工确认口径：**
-- 只有用户明确表示“页面方向通过”“按这个页面继续”“页面确认”之类肯定结论时，才算通过
-- “继续看看”“先放着”“差不多”这类模糊表达，不自动视为页面确认
+- 只有用户明确表示“页面方向通过”“按这个页面继续”“页面确认”之类肯定结论时，才算 `page-designer` 的页面方向通过
+- `page-explainer` 各阶段涉及的流程、交互语义和权限矩阵，同样需要用户明确确认后才能冻结为 `locked`
+- “继续看看”“先放着”“差不多”这类模糊表达，不自动视为页面确认或语义冻结确认
 
 **禁止：**
 - 禁止在没有页面代码 / 页面交付清单的情况下直接输出 foundation 或完整版 PRD
 - 禁止把静态模块清单当作“页面产物”替代物
-- 禁止页面未经用户确认就进入 `foundation-builder` 或把 PRD 写成权威版本
+- 禁止页面未经用户确认、或页面环节未被 `page-chief` 判定 DONE，就进入 `prd-chief`、`foundation-builder` 或把 PRD 写成权威版本
+- 禁止跳过 `page-explainer` 直接把页面代码当成页面环节已完成
 - 禁止跳过 `foundation-builder` 直接让 `prd-writer` 自行定义术语、Schema 或 API
 - 禁止在页面未确认或 foundation 未完成时进入 S3
+- 禁止主入口绕过 `page-chief` 直接把 `page-designer`、`page-explainer`、`foundation-builder`、`prd-writer` 拼成非受控链路
 - 禁止主入口绕过 `page-designer` 直接调用 `ui-ux-pro-max` 充当 S2 正式阶段交付
 
 ### 2.1 全局伴随能力规则
@@ -352,11 +366,11 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面代码 → 技术
 当用户没有指定研发流程时，按此顺序推进：
 
 ```
-项目画像 → 需求清单 → 业务需求文档 → 页面代码 / 页面交付清单 → 人工确认页面 → 术语表 / Schema / API / foundation 交付清单 → 功能列表 / 主 PRD / 子 PRD → 开发计划 → 开发执行 → 测试用例 → 测试执行
+项目画像 → 需求清单 → 业务需求文档 → page-chief → 页面代码 / 页面交付清单 → 页面确认 → page-explainer 冻结交互语义 / 权限 / gap 收口 → prd-chief → 术语表 / Schema / API / foundation 交付清单 → 功能列表 / 主 PRD / 子 PRD → 开发计划 → 开发执行 → 测试用例 → 测试执行
 ```
 
 输出约束：
 - 每轮留下可复用文档，不只停留在对话里
 - 每轮写清楚下一步，不只给方向
 - 用户时间有限时，优先输出当前阶段最小交付物（见 §2 表格）
-- 命中 S2 时，若本轮尚未拿到用户确认，优先输出页面代码 / 页面交付清单和待确认项，不输出 foundation 或 PRD
+- 命中 S2 时，若 `page-chief` 尚未判定页面环节 DONE，优先输出页面代码 / 页面交付清单 / explainer 待确认项，不输出 foundation 或 PRD

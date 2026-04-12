@@ -25,7 +25,8 @@ import {
     fieldPackages,
     routeTargets,
     gatingRules,
-    markdownStructure
+    markdownStructure,
+    validationPolicy
 } from '../lib/ai-pm-protocol/index.js';
 import { validateGlobalFiles } from './validate-global-files.mjs';
 
@@ -166,6 +167,372 @@ function loadMarkdownFile(filePath) {
 
 function resolveAbsolutePath(hostRoot, relativePath) {
     return relativePath ? path.join(hostRoot, relativePath) : null;
+}
+
+function normalizePathForMatch(hostRoot, targetPath) {
+    return path.relative(hostRoot, targetPath).split(path.sep).join('/');
+}
+
+function shouldIgnoreDir(relativeDir) {
+    return validationPolicy.scan.ignoredDirectories.some((ignored) => {
+        return relativeDir === ignored || relativeDir.startsWith(`${ignored}/`);
+    });
+}
+
+function walkFiles(rootDir, maxDepth, includeExtensions) {
+    const results = [];
+
+    function recurse(currentDir, depth) {
+        if (depth > maxDepth) return;
+
+        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(currentDir, entry.name);
+            const relativePath = normalizePathForMatch(rootDir, fullPath);
+
+            if (entry.isDirectory()) {
+                if (shouldIgnoreDir(relativePath)) {
+                    continue;
+                }
+                recurse(fullPath, depth + 1);
+                continue;
+            }
+
+            if (entry.isFile() && includeExtensions.some((ext) => entry.name.endsWith(ext))) {
+                results.push(fullPath);
+            }
+        }
+    }
+
+    recurse(rootDir, 0);
+    return results.sort();
+}
+
+function findLatestMatchingFile(hostRoot, files, pattern) {
+    const candidates = files
+        .filter((filePath) => pattern.test(path.basename(filePath)))
+        .map((filePath) => ({
+            filePath,
+            relativePath: normalizePathForMatch(hostRoot, filePath),
+            mtimeMs: fs.statSync(filePath).mtimeMs
+        }))
+        .sort((a, b) => b.mtimeMs - a.mtimeMs || a.relativePath.localeCompare(b.relativePath));
+
+    return candidates[0] || null;
+}
+
+function findMatchingFiles(hostRoot, files, pattern) {
+    return files
+        .filter((filePath) => pattern.test(path.basename(filePath)))
+        .map((filePath) => ({
+            filePath,
+            relativePath: normalizePathForMatch(hostRoot, filePath),
+            mtimeMs: fs.statSync(filePath).mtimeMs
+        }))
+        .sort((a, b) => b.mtimeMs - a.mtimeMs || a.relativePath.localeCompare(b.relativePath));
+}
+
+function parseMarkdownTables(content) {
+    const lines = content.split('\n');
+    const tables = [];
+    let index = 0;
+
+    while (index < lines.length) {
+        const line = lines[index].trim();
+        if (!line.startsWith('|')) {
+            index += 1;
+            continue;
+        }
+
+        const headerLine = line;
+        const separatorLine = lines[index + 1]?.trim() || '';
+        if (!separatorLine.startsWith('|')) {
+            index += 1;
+            continue;
+        }
+
+        const headerCells = headerLine
+            .split('|')
+            .slice(1, -1)
+            .map((cell) => cell.trim());
+        const separatorCells = separatorLine
+            .split('|')
+            .slice(1, -1)
+            .map((cell) => cell.trim());
+
+        if (
+            headerCells.length === 0 ||
+            headerCells.length !== separatorCells.length ||
+            !separatorCells.every((cell) => /^:?-{3,}:?$/.test(cell))
+        ) {
+            index += 1;
+            continue;
+        }
+
+        const rows = [];
+        let rowIndex = index + 2;
+        while (rowIndex < lines.length) {
+            const rowLine = lines[rowIndex].trim();
+            if (!rowLine.startsWith('|')) {
+                break;
+            }
+
+            const rowCells = rowLine
+                .split('|')
+                .slice(1, -1)
+                .map((cell) => cell.trim());
+
+            if (rowCells.length === headerCells.length) {
+                rows.push(rowCells);
+            }
+            rowIndex += 1;
+        }
+
+        tables.push({
+            headers: headerCells,
+            rows
+        });
+        index = rowIndex;
+    }
+
+    return tables;
+}
+
+function normalizeArtifactPath(rawPath) {
+    if (!rawPath) return '';
+    return String(rawPath)
+        .replace(/^`|`$/g, '')
+        .replace(/^<|>$/g, '')
+        .replace(/^["']|["']$/g, '')
+        .trim();
+}
+
+function isLikelyPlaceholderPath(rawPath) {
+    const value = normalizeArtifactPath(rawPath);
+    if (!value) return true;
+    return /<.+>|路径|待补|待确认|示例|文件绝对路径/.test(value);
+}
+
+function resolveArtifactFilePath(hostRoot, rawPath) {
+    const value = normalizeArtifactPath(rawPath);
+    if (!value || isLikelyPlaceholderPath(value)) {
+        return null;
+    }
+
+    if (path.isAbsolute(value)) {
+        return value;
+    }
+
+    return path.resolve(hostRoot, value);
+}
+
+function extractFilePathColumnValues(content) {
+    const tables = parseMarkdownTables(content);
+    const values = [];
+
+    for (const table of tables) {
+        const pathIndex = table.headers.findIndex((header) => header === '文件路径');
+        if (pathIndex === -1) {
+            continue;
+        }
+
+        for (const row of table.rows) {
+            const rawValue = row[pathIndex];
+            if (!rawValue || isLikelyPlaceholderPath(rawValue)) {
+                continue;
+            }
+            values.push(normalizeArtifactPath(rawValue));
+        }
+    }
+
+    return values;
+}
+
+function extractNamedArtifactPaths(content) {
+    const tables = parseMarkdownTables(content);
+    const artifacts = [];
+
+    for (const table of tables) {
+        const nameIndex = table.headers.findIndex((header) => header === '产物');
+        const pathIndex = table.headers.findIndex((header) => header === '文件路径');
+        if (nameIndex === -1 || pathIndex === -1) {
+            continue;
+        }
+
+        for (const row of table.rows) {
+            const rawPath = row[pathIndex];
+            if (!rawPath || isLikelyPlaceholderPath(rawPath)) {
+                continue;
+            }
+
+            artifacts.push({
+                name: row[nameIndex],
+                filePath: normalizeArtifactPath(rawPath)
+            });
+        }
+    }
+
+    return artifacts;
+}
+
+function listResolvedFiles(hostRoot, rawPaths) {
+    const files = rawPaths
+        .map((rawPath) => resolveArtifactFilePath(hostRoot, rawPath))
+        .filter(Boolean)
+        .map((filePath) => ({
+            filePath,
+            exists: fs.existsSync(filePath)
+        }));
+
+    return {
+        files,
+        allExist: files.length > 0 && files.every((item) => item.exists)
+    };
+}
+
+function extractHasCEndFromBrd(content) {
+    if (!content) return null;
+
+    const match = content.match(/是否包含\s*C\s*端页面[^：:\n]*[：:]\s*`?(是|否)`?/);
+    if (!match) {
+        return null;
+    }
+
+    return match[1] === '是';
+}
+
+function extractInteractionStatuses(content) {
+    if (!content) return [];
+
+    const tables = parseMarkdownTables(content);
+    const statuses = [];
+
+    for (const table of tables) {
+        const statusIndex = table.headers.findIndex((header) => header === 'status');
+        if (statusIndex === -1) {
+            continue;
+        }
+
+        for (const row of table.rows) {
+            const status = row[statusIndex]?.trim().toLowerCase();
+            if (status) {
+                statuses.push(status);
+            }
+        }
+    }
+
+    return statuses;
+}
+
+function extractUnresolvedGapCategories(content) {
+    if (!content) return [];
+
+    const categories = [];
+    const pattern = /-\s+\*\*分类\*\*:\s*`([^`]+)`/g;
+    let match = pattern.exec(content);
+    while (match) {
+        const category = match[1].trim();
+        if (category === 'design_gap' || category === 'logic_conflict') {
+            categories.push(category);
+        }
+        match = pattern.exec(content);
+    }
+
+    return categories;
+}
+
+function inspectS2Artifacts(hostRoot) {
+    const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
+    const brd = findLatestMatchingFile(hostRoot, markdownFiles, /^BRD-.+\.md$/);
+    const pageDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^page-delivery-.+\.md$/);
+    const explainerFlow = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-flow-.+\.md$/);
+    const explainerBInteraction = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-b-interaction-.+\.md$/);
+    const explainerCInteraction = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-c-interaction-.+\.md$/);
+    const explainerBPermission = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-b-permission-.+\.md$/);
+    const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-(c|b)-gap-.+\.md$/);
+
+    const brdContent = brd ? loadMarkdownFile(brd.filePath) : null;
+    const pageDeliveryContent = pageDelivery ? loadMarkdownFile(pageDelivery.filePath) : null;
+    const hasCEnd = extractHasCEndFromBrd(brdContent);
+
+    const pageCodeCheck = pageDeliveryContent
+        ? listResolvedFiles(hostRoot, extractFilePathColumnValues(pageDeliveryContent))
+        : { files: [], allExist: false };
+
+    const bInteractionStatuses = explainerBInteraction ? extractInteractionStatuses(loadMarkdownFile(explainerBInteraction.filePath)) : [];
+    const cInteractionStatuses = explainerCInteraction ? extractInteractionStatuses(loadMarkdownFile(explainerCInteraction.filePath)) : [];
+    const unresolvedGapCategories = gapFiles.flatMap((file) => extractUnresolvedGapCategories(loadMarkdownFile(file.filePath)));
+
+    const requiresCInteraction = hasCEnd === true || (hasCEnd == null && Boolean(explainerCInteraction));
+    const bInteractionLocked = bInteractionStatuses.length > 0 && bInteractionStatuses.every((status) => status === 'locked');
+    const cInteractionLocked = !requiresCInteraction || (cInteractionStatuses.length > 0 && cInteractionStatuses.every((status) => status === 'locked'));
+
+    const explainerFilesComplete =
+        Boolean(explainerFlow) &&
+        Boolean(explainerBInteraction) &&
+        Boolean(explainerBPermission) &&
+        (!requiresCInteraction || Boolean(explainerCInteraction));
+
+    return {
+        brdExists: Boolean(brd),
+        pageDeliveryExists: Boolean(pageDelivery),
+        pageDeliveryPath: pageDelivery?.relativePath || null,
+        pageCodeFiles: pageCodeCheck.files,
+        pageCodeFilesAllExist: pageCodeCheck.allExist,
+        hasCEnd,
+        requiresCInteraction,
+        explainerFilesComplete,
+        bInteractionLocked,
+        cInteractionLocked,
+        interactionStatusesLocked: bInteractionLocked && cInteractionLocked,
+        unresolvedGapCategories,
+        pageStageClosed:
+            Boolean(brd) &&
+            Boolean(pageDelivery) &&
+            pageCodeCheck.allExist &&
+            explainerFilesComplete &&
+            bInteractionLocked &&
+            cInteractionLocked &&
+            unresolvedGapCategories.length === 0
+    };
+}
+
+function inspectFoundationArtifacts(hostRoot) {
+    const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
+    const foundationDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^foundation-delivery-.+\.md$/);
+    if (!foundationDelivery) {
+        return {
+            foundationDeliveryExists: false,
+            artifactsReady: false,
+            artifactFiles: []
+        };
+    }
+
+    const artifactFiles = listResolvedFiles(
+        hostRoot,
+        extractNamedArtifactPaths(loadMarkdownFile(foundationDelivery.filePath)).map((item) => item.filePath)
+    );
+
+    return {
+        foundationDeliveryExists: true,
+        foundationDeliveryPath: foundationDelivery.relativePath,
+        artifactsReady: artifactFiles.allExist,
+        artifactFiles: artifactFiles.files
+    };
+}
+
+function inspectPrdArtifacts(hostRoot) {
+    const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
+    const featureList = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-feature-list-.+\.md$/);
+    const mainPrd = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-main-.+\.md$/);
+    const subPrds = findMatchingFiles(hostRoot, markdownFiles, /^prd-(?!feature-list-|main-).+\.md$/);
+
+    return {
+        featureListExists: Boolean(featureList),
+        mainPrdExists: Boolean(mainPrd),
+        subPrdCount: subPrds.length,
+        fullPrdReady: Boolean(featureList) && Boolean(mainPrd) && subPrds.length > 0
+    };
 }
 
 function extractProfileContext(content) {
@@ -361,6 +728,9 @@ function hasRecentStageWriteback(hostRoot, validationResult, targetStage) {
 function buildGateChecks({ targetStage, profileContext, planContext, validationResult, hostRoot }) {
     const values = fieldValueMap(profileContext);
     const checks = {};
+    const s2Artifacts = inspectS2Artifacts(hostRoot);
+    const foundationArtifacts = inspectFoundationArtifacts(hostRoot);
+    const prdArtifacts = inspectPrdArtifacts(hostRoot);
 
     checks.startupMinimum = {
         pass: collectMissingFields(fieldPackages.startupMinimum, values).length === 0,
@@ -372,13 +742,36 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
             pass: collectMissingFields(fieldPackages.pageTaskRequired, values).length === 0,
             missingFields: collectMissingFields(fieldPackages.pageTaskRequired, values)
         };
+
+        checks.pageStageClosedForPrd = {
+            pass: s2Artifacts.pageStageClosed,
+            evidence: {
+                brdExists: s2Artifacts.brdExists,
+                pageDeliveryExists: s2Artifacts.pageDeliveryExists,
+                pageCodeFilesAllExist: s2Artifacts.pageCodeFilesAllExist,
+                explainerFilesComplete: s2Artifacts.explainerFilesComplete,
+                interactionStatusesLocked: s2Artifacts.interactionStatusesLocked,
+                unresolvedGapCategories: s2Artifacts.unresolvedGapCategories
+            }
+        };
+
+        checks.foundationReadyForPrd = {
+            pass: foundationArtifacts.foundationDeliveryExists && foundationArtifacts.artifactsReady,
+            evidence: {
+                foundationDeliveryExists: foundationArtifacts.foundationDeliveryExists,
+                artifactsReady: foundationArtifacts.artifactsReady
+            }
+        };
     }
 
     if (targetStage === STAGE_IDS.S3) {
         checks.fullPrdReady = {
-            pass: /PRD/.test(profileContext.fields.current_round_deliverable || '') ||
-                planContext.currentGoal.some((item) => /PRD/.test(item)),
-            evidence: profileContext.fields.current_round_deliverable || planContext.currentGoal.join(' | ')
+            pass: prdArtifacts.fullPrdReady,
+            evidence: {
+                featureListExists: prdArtifacts.featureListExists,
+                mainPrdExists: prdArtifacts.mainPrdExists,
+                subPrdCount: prdArtifacts.subPrdCount
+            }
         };
     }
 
@@ -447,7 +840,32 @@ function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gat
     return reasons;
 }
 
-function resolveNextAction({ validationResult, recommendedStage, blockers }) {
+function resolveRouteTarget(targetStage, gateChecks) {
+    const baseTarget = routeTargets[targetStage];
+    if (!baseTarget) {
+        return null;
+    }
+
+    if (targetStage !== STAGE_IDS.S2) {
+        return baseTarget;
+    }
+
+    if (gateChecks.pageStageClosedForPrd?.pass) {
+        return {
+            ...baseTarget,
+            skill: 'prd-chief',
+            followUpSkills: ['foundation-builder', 'prd-writer']
+        };
+    }
+
+    return {
+        ...baseTarget,
+        skill: 'page-chief',
+        followUpSkills: ['page-designer', 'page-explainer', 'prd-chief']
+    };
+}
+
+function resolveNextActionWithContext({ validationResult, targetStage, resolvedRouteTarget, blockers, gateChecks }) {
     if (!validationResult.authority[FILE_ROLE_IDS.PROFILE]) {
         return '停留主入口，发起首轮极简访谈并补齐项目画像';
     }
@@ -467,13 +885,26 @@ function resolveNextAction({ validationResult, recommendedStage, blockers }) {
         return '先调用 project-devlog 完成阶段切换日志回写，再进入下一阶段能力';
     }
 
-    if (recommendedStage && routeTargets[recommendedStage]) {
-        const routeTarget = routeTargets[recommendedStage];
-        if (Array.isArray(routeTarget.followUpSkills) && routeTarget.followUpSkills.length > 0) {
-            return `可进入 ${recommendedStage}，默认先交由 ${routeTarget.skill}，后续按链路进入 ${routeTarget.followUpSkills.join(' -> ')}`;
+    if (targetStage === STAGE_IDS.S2) {
+        if (resolvedRouteTarget?.skill === 'page-chief') {
+            return '可进入 S2，默认先交由 page-chief，先完成页面代码 / 页面交付清单 / explainer 收口';
         }
 
-        return `可进入 ${recommendedStage}，默认交由 ${routeTarget.skill}`;
+        if (resolvedRouteTarget?.skill === 'prd-chief') {
+            if (!gateChecks.foundationReadyForPrd?.pass) {
+                return '可进入 S2，页面环节已收口，下一步进入 prd-chief，并先调度 foundation-builder';
+            }
+            return '可进入 S2，页面环节已收口，下一步进入 prd-chief，并继续推进 prd-writer';
+        }
+    }
+
+    if (targetStage && resolvedRouteTarget) {
+        const routeTarget = resolvedRouteTarget;
+        if (Array.isArray(routeTarget.followUpSkills) && routeTarget.followUpSkills.length > 0) {
+            return `可进入 ${targetStage}，默认先交由 ${routeTarget.skill}，后续按链路进入 ${routeTarget.followUpSkills.join(' -> ')}`;
+        }
+
+        return `可进入 ${targetStage}，默认交由 ${routeTarget.skill}`;
     }
 
     return '停留主入口继续澄清上下文';
@@ -510,13 +941,14 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         recommendedStage,
         gateChecks
     });
+    const resolvedRouteTarget = resolveRouteTarget(resolvedTargetStage, gateChecks);
 
     const result = {
         hostRoot: resolvedHostRoot,
         currentStage,
         recommendedStage,
         targetStage: resolvedTargetStage,
-        routeTarget: routeTargets[resolvedTargetStage] || null,
+        routeTarget: resolvedRouteTarget,
         canEnter: blockingReasons.length === 0,
         gateChecks,
         blockingReasons,
@@ -531,10 +963,12 @@ function routeCheck({ hostRoot, targetStage = '' }) {
                 plan: planContext.pendingItems
             }
         },
-        nextAction: resolveNextAction({
+        nextAction: resolveNextActionWithContext({
             validationResult,
-            recommendedStage: resolvedTargetStage,
-            blockers: blockingReasons
+            targetStage: resolvedTargetStage,
+            resolvedRouteTarget,
+            blockers: blockingReasons,
+            gateChecks
         }),
         validation: validationResult.summary
     };

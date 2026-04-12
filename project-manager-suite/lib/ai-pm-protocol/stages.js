@@ -28,10 +28,10 @@ const stages = [
     {
         id: STAGE_IDS.S2,
         name: '页面设计、技术地基与完整版 PRD',
-        signals: ['已有业务需求文档', '需要先固化页面代码与页面交付清单，再反推技术地基并沉淀完整 PRD'],
-        minimumDeliverable: '首轮：页面代码 / 页面交付清单 + 待确认项；页面确认后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD',
-        ownerSkill: 'page-designer -> foundation-builder -> prd-writer',
-        gatekeeping: ['startupMinimum', 'pageTaskRequired', 'pagePrototypeConfirmedForPrd']
+        signals: ['已有业务需求文档', '需要先完成页面代码与交互语义冻结，再收口页面环节并沉淀完整 PRD'],
+        minimumDeliverable: '首轮：页面代码 / 页面交付清单 + 待确认项；页面环节收口后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD',
+        ownerSkill: 'page-chief -> prd-chief',
+        gatekeeping: ['startupMinimum', 'pageTaskRequired', 'pageStageClosedForPrd']
     },
     {
         id: STAGE_IDS.S3,
@@ -74,8 +74,9 @@ const stageDecisionRules = [
     '用户要求拆任务、拆开发任务、制定开发计划时进入 S3',
     '用户要求实现某模块但上下文不足时，先补上下文再进入 S3/S4',
     '当前阶段与推荐阶段冲突时，先解释差异再更新画像',
-    'S2 页面代码或页面交付清单未产出前，不得提前交付 foundation 或完整版 PRD',
-    'S2 页面未确认或 foundation 未完成前，不得进入 S3'
+    'S2 页面代码或页面交付清单未产出前，主入口必须先停留在 page-chief 链路内',
+    'S2 页面环节未被 page-chief 判定 DONE 前，不得进入 prd-chief、foundation-builder、prd-writer 或 S3',
+    'S2 只有页面环节已收口后，才允许切换到 prd-chief；只有 foundation 完成后，才允许继续推进 prd-writer'
 ];
 
 const globalCompanionAbilities = [

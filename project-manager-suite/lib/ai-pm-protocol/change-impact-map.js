@@ -7,6 +7,18 @@
  */
 
 const changeImpactMap = {
+    entryIdentity: {
+        description: '主入口身份、默认第一入口定位、核心红线与上位边界',
+        currentAuthority: ['skills/ai-project-manager/SKILL.md'],
+        targetAuthority: ['lib/ai-pm-protocol/bootstrap.js', 'lib/bootstrap/index.js'],
+        checkAlso: [
+            'skills/ai-project-manager/references/core/runtime.md',
+            'skills/ai-project-manager/references/core/routing.md',
+            'lib/ai-pm-protocol/stages.js',
+            'lib/ai-pm-protocol/routing.js',
+            'tools/route-check.mjs'
+        ]
+    },
     startupInterview: {
         description: '首轮访谈的必问字段、追问条件、展示顺序与停机条件',
         currentAuthority: ['skills/ai-project-manager/references/core/runtime.md'],

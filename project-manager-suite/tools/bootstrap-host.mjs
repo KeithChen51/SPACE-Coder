@@ -34,7 +34,7 @@ const templatesDir = path.join(suiteRoot, 'skills', 'ai-project-manager', 'asset
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S3|S4] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
+        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S0|S1|S2|S3|S4|S5|S6] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
     );
 }
 
@@ -137,7 +137,7 @@ function parseArgs(argv) {
         throw new Error('Missing host project root.');
     }
 
-    if (options.targetStage && ![STAGE_IDS.S3, STAGE_IDS.S4].includes(options.targetStage) && !Object.values(STAGE_IDS).includes(options.targetStage)) {
+    if (options.targetStage && !Object.values(STAGE_IDS).includes(options.targetStage)) {
         throw new Error(`Unsupported target stage: ${options.targetStage}`);
     }
 
