@@ -38,10 +38,11 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | 4 | `explainer-flow-<slug>.md` | page-explainer | 用户流程全貌 |
 | 5 | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | 结构化交互语义（仅消费 locked 条目） |
 | 6 | `explainer-b-permission-<slug>.md` | page-explainer | 权限模型 |
-| 7 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
-| 8 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema |
-| 9 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计 |
-| 10 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
+| 7 | `explainer-delivery-<slug>.md` | page-explainer | 入口索引：产物清单、流程 → 产物映射、本环节一致性自查结论 |
+| 8 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
+| 9 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema |
+| 10 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计 |
+| 11 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
 
 缺任何一个就**中止**，提示用户先完成对应上游 skill。
 
@@ -95,11 +96,12 @@ Phase 5: 一致性自查
 3. 搜索 `explainer-flow-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
 4. 搜索 `explainer-b-permission-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
 5. 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`），不存在则**中止**
-6. 搜索 `foundation-delivery-<slug>.md`，不存在则**中止**
-7. 从 foundation-delivery 中获取 glossary/schema/api 文件路径，逐个校验存在
-8. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-9. 从 BRD 读取：产品背景、用户画像、是否含 C 端
-10. 判定 C+B / 纯 B 路径
+6. 搜索 `explainer-delivery-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+7. 搜索 `foundation-delivery-<slug>.md`，不存在则**中止**
+8. 从 foundation-delivery 中获取 glossary/schema/api 文件路径，逐个校验存在
+9. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+10. 从 BRD 读取：产品背景、用户画像、是否含 C 端
+11. 判定 C+B / 纯 B 路径
 
 ## 8) 状态标记（强制）
 
