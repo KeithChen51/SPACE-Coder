@@ -201,7 +201,7 @@ skill 优先级（**先后顺序不可混淆**）：
 
 **S2 特殊强约束：**
 - 当当前阶段命中 **S2 页面设计、技术地基与完整版 PRD** 时，必须先确认“页面任务必补字段包”已补齐。
-- 当当前阶段命中 **S2 页面设计、技术地基与完整版 PRD** 时，**第一动作必须是先进入 `page-chief`**，由其调度 `page-designer` 产出页面代码 / 页面交付清单；`ui-ux-pro-max` 仅作为 `page-designer` 的内部页面生成能力，不是主入口直连目标。
+- 当当前阶段命中 **S2 页面设计、技术地基与完整版 PRD** 时，**第一动作必须是先进入 `page-chief`**，由其调度 `page-designer` 产出页面代码 / 页面交付清单；主入口不得再假设存在独立的页面专项子能力作为直连目标。
 - S2 首轮默认交付物必须是：**页面代码 / 页面交付清单 + 待确认项**。
 - 仅有页面代码 / 页面交付清单，不代表页面环节已完成；在 `page-explainer` 产物未齐、交互语义未全部 `locked`、或仍有未解决 `design_gap` / `logic_conflict` 时，主入口必须继续停留在 `page-chief` 调度链路内。
 - 只有当 `page-chief` 基于文件状态判定页面环节已收口后，主入口才允许进入 `prd-chief`，再由其线性调度 `foundation-builder` 和 `prd-writer`。
@@ -293,7 +293,7 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 - 禁止跳过 `foundation-builder` 直接让 `prd-writer` 自行定义术语、Schema 或 API
 - 禁止在页面未确认或 foundation 未完成时进入 S3
 - 禁止主入口绕过 `page-chief` 直接把 `page-designer`、`page-explainer`、`foundation-builder`、`prd-writer` 拼成非受控链路
-- 禁止主入口绕过 `page-designer` 直接调用 `ui-ux-pro-max` 充当 S2 正式阶段交付
+- 禁止主入口绕过 `page-designer`，直接用任何未登记的页面专项能力充当 S2 正式阶段交付
 
 ### 2.1 全局伴随能力规则
 

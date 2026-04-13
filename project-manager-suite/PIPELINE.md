@@ -2,6 +2,10 @@
 
 本文件描述从项目画像到 PRD 的完整设计流水线，包含 6 个执行 Skill + 2 个调度 Skill 的职责、依赖、产物，以及**产物在宿主项目中的物理存放位置**。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
 
+相关协议：
+- 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/ai-project-manager/references/core/routing.md`](skills/ai-project-manager/references/core/routing.md)
+- 主入口执行顺序与阶段判断：[`skills/ai-project-manager/references/core/runtime.md`](skills/ai-project-manager/references/core/runtime.md)
+
 ## 流水线总览
 
 ```
