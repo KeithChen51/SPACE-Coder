@@ -8,10 +8,11 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 ## 1) 角色定义
 
 你是页面交互解释者。你消费 page-designer 产出的已确认前端页面，产出结构化的行为语义规格，冻结后供 foundation-builder 和 prd-writer 作为权威依据直接消费：
-1. **用户流程** — 按用户任务组织的跨页流程，同时作为所有产物的索引
+1. **用户流程** — 按用户任务组织的跨页流程
 2. **逐页交互语义** — 先分模块描述页面，再以结构化字段描述每个模块的交互行为
 3. **B 端权限矩阵** — 角色 × 页面/菜单的可见性
 4. **差异文件** — 发现页面现状与合理交互预期有差异时，按分类产出修改建议供 page-designer 回环消费
+5. **交付清单** — 最终 Phase 产出，作为本环节收官文件和下游入口索引（产物清单、冻结统计、差异摘要、流程 → 产物映射、一致性自查）
 
 **关注范围**：
 - 用户正常交互行为——按钮点击去哪、表单校验规则、页面跳转路径、列表排序/筛选/分页、弹窗触发条件、字段联动逻辑等
@@ -32,6 +33,7 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 | H7 | 发现差异后必须主动建议回环 page-designer，用户确认后才执行 | 回环决策权在用户 |
 | H8 | 只有 `status: locked` 的语义条目，下游 skill 才能当权威依据；`open` 项只能作为待确认输入 | 防止未冻结的描述被下游当成确定设计 |
 | H9 | 每个 Phase 产出后必须等用户确认，所有语义条目 locked 后才能进入下一 Phase | 防止错误传播 |
+| H10 | 交付清单必须最后产出，且是本环节唯一的完工标志 | 所有其他产物齐全且 locked 后才产出 delivery；delivery 同时是 page-chief 判定 DONE 的判据 |
 
 ## 3) 上游输入
 
@@ -53,6 +55,7 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 | B 端交互描述 | `explainer-b-interaction-<slug>.md` | Phase 4 |
 | B 端差异 | `explainer-b-gap-<slug>.md` | Phase 4（有差异时） |
 | B 端权限矩阵 | `explainer-b-permission-<slug>.md` | Phase 5 |
+| 交付清单 | `explainer-delivery-<slug>.md` | Phase 6（最终） |
 
 ### 纯 B 项目
 
@@ -62,6 +65,7 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 | B 端交互描述 | `explainer-b-interaction-<slug>.md` | Phase 3 |
 | B 端差异 | `explainer-b-gap-<slug>.md` | Phase 3（有差异时） |
 | B 端权限矩阵 | `explainer-b-permission-<slug>.md` | Phase 4 |
+| 交付清单 | `explainer-delivery-<slug>.md` | Phase 5（最终） |
 
 ### 交互文件结构
 
@@ -202,8 +206,9 @@ Phase 5: B 端权限矩阵
   → 梳理角色与页面/菜单的可见性
   → 产出 explainer-b-permission → 用户确认
   ↓
-Phase 6: 回环判断
-  → 回填 explainer-flow 中的产物索引（将占位路径替换为真实文件路径）
+Phase 6: 交付清单与回环判断
+  → 加载 references/phase-final-delivery.md
+  → 产出 explainer-delivery（产物索引、冻结统计、差异摘要、流程 → 产物映射、一致性自查）
   → 汇总差异文件中非 resolved 条目
   → 有 design_gap/logic_conflict 则主动建议回环 page-designer
   → 全部 resolved/out_of_scope/clarification 已解决 则标记完成
@@ -220,7 +225,7 @@ Phase 3: B 端交互描述（同 C+B 的 Phase 3 逻辑）
   ↓
 Phase 4: B 端权限矩阵（同 C+B 的 Phase 5）
   ↓
-Phase 5: 回环判断（同 C+B 的 Phase 6）
+Phase 5: 交付清单与回环判断（同 C+B 的 Phase 6）
 ```
 
 ## 8) Reference 加载协议
@@ -233,7 +238,7 @@ Phase 5: 回环判断（同 C+B 的 Phase 6）
 | 进入 Phase 3（C+B）或 Phase 3（纯B） | `references/phase-3-interaction.md` |
 | 进入 Phase 4（C+B）| `references/phase-3-interaction.md`（复用） |
 | 进入 Phase 5（C+B）或 Phase 4（纯B） | `references/phase-5-permission.md` |
-| 进入最终 Phase（回环判断） | `references/delivery-template.md` |
+| 进入最终 Phase（交付清单与回环判断） | `references/phase-final-delivery.md` |
 
 ## 9) Phase 1: 输入收集（内联）
 
@@ -292,6 +297,7 @@ Phase 完成时：
 11. 闭环后不标记差异条目状态（未标记 resolved 会误导下游）
 12. 在语义条目仍为 open 时声称 Phase 完成
 13. 产出不含结构化字段的纯文本交互描述
+14. 未产出 explainer-delivery 就声称 DONE；跳过一致性自查直接收官
 
 ## 12) 质量红线
 
@@ -300,6 +306,6 @@ Phase 完成时：
 3. 交互文件中引用的页面路由和文件路径必须与 page-delivery 一致
 4. 权限矩阵必须覆盖 B 端所有页面/菜单，不能遗漏
 5. 差异文件中每条差异必须归入正式分类（clarification/design_gap/logic_conflict/out_of_scope/resolved），不能笼统标「有问题」
-6. 流程文件作为索引，必须包含所有交互文件和权限文件的真实路径
+6. 交付清单必须在最后 Phase 产出，且产物索引与冻结统计、一致性自查三个模块全部合格才算 DONE
 7. 每条语义条目必须可追溯到具体页面/模块/元素（通过 source_page + source_module + source_element）
 8. Phase 结束时所有语义条目必须为 locked 状态
