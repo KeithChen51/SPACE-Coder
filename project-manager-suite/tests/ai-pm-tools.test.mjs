@@ -398,6 +398,38 @@ test('bootstrap-host initializes container root and creates safe scaffold', () =
     assert.ok(result.files.deferred.some((item) => item.reason === 'profile_creation_not_requested'));
 });
 
+test('bootstrap-host reuses current directory when it already matches the interview project name', () => {
+    const workspaceRoot = makeTempDir('pm-suite-project-root-reuse-');
+    const projectRoot = path.join(workspaceRoot, '演示项目');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    fs.mkdirSync(projectRoot, { recursive: true });
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
+
+    const result = bootstrapHost({
+        hostRoot: projectRoot,
+        projectName: '演示项目',
+        targetStage: '',
+        containerRoot: false,
+        dryRun: false,
+        json: false,
+        forceRules: false,
+        interviewComplete: true,
+        interviewJsonPath,
+        createProfileFile: false,
+        createRulesFile: true,
+        createPlanFile: false
+    });
+
+    assert.equal(result.rootResolution.rootMode, 'project');
+    assert.equal(result.rootResolution.effectiveRoot, projectRoot);
+    assert.ok(result.rootResolution.detectionEvidence.includes('current_dir_matches_project_name'));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'docs', 'rules')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'docs', 'plans', 'execution-plan.md')));
+    assert.ok(fs.existsSync(path.join(projectRoot, '.agent', 'skills')));
+    assert.equal(fs.existsSync(path.join(projectRoot, '演示项目')), false);
+});
+
 test('bootstrap-host refuses to bootstrap a container root before startup interview is complete', () => {
     const workspaceRoot = makeTempDir('pm-suite-bootstrap-container-incomplete-');
 

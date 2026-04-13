@@ -285,11 +285,22 @@ function resolveEffectiveRoot(hostRoot, options, interviewInput) {
 
         const interviewProjectName = getInterviewProjectName(interviewInput);
         assertValidProjectDirectoryName(interviewProjectName);
+        const currentDirName = path.basename(resolvedHostRoot);
+        const currentDirAlreadyMatchesProject = currentDirName === interviewProjectName;
 
         if (options.projectName && options.projectName !== interviewProjectName) {
             throw new Error(
                 `--project-name must match interview project_name when bootstrapping a container root. Received "${options.projectName}" but interview project_name is "${interviewProjectName}".`
             );
+        }
+
+        if (currentDirAlreadyMatchesProject) {
+            return {
+                inputRoot: resolvedHostRoot,
+                effectiveRoot: resolvedHostRoot,
+                rootMode: 'project',
+                detectionEvidence: [...containerCheck.evidence, 'current_dir_matches_project_name']
+            };
         }
 
         return {
