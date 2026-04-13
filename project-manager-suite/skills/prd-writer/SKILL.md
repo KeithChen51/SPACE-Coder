@@ -40,11 +40,18 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | 6 | `explainer-b-permission-<slug>.md` | page-explainer | 权限模型 |
 | 7 | `explainer-delivery-<slug>.md` | page-explainer | 入口索引：产物清单、流程 → 产物映射、本环节一致性自查结论 |
 | 8 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
-| 9 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema |
-| 10 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计 |
+| 9 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema（可能为拆分模式索引，见下方注） |
+| 10 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计（可能为拆分模式索引，见下方注） |
 | 11 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
 
 缺任何一个就**中止**，提示用户先完成对应上游 skill。
+
+**拆分消费协议**（适用于 foundation-schema、foundation-api）：
+
+1. 拿到主文件路径后，stat 同名子目录（去 `.md`）是否存在
+2. 子目录存在 → 主文件是索引，**必须**从 `foundation-delivery-<slug>.md` 的"拆分子文件"列读取子文件清单，逐个读入作为权威来源；主文件仅用于获得索引结构
+3. 子目录不存在 → 主文件即权威来源
+4. 拆分消费的上游契约见 PIPELINE.md §"产物拆分约定"
 
 ## 4) 产物
 
@@ -98,10 +105,13 @@ Phase 5: 一致性自查
 5. 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`），不存在则**中止**
 6. 搜索 `explainer-delivery-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
 7. 搜索 `foundation-delivery-<slug>.md`，不存在则**中止**
-8. 从 foundation-delivery 中获取 glossary/schema/api 文件路径，逐个校验存在
-9. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-10. 从 BRD 读取：产品背景、用户画像、是否含 C 端
-11. 判定 C+B / 纯 B 路径
+8. 从 foundation-delivery 中获取 glossary/schema/api 主文件路径，逐个校验存在
+9. 对 schema / api 主文件：stat 同名子目录是否存在
+   - 存在（拆分模式）→ 从 foundation-delivery 的"拆分子文件"列读清单，逐个校验每个子文件存在；任一缺失则**中止**，提示用户补齐 delivery 或重跑 foundation-builder
+   - 不存在（单文件模式）→ 跳过子文件校验
+10. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+11. 从 BRD 读取：产品背景、用户画像、是否含 C 端
+12. 判定 C+B / 纯 B 路径
 
 ## 8) 状态标记（强制）
 
