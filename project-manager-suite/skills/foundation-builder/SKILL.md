@@ -37,6 +37,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | page-explainer | `explainer-flow-<slug>.md` | 是 | 用户流程全貌，辅助理解数据流向 |
 | page-explainer | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | 是 | 结构化交互语义（仅消费 locked 条目），辅助 API 设计 |
 | page-explainer | `explainer-b-permission-<slug>.md` | 是 | 权限模型，影响 Schema 和 API 设计 |
+| page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引：按流程 → 产物映射快速定位本次 Schema/API 涉及的语义条目 |
 | 用户提供 | 已有数据库/接口文件（可选） | 否 | 现有表结构、接口定义 |
 | 自身前次产出 | `foundation-*-<slug>.md` | 否 | 增量更新时读取 |
 
@@ -106,14 +107,15 @@ Phase 1 逻辑简单，直接在此定义：
 3. 搜索 `explainer-flow-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
 4. 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`，根据 C+B 或纯 B 判定），不存在则**中止**，提示用户先完成 page-explainer
 5. 搜索 `explainer-b-permission-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
-6. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-7. 从 BRD 读取：项目类型、是否含 C 端、核心业务模型
-8. 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在
+6. 搜索 `explainer-delivery-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+7. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+8. 从 BRD 读取：项目类型、是否含 C 端、核心业务模型
+9. 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在
    - 存在 → 增量模式，加载 `references/incremental-update.md`
    - 不存在 → 首次模式
-9. 询问用户是否有已有数据库/接口文件
-   - 有 → 读取，加载 `references/existing-files-evaluation.md`
-   - 无 → 继续
+10. 询问用户是否有已有数据库/接口文件
+    - 有 → 读取，加载 `references/existing-files-evaluation.md`
+    - 无 → 继续
 
 ## 8) 状态标记（强制）
 
