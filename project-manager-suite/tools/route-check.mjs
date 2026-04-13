@@ -450,6 +450,7 @@ function inspectS2Artifacts(hostRoot) {
     const explainerBInteraction = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-b-interaction-.+\.md$/);
     const explainerCInteraction = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-c-interaction-.+\.md$/);
     const explainerBPermission = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-b-permission-.+\.md$/);
+    const explainerDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-delivery-.+\.md$/);
     const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-(c|b)-gap-.+\.md$/);
 
     const brdContent = brd ? loadMarkdownFile(brd.filePath) : null;
@@ -472,6 +473,7 @@ function inspectS2Artifacts(hostRoot) {
         Boolean(explainerFlow) &&
         Boolean(explainerBInteraction) &&
         Boolean(explainerBPermission) &&
+        Boolean(explainerDelivery) &&
         (!requiresCInteraction || Boolean(explainerCInteraction));
 
     return {
