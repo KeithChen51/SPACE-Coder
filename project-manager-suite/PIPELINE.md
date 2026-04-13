@@ -50,8 +50,10 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 │   └── explainer-delivery-<slug>.md          # page-explainer 交付清单（入口索引 + 一致性自查）
 └── prd/                                      # 技术地基 + PRD 层
     ├── foundation-glossary-<slug>.md         # foundation-builder 术语表
-    ├── foundation-schema-<slug>.md           # foundation-builder 数据库 Schema
-    ├── foundation-api-<slug>.md              # foundation-builder API 接口
+    ├── foundation-schema-<slug>.md           # foundation-builder 数据库 Schema（单文件或索引）
+    ├── foundation-schema-<slug>/             # 可选：Schema 超 400 行时拆分，内含 <table>.md
+    ├── foundation-api-<slug>.md              # foundation-builder API 接口（单文件或索引）
+    ├── foundation-api-<slug>/                # 可选：API 超 400 行时拆分，内含 <module>.md
     ├── foundation-delivery-<slug>.md         # foundation-builder 交付清单
     ├── prd-feature-list-<slug>.md            # prd-writer 功能列表
     ├── prd-main-<slug>.md                    # prd-writer 主 PRD（索引枢纽）
@@ -86,6 +88,34 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 2. 新增 skill 前必须在本表登记目标文件夹；若现有三类目录不能覆盖，需先与 PIPELINE.md 维护者讨论扩表，再实施 skill。
 3. 重命名/拆分产物时，只改文件名，不改落地文件夹（落地文件夹由 skill 决定，与文件名无关）。
 4. 下游 skill 在依赖表中看到某上游文件名，对应查找目录 = 上表中该上游 skill 的"产出目标文件夹"；不需要每个依赖表项单独标注目录。
+5. 允许 skill 在其目标文件夹下建**同名子目录**存放拆分子文件（见下文"产物拆分约定"），子目录仍视作同一 skill 的归属，不破坏单一映射。
+
+### 产物拆分约定
+
+部分产物（当前已声明：foundation-schema、foundation-api；未来可扩展）支持行数超阈值时自动拆分。拆分规则统一遵循：
+
+**命名规则：**
+
+| 元素 | 命名 | 示例 |
+|------|------|------|
+| 主文件（索引） | `<产物名>-<slug>.md` | `foundation-schema-xxx.md` |
+| 子目录 | 与主文件同名去 `.md` | `foundation-schema-xxx/` |
+| 子文件 | `<子目录>/<条目名>.md` | `foundation-schema-xxx/users.md` |
+
+**主文件职责（拆分模式下）：**
+- 不含字段级细节，只含总览表 + 每个子文件一行摘要 + 指向子文件的相对链接
+- 子文件引用格式示例：`[users.md](foundation-schema-xxx/users.md)`
+
+**下游消费协议（硬契约）：**
+
+1. 下游 skill 拿到主文件路径时，**必须**检查同级是否存在同名子目录：
+   - 存在 → 视为拆分模式；主文件仅为索引，**必须**读入子目录下所有 `*.md` 作为权威来源
+   - 不存在 → 视为单文件模式，主文件即权威来源
+2. 上游 skill 的 delivery 清单必须在主文件一行下方枚举所有子文件真实路径（若拆分），不允许下游自行 glob 兜底
+3. 新增支持拆分的产物时，必须：
+   - 更新本节"命名规则"表（登记产物名）
+   - 在对应上游 skill 的 delivery 模板里加"拆分子文件清单"列
+   - 在下游 skill 的依赖表加注拆分检测协议
 
 ### slug 约定
 
