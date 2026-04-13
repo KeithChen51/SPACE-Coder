@@ -620,5 +620,7 @@ test('bootstrap text treats startup intent as an automatic ai-project-manager en
 
     assert.ok(claudeBootstrap.includes('默认直接由 `ai-project-manager` 接管'));
     assert.ok(claudeBootstrap.includes('不要再次询问是否要按这套流程开始'));
+    assert.ok(claudeBootstrap.includes('不得先进入 `superpower` 等通用增强类 skill'));
     assert.ok(openCodeBootstrap.includes('不要再确认是否启用它'));
+    assert.ok(openCodeBootstrap.includes('不要先进入 `superpower` 等通用增强类 skill'));
 });
