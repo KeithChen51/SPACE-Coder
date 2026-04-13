@@ -34,9 +34,20 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 ```
 <host>/                                       # 宿主项目根目录
 ├── project-profile.md                        # ai-project-manager 产出；全局画像与状态入口
-├── brd/                                      # 业务需求层
-│   ├── brd-ledger-<slug>.md                  # brd-writer 过程台账
-│   └── BRD-<slug>-<YYYYMMDD-HHMM>.md         # brd-writer 最终交付 BRD
+├── docs/
+│   ├── brd/                                  # 业务需求层
+│   │   ├── brd-ledger-<slug>.md              # brd-writer 过程台账
+│   │   └── BRD-<slug>-<YYYYMMDD-HHMM>.md     # brd-writer 最终交付 BRD
+│   └── prd/                                  # 技术地基 + PRD 层
+│       ├── foundation-glossary-<slug>.md     # foundation-builder 术语表
+│       ├── foundation-schema-<slug>.md       # foundation-builder 数据库 Schema（单文件或索引）
+│       ├── foundation-schema-<slug>/         # 可选：Schema 超 400 行时拆分，内含 <table>.md
+│       ├── foundation-api-<slug>.md          # foundation-builder API 接口（单文件或索引）
+│       ├── foundation-api-<slug>/            # 可选：API 超 400 行时拆分，内含 <module>.md
+│       ├── foundation-delivery-<slug>.md     # foundation-builder 交付清单
+│       ├── prd-feature-list-<slug>.md        # prd-writer 功能列表
+│       ├── prd-main-<slug>.md                # prd-writer 主 PRD（索引枢纽）
+│       └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
 ├── 可操作页面/                               # 前端页面与页面语义描述层
 │   ├── <Vue 3 前端工程>/                     # page-designer 产出的可运行代码（src/、package.json 等）
 │   ├── page-delivery-<slug>.md               # page-designer 交付清单（页面索引入口）
@@ -48,16 +59,6 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 │   ├── explainer-c-gap-<slug>.md             # page-explainer C 端差异（可选，有差异时产出）
 │   ├── explainer-b-gap-<slug>.md             # page-explainer B 端差异（可选，有差异时产出）
 │   └── explainer-delivery-<slug>.md          # page-explainer 交付清单（入口索引 + 一致性自查）
-└── prd/                                      # 技术地基 + PRD 层
-    ├── foundation-glossary-<slug>.md         # foundation-builder 术语表
-    ├── foundation-schema-<slug>.md           # foundation-builder 数据库 Schema（单文件或索引）
-    ├── foundation-schema-<slug>/             # 可选：Schema 超 400 行时拆分，内含 <table>.md
-    ├── foundation-api-<slug>.md              # foundation-builder API 接口（单文件或索引）
-    ├── foundation-api-<slug>/                # 可选：API 超 400 行时拆分，内含 <module>.md
-    ├── foundation-delivery-<slug>.md         # foundation-builder 交付清单
-    ├── prd-feature-list-<slug>.md            # prd-writer 功能列表
-    ├── prd-main-<slug>.md                    # prd-writer 主 PRD（索引枢纽）
-    └── prd-<slug>-<区块名>.md                # prd-writer 子 PRD（N 份，按区块拆分）
 ```
 
 ### 目录语义
@@ -65,9 +66,9 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | 目录 | 归属 | 语义 | 谁写 | 谁读 |
 |------|------|------|------|------|
 | `<host>/`（根） | 全局 | 项目身份与全局画像 | ai-project-manager | 所有下游 skill |
-| `<host>/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer |
+| `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer |
 | `<host>/可操作页面/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
-| `<host>/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | 下游研发/编码环节 |
+| `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | 下游研发/编码环节 |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
@@ -76,11 +77,11 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
 | ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
-| brd-writer | `<host>/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
+| brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
 | page-designer | `<host>/可操作页面/` | Vue 3 前端工程目录、`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 及后续该 skill 新增的页面层文件 |
 | page-explainer | `<host>/可操作页面/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
-| foundation-builder | `<host>/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
-| prd-writer | `<host>/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
+| foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
+| prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
 
 **不变式（写 skill 时的硬约束）：**
 
@@ -156,8 +157,8 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| BRD 决策台账 | `brd-ledger-<slug>.md` | `<host>/brd/` | 过程产物：P0 字段确认状态、冲突记录、轮次变更日志、充分性快照 |
-| BRD 文件 | `BRD-<slug>-<YYYYMMDD-HHMM>.md` | `<host>/brd/` | 最终交付物 |
+| BRD 决策台账 | `brd-ledger-<slug>.md` | `<host>/docs/brd/` | 过程产物：P0 字段确认状态、冲突记录、轮次变更日志、充分性快照 |
+| BRD 文件 | `BRD-<slug>-<YYYYMMDD-HHMM>.md` | `<host>/docs/brd/` | 最终交付物 |
 
 ---
 
@@ -169,7 +170,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
-| `BRD-<slug>-*.md` | brd-writer | `<host>/brd/` |
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 
 **产出文件**：
 
@@ -190,7 +191,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
-| `BRD-<slug>-*.md` | brd-writer | `<host>/brd/` |
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 | `page-delivery-<slug>.md` | page-designer | `<host>/可操作页面/` |
 | 页面代码文件（Vue 3 组件） | page-designer | `<host>/可操作页面/<工程名>/` |
 
@@ -218,7 +219,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
-| `BRD-<slug>-*.md` | brd-writer | `<host>/brd/` |
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 | `page-delivery-<slug>.md` | page-designer | `<host>/可操作页面/` |
 | 页面代码文件（Vue 3 组件） | page-designer | `<host>/可操作页面/<工程名>/` |
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/可操作页面/` |
@@ -231,10 +232,10 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 术语表 | `foundation-glossary-<slug>.md` | `<host>/prd/` | 按业务域分组的统一术语定义 |
-| 数据库 Schema | `foundation-schema-<slug>.md` | `<host>/prd/` | 表结构设计，超 400 行自动拆分 |
-| API 接口设计 | `foundation-api-<slug>.md` | `<host>/prd/` | 接口定义，超 400 行自动拆分 |
-| 交付清单 | `foundation-delivery-<slug>.md` | `<host>/prd/` | 产物索引 + 一致性自查结果 |
+| 术语表 | `foundation-glossary-<slug>.md` | `<host>/docs/prd/` | 按业务域分组的统一术语定义 |
+| 数据库 Schema | `foundation-schema-<slug>.md` | `<host>/docs/prd/` | 表结构设计，超 400 行自动拆分 |
+| API 接口设计 | `foundation-api-<slug>.md` | `<host>/docs/prd/` | 接口定义，超 400 行自动拆分 |
+| 交付清单 | `foundation-delivery-<slug>.md` | `<host>/docs/prd/` | 产物索引 + 一致性自查结果 |
 
 ---
 
@@ -246,25 +247,25 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
-| `BRD-<slug>-*.md` | brd-writer | `<host>/brd/` |
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 | `page-delivery-<slug>.md` | page-designer | `<host>/可操作页面/` |
 | 页面代码文件（Vue 3 组件） | page-designer | `<host>/可操作页面/<工程名>/` |
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/可操作页面/` |
 | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/可操作页面/` |
 | `explainer-b-permission-<slug>.md` | page-explainer | `<host>/可操作页面/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/prd/` |
-| `foundation-schema-<slug>.md` | foundation-builder | `<host>/prd/` |
-| `foundation-api-<slug>.md` | foundation-builder | `<host>/prd/` |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/prd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
 
 **产出文件**：
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 功能列表 | `prd-feature-list-<slug>.md` | `<host>/prd/` | 产品背景 + 页面全景 + 区块业务逻辑 |
-| 主文档 | `prd-main-<slug>.md` | `<host>/prd/` | 全局索引枢纽，引用所有上游产物 |
-| 子文档（N 份） | `prd-<slug>-<区块名>.md` | `<host>/prd/` | 按区块拆分，字段级可追溯 |
+| 功能列表 | `prd-feature-list-<slug>.md` | `<host>/docs/prd/` | 产品背景 + 页面全景 + 区块业务逻辑 |
+| 主文档 | `prd-main-<slug>.md` | `<host>/docs/prd/` | 全局索引枢纽，引用所有上游产物 |
+| 子文档（N 份） | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 按区块拆分，字段级可追溯 |
 
 ---
 
@@ -296,7 +297,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 ## 路径约定变更须知
 
-本版本（2026-04-13）首次固化三大目录结构（`brd/` / `可操作页面/` / `prd/`）。历史宿主项目若文件仍散落在根目录：
+本版本（2026-04-13）首次固化三大目录结构（`docs/brd/` / `可操作页面/` / `docs/prd/`）。历史宿主项目若文件仍散落在根目录：
 
 - 调度层（page-chief / prd-chief）扫描产物时，应**优先检查新目录**，兜底再扫根目录。
 - 子 skill 写入新产物时，**一律按本文件约定的目录**写入，不再回写根目录。
