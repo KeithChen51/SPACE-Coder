@@ -39,6 +39,7 @@ prd-chief 检查前置文件是否存在。Stage 2 以后会读取产物内容�
 | page-explainer | `explainer-flow-<slug>.md` | 是 | 确认交互语义已产出 |
 | page-explainer | `explainer-*-interaction-<slug>.md` | 是 | 确认交互描述存在（按项目类型） |
 | page-explainer | `explainer-b-permission-<slug>.md` | 是 | 确认权限矩阵存在 |
+| page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引，作为 page-explainer 环节完工标志 |
 
 ## 4) 出口检查清单
 
