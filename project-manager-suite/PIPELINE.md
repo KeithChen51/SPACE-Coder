@@ -67,6 +67,26 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | `<host>/可操作页面/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | 下游研发/编码环节 |
 
+### Skill → 文件夹 权威映射（单一来源）
+
+**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹；各 skill SKILL.md 和下方 §1-§5 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
+
+| Skill | 产出目标文件夹 | 覆盖产物（模式） |
+|-------|--------------|----------------|
+| ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
+| brd-writer | `<host>/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
+| page-designer | `<host>/可操作页面/` | Vue 3 前端工程目录、`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 及后续该 skill 新增的页面层文件 |
+| page-explainer | `<host>/可操作页面/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
+| foundation-builder | `<host>/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
+| prd-writer | `<host>/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
+
+**不变式（写 skill 时的硬约束）：**
+
+1. 一个 skill 的**所有**产出文件必须落在上表声明的同一个文件夹，不允许跨目录分布（如 page-explainer 不允许一部分写 `可操作页面/` 另一部分写 `prd/`）。
+2. 新增 skill 前必须在本表登记目标文件夹；若现有三类目录不能覆盖，需先与 PIPELINE.md 维护者讨论扩表，再实施 skill。
+3. 重命名/拆分产物时，只改文件名，不改落地文件夹（落地文件夹由 skill 决定，与文件名无关）。
+4. 下游 skill 在依赖表中看到某上游文件名，对应查找目录 = 上表中该上游 skill 的"产出目标文件夹"；不需要每个依赖表项单独标注目录。
+
 ### slug 约定
 
 `<slug>` 由 brd-writer 在 Phase A 确定（英文短语、全小写、连字符分隔），写入 `brd-ledger-<slug>.md` 头部。**流水线中所有下游 skill 的产物文件必须使用同一个 slug**，确保跨目录产物可通过文件名关联。
