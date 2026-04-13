@@ -12,6 +12,7 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { validateGlobalFiles } from './validate-global-files.mjs';
 
@@ -156,7 +157,12 @@ function getTimeText(timeInput) {
 function slugifyActor(actor) {
     const normalized = actor.trim();
     if (!normalized) return 'unknown';
-    return normalized.replace(/\s+/g, '_').replace(/[^\w\u4e00-\u9fa5-]/g, '');
+    const slug = normalized
+        .replace(/\s+/g, '_')
+        .replace(/[^\w\u4e00-\u9fa5-]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    return slug || 'unknown';
 }
 
 function splitList(text) {
@@ -194,6 +200,45 @@ function getActor(options, hostRoot) {
     }
 
     return process.env.USER || process.env.LOGNAME || 'unknown';
+}
+
+function getGitUserName(hostRoot) {
+    try {
+        const value = execFileSync('git', ['-C', hostRoot, 'config', 'user.name'], {
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        }).trim();
+
+        return value || '';
+    } catch {
+        return '';
+    }
+}
+
+function isCompositeActorLabel(value) {
+    return /(?:\+|&|AI|当前工作区|本人|我们|协作)/i.test(value);
+}
+
+function getActorFileKey(options, hostRoot, actor) {
+    const gitUserName = getGitUserName(hostRoot);
+    if (gitUserName) {
+        return gitUserName;
+    }
+
+    if (options.actor && !isCompositeActorLabel(options.actor)) {
+        return options.actor;
+    }
+
+    const fallbackUser = process.env.USER || process.env.LOGNAME || '';
+    if (fallbackUser) {
+        return fallbackUser;
+    }
+
+    if (actor && !isCompositeActorLabel(actor)) {
+        return actor;
+    }
+
+    return 'unknown';
 }
 
 function resolvePlanPath(options, hostRoot) {
@@ -345,7 +390,8 @@ function devlogSync(options) {
     const dateParts = getDateParts(options.date);
     const timeText = getTimeText(options.time);
     const planPath = resolvePlanPath(options, hostRoot);
-    const actorSlug = slugifyActor(actor);
+    const actorFileKey = getActorFileKey(options, hostRoot, actor);
+    const actorSlug = slugifyActor(actorFileKey);
     const logRelativePath = path.join('logs', `${dateParts.compactDate}_refactor_log_${actorSlug}.md`);
     const logFilePath = path.join(hostRoot, logRelativePath);
     const files = splitList(options.files);
@@ -355,6 +401,7 @@ function devlogSync(options) {
         hostRoot,
         logFile: logRelativePath.split(path.sep).join('/'),
         actor,
+        actorFileKey,
         createdLog: false,
         appendedLog: false,
         updatedCandidatePool: false,
@@ -458,6 +505,7 @@ function formatTextReport(result) {
         `Host root: ${result.hostRoot}`,
         `Log file: ${result.logFile}`,
         `Actor: ${result.actor}`,
+        `Actor file key: ${result.actorFileKey}`,
         `Created log: ${result.createdLog ? 'yes' : 'no'}`,
         `Appended log: ${result.appendedLog ? 'yes' : 'no'}`,
         `Updated candidate pool: ${result.updatedCandidatePool ? 'yes' : 'no'}`

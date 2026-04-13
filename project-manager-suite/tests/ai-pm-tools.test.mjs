@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { validateGlobalFiles } from '../tools/validate-global-files.mjs';
@@ -641,6 +642,47 @@ test('devlog-sync creates daily log, appends updates, and updates candidate pool
 
     assert.equal(secondResult.appendedLog, true);
     assert.ok(readFile(path.join(hostRoot, secondResult.logFile)).includes('## 补充更新 1'));
+});
+
+test('devlog-sync uses git user name for log file naming while preserving actor display text', () => {
+    const hostRoot = makeTempDir('pm-suite-devlog-git-user-');
+
+    writeFile(path.join(hostRoot, 'project-profile.md'), buildProfileContent());
+    writeFile(path.join(hostRoot, 'docs', 'plans', 'execution-plan.md'), buildPlanContent());
+
+    execFileSync('git', ['init'], { cwd: hostRoot, stdio: 'ignore' });
+    execFileSync('git', ['config', 'user.name', 'tutoumao'], { cwd: hostRoot, stdio: 'ignore' });
+
+    const result = devlogSync({
+        hostRoot,
+        actor: '我 + AI',
+        date: '2026-04-08',
+        time: '10:00',
+        title: '启动项目骨架',
+        goal: '建立项目画像与计划入口',
+        action: '执行 bootstrap 并补齐基础结构',
+        result: '骨架创建完成',
+        files: 'project-profile.md,docs/plans/execution-plan.md',
+        stage: 'S0',
+        conclusion: '基础骨架已可继续推进',
+        next: '继续访谈',
+        planPath: '',
+        reflection: '',
+        ruleScope: '',
+        ruleTarget: '',
+        ruleCheck: '',
+        ruleTitle: '',
+        dryRun: false,
+        json: false
+    });
+
+    const logPath = path.join(hostRoot, result.logFile);
+
+    assert.equal(result.actor, '我 + AI');
+    assert.equal(result.actorFileKey, 'tutoumao');
+    assert.equal(result.logFile, 'logs/20260408_refactor_log_tutoumao.md');
+    assert.ok(fs.existsSync(logPath));
+    assert.ok(readFile(logPath).includes('> 操作人：我 + AI'));
 });
 
 test('bootstrap text treats startup intent as an automatic ai-project-manager entry', () => {
