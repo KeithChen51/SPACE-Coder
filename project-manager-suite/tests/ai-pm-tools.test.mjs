@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 
 import { validateGlobalFiles } from '../tools/validate-global-files.mjs';
 import { routeCheck } from '../tools/route-check.mjs';
@@ -10,6 +11,10 @@ import { generateHostRules } from '../tools/generate-host-rules.mjs';
 import { bootstrapHost } from '../tools/bootstrap-host.mjs';
 import { installSuiteIntoHost } from '../tools/install-suite-into-host.mjs';
 import { devlogSync } from '../tools/devlog-sync.mjs';
+import { buildClaudeHookBootstrap, buildOpenCodeBootstrap } from '../lib/bootstrap/index.js';
+
+const TEST_FILE_PATH = fileURLToPath(import.meta.url);
+const CURRENT_SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
 
 function makeTempDir(prefix) {
     return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -604,4 +609,16 @@ test('devlog-sync creates daily log, appends updates, and updates candidate pool
 
     assert.equal(secondResult.appendedLog, true);
     assert.ok(readFile(path.join(hostRoot, secondResult.logFile)).includes('## 补充更新 1'));
+});
+
+test('bootstrap text treats startup intent as an automatic ai-project-manager entry', () => {
+    const claudeBootstrap = buildClaudeHookBootstrap(CURRENT_SUITE_ROOT);
+    const openCodeBootstrap = buildOpenCodeBootstrap({
+        suiteRoot: CURRENT_SUITE_ROOT,
+        configDir: '/tmp/codex-config'
+    });
+
+    assert.ok(claudeBootstrap.includes('默认直接由 `ai-project-manager` 接管'));
+    assert.ok(claudeBootstrap.includes('不要再次询问是否要按这套流程开始'));
+    assert.ok(openCodeBootstrap.includes('不要再确认是否启用它'));
 });

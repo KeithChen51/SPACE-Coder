@@ -27,7 +27,7 @@ escape_for_json() {
 }
 
 ai_pm_escaped=$(escape_for_json "$ai_pm_content")
-session_context="<EXTREMELY_IMPORTANT>\n你已加载项目经理套件。\n\n**以下是 ai-project-manager skill 的完整内容，作为项目域默认第一入口：**\n\n${ai_pm_escaped}\n</EXTREMELY_IMPORTANT>"
+session_context="<EXTREMELY_IMPORTANT>\n你已加载项目经理套件。\n当前会话一旦出现项目启动或项目推进意图，默认直接由 \`ai-project-manager\` 接管；不要再次询问是否要按这套流程开始。\n\n**以下是 ai-project-manager skill 的完整内容，作为项目域默认第一入口；当用户说“启动一个新项目”时，应直接开始主入口流程。**\n\n${ai_pm_escaped}\n</EXTREMELY_IMPORTANT>"
 
 cat <<EOF
 {

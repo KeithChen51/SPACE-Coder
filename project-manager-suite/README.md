@@ -120,23 +120,29 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 项目画像
 → 需求清单
 → 业务需求文档
+→ page-chief
 → 页面代码 / 页面交付清单
 → 人工确认页面
+→ page-explainer 冻结交互语义 / 权限 / gap 收口
+→ prd-chief
 → 术语表 / Schema / API / foundation 交付清单
 → 功能列表 / 主 PRD / 子 PRD
 → 开发计划
 → 开发执行
 → 测试用例
 → 测试执行
+→ 安全扫描
 → 验收收口
 ```
 
 其中 **S2 页面设计、技术地基与完整版 PRD** 阶段有一条硬约束：
 
-- 先调用 `page-designer` 产出页面代码与页面交付清单
-- 用户确认页面方向后，再调用 `foundation-builder` 产出术语表 / Schema / API
+- 先进入 `page-chief`，由其调度 `page-designer` 产出页面代码与页面交付清单
+- 用户确认页面方向后，仍留在 `page-chief` 链路内，继续调用 `page-explainer` 冻结交互语义、权限矩阵并收口 gap
+- 只有页面环节被 `page-chief` 判定 DONE 后，才允许切换到 `prd-chief`
+- 进入 `prd-chief` 后，必须先调用 `foundation-builder` 产出术语表 / Schema / API
 - 只有在 foundation 完成后，才允许调用 `prd-writer` 反推并沉淀完整 PRD
-- 未经确认或未完成 foundation，不允许把 PRD 当作权威版本继续推进
+- 未经页面环节收口或未完成 foundation，不允许把 PRD 当作权威版本继续推进
 
 ## 适用场景
 
@@ -151,8 +157,8 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 
 从 skill 角色来看，当前主链路中的能力可以先分成 3 类：
 
-- **流程调度型**：`ai-project-manager`，负责识别全局文件、补齐最小上下文、判断阶段、路由子能力和回写状态
-- **阶段交付型**：`brd-writer`、`page-designer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-test-case-generator`、`test-case-runner`、`security-scan`，负责承接某一阶段的正式交付物，例如 BRD、页面代码、技术地基、PRD、开发计划、测试用例、测试结果和上线前安全闸门报告
+- **流程调度型**：`ai-project-manager`、`page-chief`、`prd-chief`，负责识别上下文、判断阶段、控制页面环节与 PRD 环节的正式接管顺序
+- **阶段交付型**：`brd-writer`、`page-designer`、`page-explainer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-test-case-generator`、`test-case-runner`、`security-scan`，负责承接某一阶段的正式交付物，例如 BRD、页面代码、交互语义、技术地基、PRD、开发计划、测试用例、测试结果和上线前安全闸门报告
 - **专项执行型**：`coding-standards`、`project-devlog`，负责研发执行规范、状态回写等专项工作，不承担主流程调度
 
 当前主链路中的能力职责如下：
@@ -161,8 +167,11 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 |------|----------|--------------|
 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
 | `brd-writer` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
+| `page-chief` | 观察页面环节文件状态，调度 `page-designer -> page-explainer` 并控制是否回环 | S2 页面环节 |
 | `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单和中间文件 | S2 首轮 |
-| `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面确认后 |
+| `page-explainer` | 基于页面代码沉淀流程、交互语义、权限矩阵与 gap 文件，并完成页面环节收口 | S2 页面确认后 |
+| `prd-chief` | 在页面环节收口后调度 `foundation-builder -> prd-writer`，控制 PRD 环节推进 | S2 PRD 环节 |
+| `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面环节收口后 |
 | `prd-writer` | 基于页面与 foundation 产物沉淀 AI 可编码 PRD | S2 foundation 完成后 |
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
@@ -197,12 +206,16 @@ project-manager-suite/
 │   │   └── assets/global-files/   # 全局文件默认骨架（画像、计划等）
 │   ├── coding-standards/          # [子能力] 编码规范与研发执行
 │   ├── brd-writer/                # [子能力] 业务需求文档 / BRD 收敛
+│   ├── page-chief/                # [子能力] S2 页面环节调度
 │   ├── page-designer/             # [子能力] 页面设计（内置设计知识库 + BM25 搜索）
+│   ├── page-explainer/            # [子能力] 页面交互语义、权限与 gap 收口
+│   ├── prd-chief/                 # [子能力] S2 PRD 环节调度
 │   ├── foundation-builder/        # [子能力] 术语表 / Schema / API 技术地基设计
 │   ├── prd-writer/                # [子能力] 基于页面与 foundation 的 PRD 反推
 │   ├── delivery-planner/          # [子能力] 任务拆解与交付规划
 │   ├── prd-test-case-generator/   # [子能力] PRD 驱动测试用例生成
 │   ├── test-case-runner/          # [子能力] 测试用例执行
+│   ├── security-scan/             # [子能力] 上线前固定安全闸门扫描
 │   ├── test-and-acceptance/       # [子能力] 验收收口
 │   └── project-devlog/            # [子能力] 日志与状态回写
 ├── tests/                         # 工具链与协议对齐测试

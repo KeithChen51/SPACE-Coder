@@ -34,6 +34,7 @@ function buildCoreBootstrap({ suiteRoot, introText, extraText = '' }) {
 
     const chunks = [
         '你已加载项目经理套件。',
+        '当前会话一旦出现项目启动或项目推进意图，默认直接由 `ai-project-manager` 接管；不要再次询问是否要按这套流程开始。',
         '',
         introText,
         '',
@@ -50,7 +51,7 @@ function buildCoreBootstrap({ suiteRoot, introText, extraText = '' }) {
 function buildClaudeHookBootstrap(suiteRoot) {
     return buildCoreBootstrap({
         suiteRoot,
-        introText: '**以下是 ai-project-manager skill 的核心正文，作为项目域默认第一入口。**'
+        introText: '**以下是 ai-project-manager skill 的核心正文，作为项目域默认第一入口；当用户说“启动一个新项目”时，应直接开始主入口流程。**'
     });
 }
 
@@ -92,7 +93,7 @@ function buildOpenCodeBootstrap({ suiteRoot, configDir }) {
     return buildCoreBootstrap({
         suiteRoot,
         introText:
-            '**以下是 ai-project-manager skill 的核心正文，作为项目域默认第一入口。该 skill 已自动加载，无需再次手动加载。**',
+            '**以下是 ai-project-manager skill 的核心正文，作为项目域默认第一入口。该 skill 已自动加载，无需再次手动加载；当用户说“启动一个新项目”时，不要再确认是否启用它。**',
         extraText: buildOpenCodeToolMapping(configDir)
     });
 }
