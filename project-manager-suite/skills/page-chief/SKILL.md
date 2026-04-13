@@ -35,6 +35,10 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 |------|------|------|------|
 | brd-writer | `BRD-<slug>-*.md` | 是 | 确认项目范围，判断是否具备启动条件 |
 
+目录读取口径：
+- `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `可操作页面/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+
 ## 4) 出口检查清单
 
 page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在且状态合格：
@@ -109,7 +113,7 @@ START
 
 ### Stage 1: 前置校验
 
-1. 搜索 `BRD-<slug>-*.md`
+1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件
 2. 不存在 → **中止**，输出：`请先完成 brd-writer 产出 BRD 文件`
 3. 存在 → 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`，进入 Stage 2
 
@@ -117,7 +121,7 @@ START
 
 1. 指示：`下一步请执行 page-designer`
 2. 观察产物状态：
-   - `page-delivery-<slug>.md` 是否存在
+   - `可操作页面/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查根目录同名文件）
    - delivery 中列出的页面代码文件是否均存在
 3. 产物完整 → 进入 Stage 3
 
@@ -127,17 +131,17 @@ START
 2. 按 `has_c_end` 检查完整产物集是否全部存在：
 
    **包含 C 端页面时必须存在**：
-   - `explainer-flow-<slug>.md`
-   - `explainer-c-interaction-<slug>.md`
-   - `explainer-b-interaction-<slug>.md`
-   - `explainer-b-permission-<slug>.md`
-   - `explainer-delivery-<slug>.md`
+   - `可操作页面/` 中的 `explainer-flow-<slug>.md`
+   - `可操作页面/` 中的 `explainer-c-interaction-<slug>.md`
+   - `可操作页面/` 中的 `explainer-b-interaction-<slug>.md`
+   - `可操作页面/` 中的 `explainer-b-permission-<slug>.md`
+   - `可操作页面/` 中的 `explainer-delivery-<slug>.md`
 
    **不包含 C 端页面时必须存在**：
-   - `explainer-flow-<slug>.md`
-   - `explainer-b-interaction-<slug>.md`
-   - `explainer-b-permission-<slug>.md`
-   - `explainer-delivery-<slug>.md`
+   - `可操作页面/` 中的 `explainer-flow-<slug>.md`
+   - `可操作页面/` 中的 `explainer-b-interaction-<slug>.md`
+   - `可操作页面/` 中的 `explainer-b-permission-<slug>.md`
+   - `可操作页面/` 中的 `explainer-delivery-<slug>.md`
 
 3. 任一必需文件缺失 → page-explainer 尚未完成，继续等待
 4. 全部存在后，逐文件检查：

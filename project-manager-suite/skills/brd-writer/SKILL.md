@@ -46,12 +46,12 @@ brd-writer 的唯一硬依赖是 `project-profile.md`（或宿主映射后的项
 
 ### 5.1 决策台账（过程产物）
 
-Phase A 定性完成后，brd-writer 的收敛状态持久化在 **BRD 决策台账** 中，文件名 `brd-ledger-<slug>.md`，落在 BRD 终稿的同级目录。
+Phase A 定性完成后，brd-writer 的收敛状态持久化在 **BRD 决策台账** 中，文件名 `brd-ledger-<slug>.md`，固定落在宿主项目的 `docs/brd/` 中，与 BRD 终稿同目录。
 
 台账模板见 `templates/brd-ledger.md`。
 
 #### 台账定位
-- 台账是 brd-writer 的 **过程产物**，不是 skill 私有状态——它和 BRD 终稿一样落在项目目录中，需求方可随时查看。
+- 台账是 brd-writer 的 **过程产物**，不是 skill 私有状态——它和 BRD 终稿一样落在宿主项目的 `docs/brd/` 中，需求方可随时查看。
 - 台账是 P0 字段的确认状态权威源。`展开状态`、`只看缺口`、`回滚到上一轮`、`终稿前确认摘要` 这些命令的数据来源是台账，不是对话上下文。
 - 台账在 BRD 终稿落盘后保留，不删除——它是终稿的决策追溯记录。
 - **数据层变更**：台账的权威数据源为 `ledger-state-<slug>.json`，`brd-ledger-<slug>.md` 是由 JSON 自动渲染的只读展示层。所有读写操作通过 `scripts/` 下的脚本执行，不直接编辑 Markdown。
@@ -76,7 +76,7 @@ Phase A 定性完成后，brd-writer 的收敛状态持久化在 **BRD 决策台
 | §4 | 充分性门槛快照 | Phase E 执行后更新、跨会话恢复 |
 
 #### 跨会话恢复
-新会话开始时，先检查项目目录中是否存在 `brd-ledger-<slug>.md`：
+新会话开始时，先检查宿主项目的 `docs/brd/` 中是否存在 `brd-ledger-<slug>.md`：
 
 **台账存在**（`ledger-state-<slug>.json` 存在）：
 ```bash
@@ -156,9 +156,9 @@ Phase 是逻辑阶段，轮次（round）是一次用户交互。一个 Phase �
 ```bash
 node scripts/ledger-mutate.mjs init \
   --project-type <type> --has-c-page <bool> --is-commercial <bool> \
-  --slug <slug> --project-name <"项目名称"> --output-dir <项目目录>
+  --slug <slug> --project-name <"项目名称"> --output-dir <宿主项目/docs/brd>
 ```
-脚本自动完成：根据项目类型加载 P0 字段集、条件过滤、创建 `ledger-state-<slug>.json` + 渲染 `brd-ledger-<slug>.md`。三个元字段自动锁定（round=0）。
+脚本自动完成：根据项目类型加载 P0 字段集、条件过滤、在 `docs/brd/` 中创建 `ledger-state-<slug>.json` + 渲染 `brd-ledger-<slug>.md`。三个元字段自动锁定（round=0）。
 
 ### Phase B 诊断与需求真伪鉴别
 
@@ -257,12 +257,12 @@ Phase E 全部门槛通过后，从台账 §1 输出全量 locked 字段的值�
 2. 根据 conditional 章节在对话中的收敛情况，确定最终保留列表
 3. 生成最终编号和附录：`node scripts/ledger-render.mjs chapters finalize --ledger <path> --include "1,2,3,..."`
 4. AI 按 `heading_outline` 骨架撰写 BRD 正文，附录直接使用脚本输出的 `appendix`
-5. 将 BRD 写入临时文件 `<项目目录>/.brd-draft-<slug>.md`
+5. 将 BRD 写入临时文件 `<宿主项目/docs/brd>/.brd-draft-<slug>.md`
 
 ### Phase G 文件落盘（强制）
 
 ```bash
-node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件路径> --output-dir <项目目录>
+node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件路径> --output-dir <宿主项目/docs/brd>
 ```
 脚本自动校验 BRD 结构（章节完备、编号连续、附录引用、头部一致性、BFF 约束），通过后落盘并标记 DONE。落盘完成后回报绝对路径。
 
@@ -328,7 +328,7 @@ node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件�
 3. 每个目标都可衡量，每个功能都可验收。
 4. 单轮交互应短而有效，能让需求方快速做选择。
 5. 长对话后输出终稿时，不得与本轮之前已锁定的需求方确认项冲突。
-6. 终稿必须真实落盘为 `.md` 文件，并可被需求方在项目目录直接看到。
+6. 终稿必须真实落盘为 `.md` 文件，并可被需求方在宿主项目的 `docs/brd/` 中直接看到。
 7. 若方案涉及页面，终稿中必须明确页面定位，不能把车主侧页面写成后台工作台，也不能把后台配置页写成用户端页面。
 8. 若项目包含 C 端页面，终稿头部和 §13.1 必须明确标注 BFF 架构约束。
 9. 附录中的下游交接清单必须根据实际终稿章节编号调整引用，不能出现指向不存在章节的引用。

@@ -240,6 +240,58 @@ test('route-check blocks S2 routing when stage transition writeback is missing',
     assert.equal(result.gateChecks.pageTaskRequired.pass, true);
 });
 
+test('route-check prefers docs/brd and 可操作页面 over legacy root-level artifacts', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S2',
+            recommended_stage: 'S2',
+            current_round_deliverable: '页面代码 / 页面交付清单 + 待确认项',
+            largest_uncertainty: '页面环节待收口'
+        },
+        planOverrides: {
+            current_stage: 'S2',
+            current_goal: '完成页面环节收口',
+            next_tasks: '进入 PRD 环节'
+        },
+        logContent: '记录 S2 阶段推进与页面环节收口'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    writeFile(
+        path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260408-1000.md'),
+        '# BRD\n\n- 是否包含 C 端页面：否\n'
+    );
+    writeFile(
+        path.join(hostRoot, '可操作页面', 'page-delivery-demo.md'),
+        '# 页面交付清单\n\n| 页面 | 文件路径 |\n|---|---|\n| 首页 | 可操作页面/demo-app/src/pages/home.vue |\n'
+    );
+    writeFile(path.join(hostRoot, '可操作页面', 'demo-app', 'src', 'pages', 'home.vue'), '<template>home</template>\n');
+    writeFile(path.join(hostRoot, '可操作页面', 'explainer-flow-demo.md'), '# flow\n');
+    writeFile(
+        path.join(hostRoot, '可操作页面', 'explainer-b-interaction-demo.md'),
+        '| id | status |\n|---|---|\n| demo.home.button.1 | locked |\n'
+    );
+    writeFile(path.join(hostRoot, '可操作页面', 'explainer-b-permission-demo.md'), '# permission\n');
+    writeFile(path.join(hostRoot, '可操作页面', 'explainer-delivery-demo.md'), '# delivery\n');
+
+    writeFile(
+        path.join(hostRoot, 'BRD-legacy-20260409-1200.md'),
+        '# Legacy BRD\n\n- 是否包含 C 端页面：是\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'page-delivery-legacy.md'),
+        '# 旧页面交付清单\n\n| 页面 | 文件路径 |\n|---|---|\n| 首页 | legacy/missing.vue |\n'
+    );
+
+    const result = routeCheck({ hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'prd-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.pass, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.brdPath, 'docs/brd/BRD-demo-20260408-1000.md');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageDeliveryPath, '可操作页面/page-delivery-demo.md');
+});
+
 test('route-check enters S7 when release signal and test execution reports are ready', () => {
     const hostRoot = createHostFixture({
         profileOverrides: {

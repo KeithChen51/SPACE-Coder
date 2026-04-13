@@ -41,6 +41,11 @@ prd-chief 检查前置文件是否存在。Stage 2 以后会读取产物内容�
 | page-explainer | `explainer-b-permission-<slug>.md` | 是 | 确认权限矩阵存在 |
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引，作为 page-explainer 环节完工标志 |
 
+目录读取口径：
+- `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `可操作页面/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `foundation-*.md`、`prd-*.md` 优先从 `docs/prd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+
 ## 4) 出口检查清单
 
 prd-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在且状态合格：
@@ -103,11 +108,11 @@ START
 
 1. 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`
 2. 检查文件存在性：
-   - `BRD-<slug>-*.md`
-   - `page-delivery-<slug>.md` + delivery 中列出的页面代码文件
-   - `explainer-flow-<slug>.md`
-   - `explainer-b-interaction-<slug>.md` + `explainer-b-permission-<slug>.md`
-   - 包含 C 端页面时额外：`explainer-c-interaction-<slug>.md`
+   - `docs/brd/` 中的 `BRD-<slug>-*.md`
+   - `可操作页面/` 中的 `page-delivery-<slug>.md` + delivery 中列出的页面代码文件
+   - `可操作页面/` 中的 `explainer-flow-<slug>.md`
+   - `可操作页面/` 中的 `explainer-b-interaction-<slug>.md` + `explainer-b-permission-<slug>.md`
+   - 包含 C 端页面时额外：`可操作页面/` 中的 `explainer-c-interaction-<slug>.md`
 3. 检查内容合格性：
    - 所有 interaction 文件中的语义条目 status 是否全部为 `locked`
    - 若存在 gap 文件（`explainer-*-gap-<slug>.md`），是否无 `design_gap` / `logic_conflict` 未解决条目
@@ -119,19 +124,19 @@ START
 
 1. 指示：`下一步请执行 foundation-builder`
 2. 观察产物文件状态：
-   - `foundation-glossary-<slug>.md` 是否存在
-   - `foundation-schema-<slug>.md` 是否存在
-   - `foundation-api-<slug>.md` 是否存在
-   - `foundation-delivery-<slug>.md` 是否存在
+   - `docs/prd/` 中的 `foundation-glossary-<slug>.md` 是否存在
+   - `docs/prd/` 中的 `foundation-schema-<slug>.md` 是否存在
+   - `docs/prd/` 中的 `foundation-api-<slug>.md` 是否存在
+   - `docs/prd/` 中的 `foundation-delivery-<slug>.md` 是否存在
 3. 4 个文件全部存在 → 进入 Stage 3
 
 ### Stage 3: prd-writer
 
 1. 指示：`下一步请执行 prd-writer`
 2. 检查完整产物集是否全部存在：
-   - `prd-feature-list-<slug>.md`
-   - `prd-main-<slug>.md`
-   - 功能列表中每个区块对应的 `prd-<slug>-<区块名>.md`
+   - `docs/prd/` 中的 `prd-feature-list-<slug>.md`
+   - `docs/prd/` 中的 `prd-main-<slug>.md`
+   - 功能列表中每个区块对应的 `docs/prd/prd-<slug>-<区块名>.md`
 3. 任一必需文件缺失 → prd-writer 尚未完成，继续等待
 4. 全部存在后，检查 `prd-main` 中的子 PRD 索引表与实际子文档是否一致
 5. 一致 → 进入 Stage 4

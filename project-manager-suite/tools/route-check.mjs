@@ -209,29 +209,61 @@ function walkFiles(rootDir, maxDepth, includeExtensions) {
     return results.sort();
 }
 
-function findLatestMatchingFile(hostRoot, files, pattern) {
-    const candidates = files
-        .filter((filePath) => pattern.test(path.basename(filePath)))
+function getLocationPriority(relativePath, preferredDirs = []) {
+    if (preferredDirs.length === 0) {
+        return 0;
+    }
+
+    for (let index = 0; index < preferredDirs.length; index += 1) {
+        const preferredDir = preferredDirs[index];
+        if (relativePath === preferredDir || relativePath.startsWith(`${preferredDir}/`)) {
+            return index;
+        }
+    }
+
+    if (!relativePath.includes('/')) {
+        return preferredDirs.length;
+    }
+
+    return null;
+}
+
+function collectMatchingCandidates(hostRoot, files, pattern, preferredDirs = []) {
+    return files
         .map((filePath) => ({
             filePath,
             relativePath: normalizePathForMatch(hostRoot, filePath),
             mtimeMs: fs.statSync(filePath).mtimeMs
         }))
-        .sort((a, b) => b.mtimeMs - a.mtimeMs || a.relativePath.localeCompare(b.relativePath));
+        .filter((candidate) => pattern.test(path.basename(candidate.filePath)))
+        .map((candidate) => ({
+            ...candidate,
+            locationPriority: getLocationPriority(candidate.relativePath, preferredDirs)
+        }))
+        .filter((candidate) => preferredDirs.length === 0 || candidate.locationPriority !== null)
+        .sort(
+            (a, b) =>
+                (a.locationPriority ?? 0) - (b.locationPriority ?? 0) ||
+                b.mtimeMs - a.mtimeMs ||
+                a.relativePath.localeCompare(b.relativePath)
+        );
+}
+
+function findLatestMatchingFile(hostRoot, files, pattern, preferredDirs = []) {
+    const candidates = collectMatchingCandidates(hostRoot, files, pattern, preferredDirs);
 
     return candidates[0] || null;
 }
 
-function findMatchingFiles(hostRoot, files, pattern) {
-    return files
-        .filter((filePath) => pattern.test(path.basename(filePath)))
-        .map((filePath) => ({
-            filePath,
-            relativePath: normalizePathForMatch(hostRoot, filePath),
-            mtimeMs: fs.statSync(filePath).mtimeMs
-        }))
-        .sort((a, b) => b.mtimeMs - a.mtimeMs || a.relativePath.localeCompare(b.relativePath));
+function findMatchingFiles(hostRoot, files, pattern, preferredDirs = []) {
+    return collectMatchingCandidates(hostRoot, files, pattern, preferredDirs);
 }
+
+const DESIGN_ARTIFACT_DIRS = {
+    brd: ['docs/brd'],
+    page: ['可操作页面'],
+    prd: ['docs/prd']
+};
 
 function parseMarkdownTables(content) {
     const lines = content.split('\n');
@@ -444,14 +476,34 @@ function extractUnresolvedGapCategories(content) {
 
 function inspectS2Artifacts(hostRoot) {
     const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
-    const brd = findLatestMatchingFile(hostRoot, markdownFiles, /^BRD-.+\.md$/);
-    const pageDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^page-delivery-.+\.md$/);
-    const explainerFlow = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-flow-.+\.md$/);
-    const explainerBInteraction = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-b-interaction-.+\.md$/);
-    const explainerCInteraction = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-c-interaction-.+\.md$/);
-    const explainerBPermission = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-b-permission-.+\.md$/);
-    const explainerDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-delivery-.+\.md$/);
-    const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-(c|b)-gap-.+\.md$/);
+    const brd = findLatestMatchingFile(hostRoot, markdownFiles, /^BRD-.+\.md$/, DESIGN_ARTIFACT_DIRS.brd);
+    const pageDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^page-delivery-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
+    const explainerFlow = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-flow-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
+    const explainerBInteraction = findLatestMatchingFile(
+        hostRoot,
+        markdownFiles,
+        /^explainer-b-interaction-.+\.md$/,
+        DESIGN_ARTIFACT_DIRS.page
+    );
+    const explainerCInteraction = findLatestMatchingFile(
+        hostRoot,
+        markdownFiles,
+        /^explainer-c-interaction-.+\.md$/,
+        DESIGN_ARTIFACT_DIRS.page
+    );
+    const explainerBPermission = findLatestMatchingFile(
+        hostRoot,
+        markdownFiles,
+        /^explainer-b-permission-.+\.md$/,
+        DESIGN_ARTIFACT_DIRS.page
+    );
+    const explainerDelivery = findLatestMatchingFile(
+        hostRoot,
+        markdownFiles,
+        /^explainer-delivery-.+\.md$/,
+        DESIGN_ARTIFACT_DIRS.page
+    );
+    const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-(c|b)-gap-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
 
     const brdContent = brd ? loadMarkdownFile(brd.filePath) : null;
     const pageDeliveryContent = pageDelivery ? loadMarkdownFile(pageDelivery.filePath) : null;
@@ -478,6 +530,7 @@ function inspectS2Artifacts(hostRoot) {
 
     return {
         brdExists: Boolean(brd),
+        brdPath: brd?.relativePath || null,
         pageDeliveryExists: Boolean(pageDelivery),
         pageDeliveryPath: pageDelivery?.relativePath || null,
         pageCodeFiles: pageCodeCheck.files,
@@ -485,6 +538,7 @@ function inspectS2Artifacts(hostRoot) {
         hasCEnd,
         requiresCInteraction,
         explainerFilesComplete,
+        explainerDeliveryPath: explainerDelivery?.relativePath || null,
         bInteractionLocked,
         cInteractionLocked,
         interactionStatusesLocked: bInteractionLocked && cInteractionLocked,
@@ -502,7 +556,12 @@ function inspectS2Artifacts(hostRoot) {
 
 function inspectFoundationArtifacts(hostRoot) {
     const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
-    const foundationDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^foundation-delivery-.+\.md$/);
+    const foundationDelivery = findLatestMatchingFile(
+        hostRoot,
+        markdownFiles,
+        /^foundation-delivery-.+\.md$/,
+        DESIGN_ARTIFACT_DIRS.prd
+    );
     if (!foundationDelivery) {
         return {
             foundationDeliveryExists: false,
@@ -526,9 +585,9 @@ function inspectFoundationArtifacts(hostRoot) {
 
 function inspectPrdArtifacts(hostRoot) {
     const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
-    const featureList = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-feature-list-.+\.md$/);
-    const mainPrd = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-main-.+\.md$/);
-    const subPrds = findMatchingFiles(hostRoot, markdownFiles, /^prd-(?!feature-list-|main-).+\.md$/);
+    const featureList = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-feature-list-.+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
+    const mainPrd = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-main-.+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
+    const subPrds = findMatchingFiles(hostRoot, markdownFiles, /^prd-(?!feature-list-|main-).+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
 
     return {
         featureListExists: Boolean(featureList),
@@ -791,9 +850,12 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
             pass: s2Artifacts.pageStageClosed,
             evidence: {
                 brdExists: s2Artifacts.brdExists,
+                brdPath: s2Artifacts.brdPath,
                 pageDeliveryExists: s2Artifacts.pageDeliveryExists,
+                pageDeliveryPath: s2Artifacts.pageDeliveryPath,
                 pageCodeFilesAllExist: s2Artifacts.pageCodeFilesAllExist,
                 explainerFilesComplete: s2Artifacts.explainerFilesComplete,
+                explainerDeliveryPath: s2Artifacts.explainerDeliveryPath,
                 interactionStatusesLocked: s2Artifacts.interactionStatusesLocked,
                 unresolvedGapCategories: s2Artifacts.unresolvedGapCategories
             }

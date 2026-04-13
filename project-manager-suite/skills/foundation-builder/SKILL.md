@@ -42,6 +42,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | 自身前次产出 | `foundation-*-<slug>.md` | 否 | 增量更新时读取 |
 
 > **注意**：不读取 `page-spec-entities-<slug>.md`。Schema 和 API 直接从前端页面代码反推，确保地基与前端实际消费对齐。
+> **目录读取口径**：`BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物优先从 `可操作页面/` 读取；自身 `foundation-*.md` 优先从 `docs/prd/` 读取。仅旧项目尚未迁移时，才回退读取根目录同名文件。
 
 ## 4) 产物
 
@@ -102,15 +103,15 @@ Phase 6: 交付清单落盘
 
 Phase 1 逻辑简单，直接在此定义：
 
-1. 搜索 `BRD-<slug>-*.md`，不存在则**中止**，提示用户先完成 brd-writer
-2. 搜索 `page-delivery-<slug>.md`，不存在则**中止**，提示用户先完成 page-designer
-3. 搜索 `explainer-flow-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
-4. 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`，根据 C+B 或纯 B 判定），不存在则**中止**，提示用户先完成 page-explainer
-5. 搜索 `explainer-b-permission-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer
-6. 搜索 `explainer-delivery-<slug>.md`，不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 brd-writer
+2. 优先在 `可操作页面/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-designer
+3. 优先在 `可操作页面/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
+4. 优先在 `可操作页面/` 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`，根据 C+B 或纯 B 判定）；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
+5. 优先在 `可操作页面/` 搜索 `explainer-b-permission-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
+6. 优先在 `可操作页面/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
 7. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
 8. 从 BRD 读取：项目类型、是否含 C 端、核心业务模型
-9. 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在
+9. 优先在 `docs/prd/` 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在；仅旧项目尚未迁移时，才回退检查根目录同名文件
    - 存在 → 增量模式，加载 `references/incremental-update.md`
    - 不存在 → 首次模式
 10. 询问用户是否有已有数据库/接口文件
