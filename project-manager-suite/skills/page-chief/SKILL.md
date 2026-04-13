@@ -49,6 +49,7 @@ page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在
 | page-explainer | `explainer-b-interaction-<slug>.md` | 存在，所有语义条目 status = locked |
 | page-explainer | `explainer-b-permission-<slug>.md` | 存在 |
 | page-explainer | `explainer-*-gap-<slug>.md`（若存在） | 无 design_gap / logic_conflict 未解决条目 |
+| page-explainer | `explainer-delivery-<slug>.md` | 存在，一致性自查 6 项全部 ✓ |
 
 **包含 C 端页面时额外检查**：
 
@@ -130,16 +131,19 @@ START
    - `explainer-c-interaction-<slug>.md`
    - `explainer-b-interaction-<slug>.md`
    - `explainer-b-permission-<slug>.md`
+   - `explainer-delivery-<slug>.md`
 
    **不包含 C 端页面时必须存在**：
    - `explainer-flow-<slug>.md`
    - `explainer-b-interaction-<slug>.md`
    - `explainer-b-permission-<slug>.md`
+   - `explainer-delivery-<slug>.md`
 
 3. 任一必需文件缺失 → page-explainer 尚未完成，继续等待
 4. 全部存在后，逐文件检查：
    - 所有 interaction 文件中的语义条目 status 是否全部为 `locked`
    - 是否存在 gap 文件（`explainer-*-gap-<slug>.md`）
+   - `explainer-delivery-<slug>.md` 一致性自查 6 项是否全部 ✓
 5. 判断结果：
    - 全部 locked + 无 gap 文件（或 gap 中无 `design_gap` / `logic_conflict`）→ 进入 Stage 4
    - 有未解决的 `design_gap` / `logic_conflict` → 进入 Stage 3a
