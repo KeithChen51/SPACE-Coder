@@ -657,6 +657,35 @@ test('bootstrap-host creates execution-plan.md as part of startup scaffold', () 
     assert.ok(result.files.created.includes(path.join(effectiveRoot, 'docs/plans/execution-plan.md')));
 });
 
+test('route-check recognizes startup minimum fields from bootstrap-generated profile template', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-route-check-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
+
+    bootstrapHost({
+        hostRoot: workspaceRoot,
+        projectName: '演示项目',
+        targetStage: '',
+        containerRoot: true,
+        dryRun: false,
+        json: false,
+        forceRules: false,
+        interviewComplete: true,
+        interviewJsonPath,
+        createProfileFile: true,
+        createRulesFile: true,
+        createPlanFile: false
+    });
+
+    const result = routeCheck({
+        hostRoot: path.join(workspaceRoot, '演示项目')
+    });
+
+    assert.equal(result.gateChecks.startupMinimum.pass, true);
+    assert.ok(!result.blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
+});
+
 test('devlog-sync creates daily log, appends updates, and updates candidate pool', () => {
     const hostRoot = makeTempDir('pm-suite-devlog-');
 

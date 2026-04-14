@@ -96,14 +96,21 @@ function normalizeValue(rawValue) {
     return rawValue
         .replace(/^`|`$/g, '')
         .replace(/`/g, '')
+        .replace(/【(?:用户确认|系统推断|主入口回写)】/g, '')
         .trim();
 }
 
 function isPlaceholderText(value) {
     if (value == null) return true;
-    const text = String(value).trim();
+    const text = normalizeValue(String(value));
     if (!text) return true;
-    return /【[^】]+】|待填写|待建立|待确认/.test(text);
+    return (
+        /^(待填写|待建立|待确认)$/.test(text) ||
+        /^例如/.test(text) ||
+        /^S0\s*\/\s*S1\s*\/\s*S2\s*\/\s*S3\s*\/\s*S4\s*\/\s*S5\s*\/\s*S6\s*\/\s*S7$/.test(text) ||
+        /^C端\s*\/\s*B端\s*\/\s*后台\s*\/\s*待确认$/.test(text) ||
+        /^仅用户侧\s*\/\s*仅内部侧\s*\/\s*两边都有\s*\/\s*待确认$/.test(text)
+    );
 }
 
 function extractStageId(text) {
@@ -670,17 +677,19 @@ function extractPlanContext(content) {
     const structure = markdownStructure[FILE_ROLE_IDS.PLAN];
     const sections = parseSectionedMarkdown(content);
     const getBullets = (sectionTitle) => sections[sectionTitle]?.bullets || [];
+    const getBulletsByAliases = (...sectionTitles) =>
+        sectionTitles.flatMap((sectionTitle) => getBullets(sectionTitle)).filter(Boolean);
 
-    const currentStageBullets = getBullets(structure.sections.currentStage);
+    const currentStageBullets = getBulletsByAliases(structure.sections.currentStage);
 
     return {
         currentStage: extractStageId(currentStageBullets[0] || ''),
-        currentGoal: getBullets(structure.sections.currentGoal),
-        inProgressTasks: getBullets(structure.sections.inProgress),
-        nextTasks: getBullets(structure.sections.nextTasks),
-        completionCriteria: getBullets(structure.sections.completionCriteria),
-        dependencies: getBullets(structure.sections.dependencies),
-        pendingItems: getBullets(structure.sections.pending)
+        currentGoal: getBulletsByAliases(structure.sections.currentGoal),
+        inProgressTasks: getBulletsByAliases(structure.sections.inProgress, '当前活跃 Phase / Task'),
+        nextTasks: getBulletsByAliases(structure.sections.nextTasks),
+        completionCriteria: getBulletsByAliases(structure.sections.completionCriteria, '完成标准摘要'),
+        dependencies: getBulletsByAliases(structure.sections.dependencies, '当前阻塞与前置依赖'),
+        pendingItems: getBulletsByAliases(structure.sections.pending)
     };
 }
 
