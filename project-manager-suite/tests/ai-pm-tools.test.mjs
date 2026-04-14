@@ -240,6 +240,24 @@ test('route-check blocks S2 routing when stage transition writeback is missing',
     assert.equal(result.gateChecks.pageTaskRequired.pass, true);
 });
 
+test('route-check stays in startup/bootstrap mode when page signal appears before authority files exist', () => {
+    const hostRoot = makeTempDir('pm-suite-host-startup-page-signal-');
+
+    writeFile(
+        path.join(hostRoot, 'notes.md'),
+        '# 启动记录\n\n- 目标：先做车主端页面和管理后台\n- 下一步：梳理页面方向\n'
+    );
+
+    const result = routeCheck({ hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.currentStage, null);
+    assert.equal(result.recommendedStage, 'S0');
+    assert.equal(result.routeTarget, null);
+    assert.equal(result.nextAction, '停留主入口，发起首轮极简访谈并补齐项目画像');
+    assert.ok(result.blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
+});
+
 test('route-check prefers docs/brd and page-preview over legacy page directories and root-level artifacts', () => {
     const hostRoot = createHostFixture({
         profileOverrides: {

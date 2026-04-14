@@ -1076,13 +1076,17 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         gateChecks
     });
     const resolvedRouteTarget = resolveRouteTarget(resolvedTargetStage, gateChecks);
+    const hasStartupBootstrapBlocker =
+        !validationResult.authority[FILE_ROLE_IDS.PROFILE] ||
+        blockingReasons.some((item) => item.code === 'startup_minimum_missing');
+    const visibleRouteTarget = hasStartupBootstrapBlocker ? null : resolvedRouteTarget;
 
     const result = {
         hostRoot: resolvedHostRoot,
         currentStage,
         recommendedStage,
         targetStage: resolvedTargetStage,
-        routeTarget: resolvedRouteTarget,
+        routeTarget: visibleRouteTarget,
         canEnter: blockingReasons.length === 0,
         gateChecks,
         blockingReasons,
@@ -1100,7 +1104,7 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         nextAction: resolveNextActionWithContext({
             validationResult,
             targetStage: resolvedTargetStage,
-            resolvedRouteTarget,
+            resolvedRouteTarget: visibleRouteTarget,
             blockers: blockingReasons,
             gateChecks
         }),
