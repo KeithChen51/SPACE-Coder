@@ -41,7 +41,7 @@ changelog: |
 - `delivery-plan-<slug>.md` 是正式开发计划正文权威源，默认位于宿主项目 `docs/plans/`
 - `execution-plan.md` 是主入口维护的当前执行驾驶舱，只保留正式计划入口、当前活跃任务、下一步动作和完成标准摘要
 - 本 skill 负责生成或更新正式计划正文，不负责把完整 Phase / Task 正文复制进 `execution-plan.md`
-- 当本 skill 完成新建或更新后，应由主入口或计划类执行单元把摘要同步回 `execution-plan.md`
+- 当本 skill 完成新建或更新后，应由 `ai-project-manager` 把摘要同步回 `execution-plan.md`
 - 驾驶舱摘要必须使用 `templates/delivery-plan-template.md` 顶部的固定区块，不允许自由发挥字段名或顺序
 - 仅在以下事件发生时同步摘要：首次生成正式计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越
 
