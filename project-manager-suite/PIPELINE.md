@@ -1,6 +1,6 @@
-# 产品设计流水线（project-profile → PRD）
+# 产品设计与开发计划流水线（project-profile → PRD → 开发计划）
 
-本文件描述从项目画像到 PRD 的完整设计流水线，包含 6 个执行 Skill + 2 个调度 Skill 的职责、依赖、产物，以及**产物在宿主项目中的物理存放位置**。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
+本文件描述从项目画像到 PRD 再到开发执行计划的完整流水线，包含 7 个执行 Skill + 2 个调度 Skill 的职责、依赖、产物，以及**产物在宿主项目中的物理存放位置**。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
 
 相关协议：
 - 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/ai-project-manager/references/core/routing.md`](skills/ai-project-manager/references/core/routing.md)
@@ -9,14 +9,14 @@
 ## 流水线总览
 
 ```
-S0 阶段                S1 阶段                               S2 阶段
-──────────────      ────────         ──────────────────────────────────────────────────────────────
+S0 阶段                S1 阶段                               S2 阶段                                                        S3 阶段
+──────────────      ────────         ──────────────────────────────────────────────────────────────  ──────────────
                                        page-chief 调度                       prd-chief 调度
                                   ┌─────────────────────┐             ┌──────────────────────┐
-ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer
-        │                │            │                │                    │                 │
-        ▼                ▼            ▼                ▼                    ▼                 ▼
-  project-profile      BRD       页面代码         流程/交互语义/权限      术语表/Schema/API   功能列表/主PRD/子PRD
+ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer → delivery-planner
+        │                │            │                │                    │                 │              │
+        ▼                ▼            ▼                ▼                    ▼                 ▼              ▼
+  project-profile      BRD       页面代码         流程/交互语义/权限      术语表/Schema/API   功能列表/主PRD/子PRD  开发执行计划
                        台账      交付清单         差异（可选）            交付清单
 ```
 
@@ -42,16 +42,18 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 │   ├── brd/                                  # 业务需求层
 │   │   ├── brd-ledger-<slug>.md              # brd-writer 过程台账
 │   │   └── BRD-<slug>-<YYYYMMDD-HHMM>.md     # brd-writer 最终交付 BRD
-│   └── prd/                                  # 技术地基 + PRD 层
-│       ├── foundation-glossary-<slug>.md     # foundation-builder 术语表
-│       ├── foundation-schema-<slug>.md       # foundation-builder 数据库 Schema（单文件或索引）
-│       ├── foundation-schema-<slug>/         # 可选：Schema 超 400 行时拆分，内含 <table>.md
-│       ├── foundation-api-<slug>.md          # foundation-builder API 接口（单文件或索引）
-│       ├── foundation-api-<slug>/            # 可选：API 超 400 行时拆分，内含 <module>.md
-│       ├── foundation-delivery-<slug>.md     # foundation-builder 交付清单
-│       ├── prd-feature-list-<slug>.md        # prd-writer 功能列表
-│       ├── prd-main-<slug>.md                # prd-writer 主 PRD（索引枢纽）
-│       └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
+│   ├── prd/                                  # 技术地基 + PRD 层
+│   │   ├── foundation-glossary-<slug>.md     # foundation-builder 术语表
+│   │   ├── foundation-schema-<slug>.md       # foundation-builder 数据库 Schema（单文件或索引）
+│   │   ├── foundation-schema-<slug>/         # 可选：Schema 超 400 行时拆分，内含 <table>.md
+│   │   ├── foundation-api-<slug>.md          # foundation-builder API 接口（单文件或索引）
+│   │   ├── foundation-api-<slug>/            # 可选：API 超 400 行时拆分，内含 <module>.md
+│   │   ├── foundation-delivery-<slug>.md     # foundation-builder 交付清单
+│   │   ├── prd-feature-list-<slug>.md        # prd-writer 功能列表
+│   │   ├── prd-main-<slug>.md                # prd-writer 主 PRD（索引枢纽）
+│   │   └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
+│   └── plan/                                 # 开发执行计划层
+│       └── delivery-plan-<slug>.md           # delivery-planner 产出的开发执行计划
 ├── page-preview/                             # 前端页面与页面语义描述层
 │   ├── <Vue 3 前端工程>/                     # page-designer 产出的可运行代码（src/、package.json 等）
 │   ├── page-delivery-<slug>.md               # page-designer 交付清单（页面索引入口）
@@ -70,13 +72,14 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | 目录 | 归属 | 语义 | 谁写 | 谁读 |
 |------|------|------|------|------|
 | `<host>/`（根） | 全局 | 项目身份与全局画像 | ai-project-manager | 所有下游 skill |
-| `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer |
+| `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
 | `<host>/page-preview/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
-| `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | 下游研发/编码环节 |
+| `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、下游研发/编码环节 |
+| `<host>/docs/plan/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | 下游开发执行环节 |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
-**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹；各 skill SKILL.md 和下方 §1-§5 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
+**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹；各 skill SKILL.md 和下方 §1-§6 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
 
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
@@ -86,6 +89,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | page-explainer | `<host>/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
+| delivery-planner | `<host>/docs/plan/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
 
 **不变式（写 skill 时的硬约束）：**
 
@@ -273,29 +277,56 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 ---
 
+## 6. delivery-planner — 开发执行计划
+
+**职责**：基于上游 PRD 规格和技术地基产物，产出面向 AI 执行、人类 review 的开发计划文档（Phase/Task 拆解、完成标准、发布闸门）。不直接执行代码开发。前置运行 `collect-upstream-context.mjs` 脚本程序化发现上游产物，产出后运行 `validate-plan-structure.mjs` 脚本做结构化校验。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| `project-profile.md` | ai-project-manager | `<host>/project-profile.md` |
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
+| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plan/` | 包含 Phase/Task 拆解、完成标准、发布闸门、任务看板、风险等的完整执行计划 |
+
+---
+
 ## 依赖关系矩阵
 
 下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖，👁 = 观察但不修改）：
 
-| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer |
-|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| project-profile | 产出 | ✓（硬依赖） | | | | | | |
-| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ |
-| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ |
-| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ |
-| page-spec-entities | | | | 产出 | | | | |
-| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ |
-| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） |
-| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ |
-| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | |
-| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ |
-| foundation-glossary | | | | | | 👁 | 产出 | ✓ |
-| foundation-schema | | | | | | 👁 | 产出 | ✓ |
-| foundation-api | | | | | | 👁 | 产出 | ✓ |
-| foundation-delivery | | | | | | 👁 | 产出 | ✓ |
-| prd-feature-list | | | | | | 👁 | | 产出 |
-| prd-main | | | | | | 👁 | | 产出 |
-| prd-子文档 | | | | | | 👁 | | 产出 |
+| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ |
+| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ |
+| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | |
+| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | |
+| page-spec-entities | | | | 产出 | | | | | |
+| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | |
+| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | |
+| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ | |
+| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | | |
+| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | |
+| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ |
+| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ |
+| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ |
+| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ |
+| prd-feature-list | | | | | | 👁 | | 产出 | ✓ |
+| prd-main | | | | | | 👁 | | 产出 | ✓ |
+| prd-子文档 | | | | | | 👁 | | 产出 | ✓（按任务选读） |
+| delivery-plan | | | | | | | | | 产出 |
 
 ---
 

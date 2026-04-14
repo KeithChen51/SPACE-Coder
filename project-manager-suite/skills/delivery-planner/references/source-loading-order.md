@@ -2,18 +2,21 @@
 
 这份文档定义执行计划写作时应该优先读取哪些真实资料，以及每类资料的用途。
 
+> **v1.1 变更说明**：Step 0.5 脚本（`collect-upstream-context.mjs`）会程序化输出一份「路径清单 JSON」，本文档的第四节〜第五节（PRD 导航源、任务相关 PRD 源）现在由脚本清单驱动，不再需要 AI 自行 glob 搜索。
+
 ## 一、总顺序
 
 按以下顺序读取，不要颠倒：
 
+0.5. **脚本化上游产物发现**（Step 0.5 强制前置，见 SKILL.md）
 1. 仓库规则源
 2. 当前正式计划与必要历史计划
-3. PRD 导航源
-4. 任务相关 PRD
+3. PRD 导航源（来自脚本输出 `prdMain`）
+4. 任务相关 PRD（来自脚本输出 `prdChildren`，按任务选读）
 5. 真实代码与 SQL
 6. 测试与验证资产
 
-核心原则：**先规则，后计划；先目标态，后现状；先主文档，后局部细节。**
+核心原则：**先脚本发现，后规则；先目标态，后现状；先主文档，后局部细节。**
 
 ## 二、仓库规则源
 
@@ -33,19 +36,24 @@
 | 用户点名的计划文件 | 当前任务的直接依据 | 必读 |
 | 历史计划样本 | 仅在需要识别结构演进时补读 | 按需 |
 
-如果是“更新计划”，必须读原计划，而不是只看聊天摘要。
+如果是"更新计划"，必须读原计划，而不是只看聊天摘要。
 
-## 四、PRD 导航源
+## 四、PRD 导航源（由脚本清单驱动）
 
-| 资料类型 | 用途 | 示例 |
+Step 0.5 脚本输出的 `prdMain` 字段即为 PRD 主文档的绝对路径。
+
+| 资料类型 | 用途 | 来源 |
 |---|---|---|
-| PRD 主文档 / 需求地图 | 建立全局地图，确定功能边界和章节入口 | `<PRD 主文档 / 需求地图>` |
+| PRD 主文档 (`prd-main-<slug>.md`) | 建立全局地图，确定功能边界和章节入口 | 脚本 `prdMain.path` |
+| PRD 功能列表 (`prd-feature-list-<slug>.md`) | 页面全景 + 区块业务逻辑总览 | 脚本 `prdFeatureList.path` |
 
 PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD。
 
-## 五、任务相关 PRD 源
+> 如果 `prdMain` 为 `null`，进入失败分支，不要继续读取其他资料。
 
-按任务类型补读相关章节，不整包读取。
+## 五、任务相关 PRD 源（由脚本清单驱动）
+
+脚本输出的 `prdChildren` 数组列举了所有子文档路径。按任务类型补读相关块，不整包读取。
 
 | 任务类型 | 优先补读 |
 |---|---|
@@ -57,10 +65,23 @@ PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD
 
 读取原则：
 - 只读与当前任务有关的章节
-- 大文件按章节号定位
+- 大文件（脚本输出 `isLarge: true`）按章节号定位
 - 章节信息最终要回写到 Task 的 `PRD 双链·读`
 
-## 六、真实代码与 SQL 源
+## 六、Foundation 文档源（由脚本清单驱动）
+
+脚本输出的 `foundations` 数组按 type 分类（glossary / schema / api / delivery），是确定完成标准的核心依据。
+
+| 类型 | 用途 | 脚本 type 值 |
+|---|---|---|
+| 术语表 | 确认统一命名口径 | `glossary` |
+| 数据库 Schema | 确认字段、表名、枚举值 | `schema` |
+| API 接口设计 | 确认接口路径、请求/响应结构 | `api` |
+| 交付清单 | 产物索引 + 一致性自查结果 | `delivery` |
+
+如果 schema / api 均缺失，则代码类任务的 `核心文件` 和 `完成标准` 无法写实，须进入失败分支。
+
+## 七、真实代码与 SQL 源
 
 计划不能停留在 PRD 层，必须读真实落点。
 
@@ -73,7 +94,7 @@ PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD
 
 如果没有读到这些真实文件，就不能把 `核心文件` 和 `完成标准` 写实。
 
-## 七、测试与验证资产
+## 八、测试与验证资产
 
 | 来源 | 用途 |
 |---|---|
@@ -81,22 +102,22 @@ PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD
 | 计划 / handoff / smoke / integration 文档 | 补齐联调口径、发布闸门、已知风险 |
 | 真实接口样例、查询脚本、联调命令 | 写入验证门禁或任务完成标准 |
 
-如果任务需要“完成前验证”，但没有读任何验证资产，计划大概率会空泛。
+如果任务需要"完成前验证"，但没有读任何验证资产，计划大概率会空泛。
 
-## 八、三种常见场景的最小读取集
+## 九、三种常见场景的最小读取集
 
 ### 场景 A：新建一份完整计划
 
-至少读取：
+必须先运行 Step 0.5 脚本，再至少读取：
+- 脚本清单：`prdMain` + `foundations` 全部 + `prdFeatureList`
 - 仓库规则源
 - 当前正式计划或成熟样本计划
-- PRD 主文档 / 需求导航文档
-- 当前任务相关 PRD 章节
+- `prdChildren` 中与任务相关的条目（非全部）
 - 至少一组真实代码 / SQL / 验证资产
 
 ### 场景 B：更新已有计划
 
-至少读取：
+必须先运行 Step 0.5 脚本（确认上游文档无重大变更），再至少读取：
 - 仓库规则源
 - 原计划文件
 - 原计划中涉及的 PRD 双链条目
@@ -104,16 +125,38 @@ PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD
 
 ### 场景 C：只补一个 Phase
 
-至少读取：
+Step 0.5 脚本可以跳过整包读取，但至少读取：
 - 仓库规则源
 - 原计划文件中该 Phase 前后的上下文
-- 该 Phase 关联的 PRD 章节
+- 该 Phase 关联的 PRD 章节（从脚本输出路径定位，不整包读）
 - 受影响的看板、风险、闸门、索引章节
 
-## 九、禁止行为
+## 十、文件命名约定与自动发现
 
+以下命名约定来自 `PIPELINE.md`，`collect-upstream-context.mjs` 脚本基于这些 glob 模式进行自动匹配。
+
+| 文件类型 | 命名模式 | 优先级 | 脚本字段 |
+|---------|----------|--------|---------|
+| PRD 主文档 | `docs/prd/prd-main-<slug>.md` | 最高，必读 | `prdMain` |
+| PRD 功能列表 | `docs/prd/prd-feature-list-<slug>.md` | 高 | `prdFeatureList` |
+| PRD 子文档 | `docs/prd/prd-<slug>-<区块名>.md`（排除 prd-main、prd-feature-list） | 按任务需要 | `prdChildren[]` |
+| Schema | `docs/prd/foundation-schema-<slug>.md`（或 `-part<N>.md`）| 高，必需 | `foundations[type=schema]` |
+| API | `docs/prd/foundation-api-<slug>.md`（或 `-part<N>.md`） | 高，必需 | `foundations[type=api]` |
+| 术语表 | `docs/prd/foundation-glossary-<slug>.md` | 中 | `foundations[type=glossary]` |
+| 交付清单 | `docs/prd/foundation-delivery-<slug>.md` | 中 | `foundations[type=delivery]` |
+| 用户流程 | `docs/prd/explainer-flow-<slug>.md` | 中 | `explainers[type=flow]` |
+| 交互描述 | `docs/prd/explainer-{c|b}-interaction-<slug>.md` | 中 | `explainers[type=*-interaction]` |
+| 权限矩阵 | `docs/prd/explainer-{c|b}-permission-<slug>.md` | 中 | `explainers[type=*-permission]` |
+| 交互差异 | `docs/prd/explainer-{c|b}-gap-<slug>.md` | 低 | `explainers[type=*-gap]` |
+
+> **slug** 由 `brd-writer` 在 Phase A 确定（英文短语、全小写、连字符分隔），流水线中所有下游 skill 的产物文件必须使用同一个 slug。
+
+## 十一、禁止行为
+
+- 禁止在 Step 0.5 脚本运行完成前开始任何读取步骤
 - 禁止一次性读取整个 PRD 目录
 - 禁止只靠聊天摘要写任务
 - 禁止只读 PRD 不读代码就写 `核心文件`
 - 禁止只读代码不回到 PRD 就写 `完成标准`
 - 禁止补计划状态时只改一处，不同步回写看板和关联章节
+- 禁止对 `isLarge: true` 的文件整包拉入上下文

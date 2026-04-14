@@ -1,11 +1,17 @@
 ---
 name: delivery-planner
 description: 当任务涉及代码仓库内的开发实施计划时使用，例如功能开发、缺陷修复、重构、联调、发布前改造的 Phase / Task 拆解、计划更新、完成标准补强与发布闸门回写。仅限代码开发计划；不要用于产品排期、运营计划、纯文档执行计划、PRD 编写计划、测试执行排期或其他非代码项目计划。即使用户没有明确提到“skill”或“方法论”，只要语境明确是在做代码开发计划，也应触发本 skill。
+version: 1.1.0
+changelog: |
+  v1.1.0 – 增加脚本驱动：Step 0.5 前置运行 collect-upstream-context.mjs 收集上游产物清单，
+           Step 5 产出自检改用 validate-plan-structure.mjs 结构化校验，消除纯 prompt 纪律的漏读风险。
 ---
 
 # delivery-planner
 
 本 skill 用来生成或更新面向 AI 执行、人类 review 的执行计划文档。它沉淀的是一套可复用的方法论，而不是某个项目专属计划的外壳。
+
+与纯 prompt 驱动的核心差异：**在进入任何读取步骤之前，必须先运行 `collect-upstream-context.mjs` 脚本**，由脚本程序化发现并清单化上游 PRD + foundation 文档，消除依赖 prompt 纪律的漏读风险。**计划产出后，必须运行 `validate-plan-structure.mjs` 脚本**做结构化校验。
 
 ## 非目标
 
@@ -41,12 +47,64 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 - **更新计划**：已有计划文档，补状态、日期、依赖、验收口径、风险、闸门
 - **局部补 Phase**：只修改某个阶段，但必须同步更新看板、风险、反向索引等关联章节
 
-### Step 1：固定读取顺序
+---
 
-先读仓库规则，再读当前正式计划，再读 PRD，再读真实代码与验证资产。不要凭对话摘要或记忆写计划。
+### Step 0.5：运行上游产物收集（硬性前置，不可跳过）
+
+**在读取任何项目文件之前**，执行以下命令，获取上游产物清单：
+
+```bash
+node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <hostRoot> --json
+```
+
+> 如果项目不在默认的 `docs/prd/` 目录存放文档，追加 `--docs-dir <相对路径>` 参数。
+> 如果项目未安装 suite（`.agent/` 目录不存在），改用 suite 的绝对路径运行脚本。
+
+**读取脚本输出后，按以下逻辑分支执行：**
+
+#### 分支 A：`canProceed: true`（所有必需文档存在）
+
+按脚本输出的路径清单作为 Step 1 的**强制读取清单**，顺序如下：
+
+1. `prdMain.path`（最高优先级，必读）
+2. `foundations` 数组中所有条目（按 type 顺序：glossary → schema → api → delivery）
+3. `prdFeatureList.path`（若存在）
+4. `prdChildren` 数组（按任务相关性选读，不要全部整包读取）
+5. `explainers` 数组（按任务相关性选读）
+
+> 对 `isLarge: true` 的文件，**禁止整包读取**，必须按章节定位读取。
+
+#### 分支 B：`canProceed: false`（必需文档缺失）
+
+进入**失败分支**：
+
+1. 输出 `requiredMissing` 列表，说明哪些文档缺失
+2. 说明缺失文档对计划完整性的影响
+3. 允许输出"阻塞版计划骨架"，但缺失依据的 Task 必须显式标注 `状态: 阻塞-等待PRD`
+4. 不要猜需求、伪造核心文件路径、填空式写完成标准
+
+#### 分支 C：仅有 `warnings`，`canProceed: true`
+
+可进入正常流程，但须在计划头部元信息中注明警告条目（如文件过大需分章节读取、发现未命名规范的文档等）。
+
+#### 分支 D：`meta.mode: 'fallback'`（未匹配到 PIPELINE 命名约定）
+
+当项目没有使用 PIPELINE.md 流水线产出文档时，脚本会自动切入兜底模式，按关键词模糊分类 docs/ 中的 .md 文件。
+
+1. 将脚本输出的分类结果（`prdDocs` / `foundationDocs` / `explainerDocs` / `otherDocs`）作为**参考清单**，不作为强制读取清单
+2. AI 需要自行打开每个匹配文件的头部（前 30 行），确认文件类型后再决定读取深度
+3. 在计划头部元信息中注明 `上游发现模式: 兜底模式（未检测到 PIPELINE 命名约定）`
+4. 不触发失败分支，`missingExpected` 检测被禁用
+5. `canProceed` 始终为 `true`
+
+---
+
+### Step 1：在脚本清单基础上补读仓库规则
+
+脚本只扫描 docs/ 产物文件，不扫描仓库规则源。在消费脚本输出后，还需补读：
 
 读取顺序见：
-- `references/source-loading-order.md`
+- `references/source-loading-order.md`（第二节〜第三节：仓库规则源、现有计划源）
 
 生成新计划前，再读取：
 - `templates/delivery-plan-template.md`
@@ -115,15 +173,26 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 - 状态、日期、依赖、闸门、风险、反向索引要可追溯
 - 证据不足、需求冲突、验证资产缺失时的失败分支
 
-### Step 5：产出后自检
+### Step 5：产出后自检（脚本 + 人工）
 
-完成初稿或更新稿后，必须逐项自检：
-- 有没有漏掉完整执行计划协议的核心章节
-- 完成标准是否可核查，是否出现“数据完整”“配置补齐”这类抽象词
+完成初稿或更新稿后，**必须先运行结构校验脚本**：
+
+```bash
+node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <计划文件路径> --json
+```
+
+**脚本会自动检查**：
+- 13 个必需章节是否齐全
+- 每个 Task 是否具备 7 个必填字段
+- 完成标准中是否出现高风险模糊词（`数据完整`、`配置补齐`、`符合预期` 等）
+
+**脚本报错（`passed: false`）时，不能宣称计划完成**，必须先修正再重新校验。
+
+脚本通过后，再人工逐项自检：
 - 是否真的引用了 PRD / API / 数据库 / 代码 / 验证资产
 - 如果是更新计划，是否同步回写了状态、日期、依赖、看板、风险或反向索引
 
-自检清单见：
+完整自检清单见：
 - `references/quality-gates.md`
 
 ## Harness 增强协议（兼容模式）
@@ -140,9 +209,11 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 
 ## 强制约束
 
+- **Step 0.5 不可跳过**：未运行 `collect-upstream-context.mjs` 前，禁止开始写计划
+- **Step 5 脚本校验不可跳过**：未运行 `validate-plan-structure.mjs` 且通过前，禁止宣称计划完成
 - 禁止一次性读取整个 PRD 目录
 - 必须先读 PRD 导航文档，再按任务读取相关章节
-- 大文件必须按章节定位读取，不要整包拉入上下文
+- 大文件（脚本输出 `isLarge: true`）必须按章节定位读取，不要整包拉入上下文
 - 编写待办和任务转述时，必须回溯原始计划与真实文件，不得复述聊天摘要
 - 任何新增验收口径，如果会影响后续执行，必须写回计划正文，不得只留在聊天里
 - 没有读到 API / 数据库 / 代码 / PRD 中至少与任务相关的依据前，不要输出“完成标准已定义”的计划
@@ -156,6 +227,7 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 - 默认落到当前仓库约定的正式计划目录
 - 计划标题、目标、Phase 命名、看板状态要与当前仓库术语一致
 - 结构默认使用 `templates/delivery-plan-template.md`
+- **计划头部元信息中必须记录 `collect-upstream-context.mjs` 的运行结论**（slug、扫描时间、是否进入失败分支）
 
 ### 更新计划
 
@@ -201,6 +273,8 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 
 ## 快速出口
 
+- 需要运行上游发现脚本时：`node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <hostRoot> --json`
+- 需要运行产出校验脚本时：`node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <计划文件路径> --json`
 - 需要模板时：读取 `templates/delivery-plan-template.md`
 - 需要章节说明时：读取 `references/plan-anatomy.md`
 - 需要判断先读哪些资料时：读取 `references/source-loading-order.md`
