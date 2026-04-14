@@ -13,6 +13,38 @@ changelog: |
 
 与纯 prompt 驱动的核心差异：**在进入任何读取步骤之前，必须先运行 `collect-upstream-context.mjs` 脚本**，由脚本程序化发现并清单化上游 PRD + foundation 文档，消除依赖 prompt 纪律的漏读风险。**计划产出后，必须运行 `validate-plan-structure.mjs` 脚本**做结构化校验。
 
+相关协议：
+- 设计流水线与产物目录：[`../../PIPELINE.md`](../../PIPELINE.md)
+- 主入口运行协议：[`../ai-project-manager/references/core/runtime.md`](../ai-project-manager/references/core/runtime.md)
+- 全局文件协议：[`../ai-project-manager/references/core/global-files-protocol.md`](../ai-project-manager/references/core/global-files-protocol.md)
+- 当前执行驾驶舱模板：[`../ai-project-manager/assets/global-files/execution-plan.md`](../ai-project-manager/assets/global-files/execution-plan.md)
+
+## 按任务阅读
+
+- 想看什么时候该用这个 skill：看 [什么时候使用](#什么时候使用)
+- 想看上游文档怎么先收集：看 [Step 0.5：运行上游产物收集](#step-05运行上游产物收集硬性前置不可跳过)
+- 想看计划正文怎么写：看 [Step 3：按完整执行计划协议输出](#step-3按完整执行计划协议输出)
+- 想看产出文件落到哪里：看 [产出要求](#产出要求)
+- 想看和 `execution-plan.md` 怎么分工：看 [与 `execution-plan.md` 的关系](#与-execution-planmd-的关系)
+
+## 目录索引
+
+- 设计流水线：[`../../PIPELINE.md`](../../PIPELINE.md)
+- 全局文件协议：[`../ai-project-manager/references/core/global-files-protocol.md`](../ai-project-manager/references/core/global-files-protocol.md)
+- 主入口运行协议：[`../ai-project-manager/references/core/runtime.md`](../ai-project-manager/references/core/runtime.md)
+- 计划模板：[`./templates/delivery-plan-template.md`](./templates/delivery-plan-template.md)
+- 结构说明：[`./references/plan-anatomy.md`](./references/plan-anatomy.md)
+- 自检门禁：[`./references/quality-gates.md`](./references/quality-gates.md)
+
+## 与 `execution-plan.md` 的关系
+
+- `delivery-plan-<slug>.md` 是正式开发计划正文权威源，默认位于宿主项目 `docs/plans/`
+- `execution-plan.md` 是主入口维护的当前执行驾驶舱，只保留正式计划入口、当前活跃任务、下一步动作和完成标准摘要
+- 本 skill 负责生成或更新正式计划正文，不负责把完整 Phase / Task 正文复制进 `execution-plan.md`
+- 当本 skill 完成新建或更新后，应由主入口或计划类执行单元把摘要同步回 `execution-plan.md`
+- 驾驶舱摘要必须使用 `templates/delivery-plan-template.md` 顶部的固定区块，不允许自由发挥字段名或顺序
+- 仅在以下事件发生时同步摘要：首次生成正式计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越
+
 ## 非目标
 
 本 skill 不负责：
@@ -228,6 +260,8 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 - 计划标题、目标、Phase 命名、看板状态要与当前仓库术语一致
 - 结构默认使用 `templates/delivery-plan-template.md`
 - **计划头部元信息中必须记录 `collect-upstream-context.mjs` 的运行结论**（slug、扫描时间、是否进入失败分支）
+- 不要把完整正文回写进 `execution-plan.md`；驾驶舱只同步入口和摘要
+- 顶部“驾驶舱摘要”区块必须填写完整，作为后续同步 `execution-plan.md` 的唯一机读来源
 
 ### 更新计划
 
