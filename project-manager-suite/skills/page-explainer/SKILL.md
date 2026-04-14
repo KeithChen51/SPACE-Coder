@@ -45,7 +45,7 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-delivery-<slug>.md` 与实际页面代码优先从 `可操作页面/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `page-delivery-<slug>.md` 与实际页面代码优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
 
 ## 4) 产物
 
@@ -249,7 +249,7 @@ Phase 5: 交付清单与回环判断（同 C+B 的 Phase 6）
 Phase 1 逻辑简单，直接在此定义：
 
 1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 brd-writer
-2. 优先在 `可操作页面/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-designer
+2. 优先在 `page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索 `可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-designer
 3. 从 delivery 中提取页面文件路径列表，逐个验证文件存在
 4. 从 BRD 读取：项目类型、是否含 C 端（判定 C+B 或纯 B）
 5. 从 delivery 读取：页面路由表、架构信息

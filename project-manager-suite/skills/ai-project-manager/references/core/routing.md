@@ -157,7 +157,7 @@ S1/S2 的上游产物目录、下游消费路径与宿主项目物理目录约�
 ### 第二层：阶段触发目录（按需创建）
 只在进入对应阶段后补建：
 - `docs/brd/` (进入 S1，开始沉淀 BRD 与业务台账)
-- `可操作页面/` (进入 S2 页面环节，开始沉淀页面代码与 explainer 产物)
+- `page-preview/` (进入 S2 页面环节，开始沉淀页面代码与 explainer 产物)
 - `docs/prd/` (进入 S2 PRD 环节，开始沉淀 foundation 与 PRD 规格)
 - `docs/decisions/` (发生方案选型决策)
 - `docs/test-case/` (进入测试设计)

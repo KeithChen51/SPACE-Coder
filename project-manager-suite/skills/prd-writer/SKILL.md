@@ -48,7 +48,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-delivery-<slug>.md` 与 explainer 产物优先从 `可操作页面/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `page-delivery-<slug>.md` 与 explainer 产物优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
 - `foundation-*.md`、`prd-*.md` 优先从 `docs/prd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 
 **拆分消费协议**（适用于 foundation-schema、foundation-api）：
@@ -104,11 +104,11 @@ Phase 5: 一致性自查
 ## 7) Phase 1: 输入收集（内联）
 
 1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
-2. 优先在 `可操作页面/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
-3. 优先在 `可操作页面/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-4. 优先在 `可操作页面/` 搜索 `explainer-b-permission-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-5. 优先在 `可操作页面/` 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`）；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
-6. 优先在 `可操作页面/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+2. 优先在 `page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索 `可操作页面/` 或根目录同名文件；仍不存在则**中止**
+3. 优先在 `page-preview/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索 `可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
+4. 优先在 `page-preview/` 搜索 `explainer-b-permission-<slug>.md`；仅旧项目尚未迁移时，才回退搜索 `可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
+5. 优先在 `page-preview/` 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`）；仅旧项目尚未迁移时，才回退搜索 `可操作页面/` 或根目录同名文件；仍不存在则**中止**
+6. 优先在 `page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索 `可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
 7. 优先在 `docs/prd/` 搜索 `foundation-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
 8. 从 foundation-delivery 中获取 glossary/schema/api 主文件路径，逐个校验存在
 9. 对 schema / api 主文件：stat 同名子目录是否存在

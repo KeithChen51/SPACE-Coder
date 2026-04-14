@@ -261,7 +261,7 @@ function findMatchingFiles(hostRoot, files, pattern, preferredDirs = []) {
 
 const DESIGN_ARTIFACT_DIRS = {
     brd: ['docs/brd'],
-    page: ['可操作页面'],
+    page: ['page-preview', '可操作页面'],
     prd: ['docs/prd']
 };
 

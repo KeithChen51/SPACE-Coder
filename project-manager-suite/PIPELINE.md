@@ -52,7 +52,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 │       ├── prd-feature-list-<slug>.md        # prd-writer 功能列表
 │       ├── prd-main-<slug>.md                # prd-writer 主 PRD（索引枢纽）
 │       └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
-├── 可操作页面/                               # 前端页面与页面语义描述层
+├── page-preview/                             # 前端页面与页面语义描述层
 │   ├── <Vue 3 前端工程>/                     # page-designer 产出的可运行代码（src/、package.json 等）
 │   ├── page-delivery-<slug>.md               # page-designer 交付清单（页面索引入口）
 │   ├── page-spec-entities-<slug>.md          # page-designer C 端实体中间文件（仅 C+B 项目）
@@ -71,7 +71,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 |------|------|------|------|------|
 | `<host>/`（根） | 全局 | 项目身份与全局画像 | ai-project-manager | 所有下游 skill |
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer |
-| `<host>/可操作页面/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
+| `<host>/page-preview/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | 下游研发/编码环节 |
 
 ### Skill → 文件夹 权威映射（单一来源）
@@ -82,14 +82,14 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 |-------|--------------|----------------|
 | ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
 | brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
-| page-designer | `<host>/可操作页面/` | Vue 3 前端工程目录、`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 及后续该 skill 新增的页面层文件 |
-| page-explainer | `<host>/可操作页面/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
+| page-designer | `<host>/page-preview/` | Vue 3 前端工程目录、`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 及后续该 skill 新增的页面层文件 |
+| page-explainer | `<host>/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
 
 **不变式（写 skill 时的硬约束）：**
 
-1. 一个 skill 的**所有**产出文件必须落在上表声明的同一个文件夹，不允许跨目录分布（如 page-explainer 不允许一部分写 `可操作页面/` 另一部分写 `prd/`）。
+1. 一个 skill 的**所有**产出文件必须落在上表声明的同一个文件夹，不允许跨目录分布（如 page-explainer 不允许一部分写 `page-preview/` 另一部分写 `prd/`）。
 2. 新增 skill 前必须在本表登记目标文件夹；若现有三类目录不能覆盖，需先与 PIPELINE.md 维护者讨论扩表，再实施 skill。
 3. 重命名/拆分产物时，只改文件名，不改落地文件夹（落地文件夹由 skill 决定，与文件名无关）。
 4. 下游 skill 在依赖表中看到某上游文件名，对应查找目录 = 上表中该上游 skill 的"产出目标文件夹"；不需要每个依赖表项单独标注目录。
@@ -180,10 +180,10 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| C 端页面代码 | Vue 3 工程 | `<host>/可操作页面/<工程名>/` | 可交互，mock 数据（仅 C+B） |
-| B 端控制台页面代码 | Vue 3 工程 | `<host>/可操作页面/<工程名>/` | 可交互，mock 数据 |
-| 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/可操作页面/` | C 端实体规格（仅 C+B） |
-| 交付清单 | `page-delivery-<slug>.md` | `<host>/可操作页面/` | 页面路由表、文件路径、下游索引 |
+| C 端页面代码 | Vue 3 工程 | `<host>/page-preview/<工程名>/` | 可交互，mock 数据（仅 C+B） |
+| B 端控制台页面代码 | Vue 3 工程 | `<host>/page-preview/<工程名>/` | 可交互，mock 数据 |
+| 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/page-preview/` | C 端实体规格（仅 C+B） |
+| 交付清单 | `page-delivery-<slug>.md` | `<host>/page-preview/` | 页面路由表、文件路径、下游索引 |
 
 ---
 
@@ -196,20 +196,20 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | 文件 | 来源 | 位置 |
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
-| `page-delivery-<slug>.md` | page-designer | `<host>/可操作页面/` |
-| 页面代码文件（Vue 3 组件） | page-designer | `<host>/可操作页面/<工程名>/` |
+| `page-delivery-<slug>.md` | page-designer | `<host>/page-preview/` |
+| 页面代码文件（Vue 3 组件） | page-designer | `<host>/page-preview/<工程名>/` |
 
 **产出文件**：
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 用户流程图 | `explainer-flow-<slug>.md` | `<host>/可操作页面/` | 按用户任务组织的流程描述（只含流程语义，不含索引） |
-| C 端交互描述 | `explainer-c-interaction-<slug>.md` | `<host>/可操作页面/` | 结构化语义条目，含 locked/open 状态（仅 C+B） |
-| B 端交互描述 | `explainer-b-interaction-<slug>.md` | `<host>/可操作页面/` | 结构化语义条目，含 locked/open 状态 |
-| B 端权限矩阵 | `explainer-b-permission-<slug>.md` | `<host>/可操作页面/` | 角色 × 页面/菜单可见性 |
-| C 端差异 | `explainer-c-gap-<slug>.md` | `<host>/可操作页面/` | 分类差异条目（仅 C+B，有差异时） |
-| B 端差异 | `explainer-b-gap-<slug>.md` | `<host>/可操作页面/` | 分类差异条目（有差异时） |
-| 交付清单 | `explainer-delivery-<slug>.md` | `<host>/可操作页面/` | 产物索引 + 冻结统计 + 差异摘要 + 流程映射 + 一致性自查；本环节收官与下游入口 |
+| 用户流程图 | `explainer-flow-<slug>.md` | `<host>/page-preview/` | 按用户任务组织的流程描述（只含流程语义，不含索引） |
+| C 端交互描述 | `explainer-c-interaction-<slug>.md` | `<host>/page-preview/` | 结构化语义条目，含 locked/open 状态（仅 C+B） |
+| B 端交互描述 | `explainer-b-interaction-<slug>.md` | `<host>/page-preview/` | 结构化语义条目，含 locked/open 状态 |
+| B 端权限矩阵 | `explainer-b-permission-<slug>.md` | `<host>/page-preview/` | 角色 × 页面/菜单可见性 |
+| C 端差异 | `explainer-c-gap-<slug>.md` | `<host>/page-preview/` | 分类差异条目（仅 C+B，有差异时） |
+| B 端差异 | `explainer-b-gap-<slug>.md` | `<host>/page-preview/` | 分类差异条目（有差异时） |
+| 交付清单 | `explainer-delivery-<slug>.md` | `<host>/page-preview/` | 产物索引 + 冻结统计 + 差异摘要 + 流程映射 + 一致性自查；本环节收官与下游入口 |
 
 **下游消费规则**：只有 `status: locked` 的语义条目，foundation-builder 和 prd-writer 才能当权威依据。
 
@@ -224,12 +224,12 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | 文件 | 来源 | 位置 |
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
-| `page-delivery-<slug>.md` | page-designer | `<host>/可操作页面/` |
-| 页面代码文件（Vue 3 组件） | page-designer | `<host>/可操作页面/<工程名>/` |
-| `explainer-flow-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `explainer-b-permission-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `explainer-delivery-<slug>.md` | page-explainer | `<host>/可操作页面/` |
+| `page-delivery-<slug>.md` | page-designer | `<host>/page-preview/` |
+| 页面代码文件（Vue 3 组件） | page-designer | `<host>/page-preview/<工程名>/` |
+| `explainer-flow-<slug>.md` | page-explainer | `<host>/page-preview/` |
+| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/page-preview/` |
+| `explainer-b-permission-<slug>.md` | page-explainer | `<host>/page-preview/` |
+| `explainer-delivery-<slug>.md` | page-explainer | `<host>/page-preview/` |
 | 已有数据库/接口文件（可选） | 用户提供 | 用户指定路径 |
 
 **产出文件**：
@@ -252,12 +252,12 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | 文件 | 来源 | 位置 |
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
-| `page-delivery-<slug>.md` | page-designer | `<host>/可操作页面/` |
-| 页面代码文件（Vue 3 组件） | page-designer | `<host>/可操作页面/<工程名>/` |
-| `explainer-flow-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `explainer-b-permission-<slug>.md` | page-explainer | `<host>/可操作页面/` |
-| `explainer-delivery-<slug>.md` | page-explainer | `<host>/可操作页面/` |
+| `page-delivery-<slug>.md` | page-designer | `<host>/page-preview/` |
+| 页面代码文件（Vue 3 组件） | page-designer | `<host>/page-preview/<工程名>/` |
+| `explainer-flow-<slug>.md` | page-explainer | `<host>/page-preview/` |
+| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/page-preview/` |
+| `explainer-b-permission-<slug>.md` | page-explainer | `<host>/page-preview/` |
+| `explainer-delivery-<slug>.md` | page-explainer | `<host>/page-preview/` |
 | `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
 | `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
 | `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
@@ -301,8 +301,8 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 ## 路径约定变更须知
 
-本版本（2026-04-13）首次固化三大目录结构（`docs/brd/` / `可操作页面/` / `docs/prd/`）。历史宿主项目若文件仍散落在根目录：
+截至 2026-04-14，三大目录结构统一为 `docs/brd/` / `page-preview/` / `docs/prd/`。其中页面层目录已从 2026-04-13 版的 `可操作页面/` 改名为 `page-preview/`。历史宿主项目若文件仍停留在旧目录或根目录：
 
-- 调度层（page-chief / prd-chief）扫描产物时，应**优先检查新目录**，兜底再扫根目录。
+- 调度层（page-chief / prd-chief）扫描产物时，应**优先检查新目录**，再兼容旧 `可操作页面/`，最后兜底扫根目录。
 - 子 skill 写入新产物时，**一律按本文件约定的目录**写入，不再回写根目录。
-- 迁移既有文件时，按 slug 归属关系移动到对应目录即可，内容无需改动。
+- 迁移既有文件时，按 slug 归属关系移动到对应目录即可，内容无需改动；若原先位于 `可操作页面/`，应整体迁移到 `page-preview/`。
