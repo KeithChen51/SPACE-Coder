@@ -224,7 +224,7 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 
 ### 新建计划
 
-- 默认落到当前仓库约定的正式计划目录
+- 默认落到宿主项目的 `docs/plans/`，主文件名为 `delivery-plan-<slug>.md`
 - 计划标题、目标、Phase 命名、看板状态要与当前仓库术语一致
 - 结构默认使用 `templates/delivery-plan-template.md`
 - **计划头部元信息中必须记录 `collect-upstream-context.mjs` 的运行结论**（slug、扫描时间、是否进入失败分支）

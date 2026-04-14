@@ -52,7 +52,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 │   │   ├── prd-feature-list-<slug>.md        # prd-writer 功能列表
 │   │   ├── prd-main-<slug>.md                # prd-writer 主 PRD（索引枢纽）
 │   │   └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
-│   └── plan/                                 # 开发执行计划层
+│   └── plans/                                # 开发执行计划层
 │       └── delivery-plan-<slug>.md           # delivery-planner 产出的开发执行计划
 ├── page-preview/                             # 前端页面与页面语义描述层
 │   ├── <Vue 3 前端工程>/                     # page-designer 产出的可运行代码（src/、package.json 等）
@@ -75,7 +75,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
 | `<host>/page-preview/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、下游研发/编码环节 |
-| `<host>/docs/plan/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | 下游开发执行环节 |
+| `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | 下游开发执行环节 |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
@@ -89,7 +89,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | page-explainer | `<host>/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
-| delivery-planner | `<host>/docs/plan/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
+| delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
 
 **不变式（写 skill 时的硬约束）：**
 
@@ -299,7 +299,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plan/` | 包含 Phase/Task 拆解、完成标准、发布闸门、任务看板、风险等的完整执行计划 |
+| 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 包含 Phase/Task 拆解、完成标准、发布闸门、任务看板、风险等的完整执行计划 |
 
 ---
 
