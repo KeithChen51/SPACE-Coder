@@ -307,6 +307,95 @@ function appendSupplementUpdate(existingContent, { title, goal, action, result, 
     return `${existingContent.replace(/\s*$/, '')}${block}`;
 }
 
+function parseSummaryRows(existingContent) {
+    return [...existingContent.matchAll(/^\| (\d+) \| (.+?) \| (.+?) \| (.+?) \|$/gm)].map((match) => ({
+        index: Number(match[1]),
+        title: match[2].trim(),
+        stage: match[3].trim(),
+        status: match[4].trim(),
+        raw: match[0]
+    }));
+}
+
+function extractLatestTaskBlock(existingContent) {
+    const taskMatches = [...existingContent.matchAll(/^### 任务 (\d+)：(.+)$/gm)];
+    if (taskMatches.length === 0) {
+        return null;
+    }
+
+    const latest = taskMatches[taskMatches.length - 1];
+    const start = latest.index ?? 0;
+    const end = existingContent.length;
+
+    return {
+        taskNumber: Number(latest[1]),
+        title: latest[2].trim(),
+        start,
+        end,
+        block: existingContent.slice(start, end)
+    };
+}
+
+function isDecisionLikeUpdate({ title, goal, action, result }) {
+    const text = [title, goal, action, result].filter(Boolean).join('\n');
+    return /(确认|澄清|收口|细化|明确|对齐|口径)/.test(text);
+}
+
+function shouldMergeIntoLatest(existingContent, { title, goal, action, result, stage }) {
+    if (!stage) {
+        return false;
+    }
+
+    if (!isDecisionLikeUpdate({ title, goal, action, result })) {
+        return false;
+    }
+
+    const latestTask = extractLatestTaskBlock(existingContent);
+    if (!latestTask) {
+        return false;
+    }
+
+    const summaryRows = parseSummaryRows(existingContent);
+    const latestSummaryRow = summaryRows[summaryRows.length - 1];
+    if (!latestSummaryRow) {
+        return false;
+    }
+
+    return latestSummaryRow.stage === stage;
+}
+
+function mergeFilesLine(existingLine, files) {
+    const currentFiles = existingLine
+        .split('：')
+        .slice(1)
+        .join('：')
+        .split('、')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    const merged = [...new Set([...currentFiles, ...files])];
+    return `- **涉及文件**：${merged.length > 0 ? merged.join('、') : '无'}`;
+}
+
+function mergeIntoLatestTask(existingContent, { title, action, result, files, timeText }) {
+    const latestTask = extractLatestTaskBlock(existingContent);
+    if (!latestTask) {
+        return existingContent;
+    }
+
+    let block = latestTask.block;
+    const detailLine = `  - ${timeText} ${title}：${action}；结果：${result}`;
+
+    if (block.includes('- **同主题补充**：')) {
+        block = block.replace(/(\n- \*\*涉及文件\*\*：)/, `\n${detailLine}$1`);
+    } else {
+        block = block.replace(/(\n- \*\*涉及文件\*\*：)/, `\n- **同主题补充**：\n${detailLine}$1`);
+    }
+
+    block = block.replace(/- \*\*涉及文件\*\*：.*$/m, (line) => mergeFilesLine(line, files));
+
+    return `${existingContent.slice(0, latestTask.start)}${block}`;
+}
+
 function injectSummaryRow(existingContent, { title, stage }) {
     const marker = '| 1 |';
     if (!existingContent.includes(marker)) {
@@ -404,6 +493,7 @@ function devlogSync(options) {
         actorFileKey,
         createdLog: false,
         appendedLog: false,
+        mergedLog: false,
         updatedCandidatePool: false,
         candidatePoolFile: null,
         candidateId: null
@@ -433,23 +523,34 @@ function devlogSync(options) {
         result.createdLog = true;
     } else {
         let content = safeRead(logFilePath);
-        content = appendSupplementUpdate(content, {
-            title: options.title,
-            goal: options.goal,
-            action: options.action,
-            result: options.result,
-            files,
-            timeText
-        });
-        content = injectSummaryRow(content, {
-            title: options.title,
-            stage
-        });
+        if (shouldMergeIntoLatest(content, options)) {
+            content = mergeIntoLatestTask(content, {
+                title: options.title,
+                action: options.action,
+                result: options.result,
+                files,
+                timeText
+            });
+            result.mergedLog = true;
+        } else {
+            content = appendSupplementUpdate(content, {
+                title: options.title,
+                goal: options.goal,
+                action: options.action,
+                result: options.result,
+                files,
+                timeText
+            });
+            content = injectSummaryRow(content, {
+                title: options.title,
+                stage
+            });
+            result.appendedLog = true;
+        }
 
         if (!options.dryRun) {
             fs.writeFileSync(logFilePath, content, 'utf8');
         }
-        result.appendedLog = true;
     }
 
     const shouldUpdateRuleCandidates = hasRuleSignal([
@@ -508,6 +609,7 @@ function formatTextReport(result) {
         `Actor file key: ${result.actorFileKey}`,
         `Created log: ${result.createdLog ? 'yes' : 'no'}`,
         `Appended log: ${result.appendedLog ? 'yes' : 'no'}`,
+        `Merged log: ${result.mergedLog ? 'yes' : 'no'}`,
         `Updated candidate pool: ${result.updatedCandidatePool ? 'yes' : 'no'}`
     ];
 

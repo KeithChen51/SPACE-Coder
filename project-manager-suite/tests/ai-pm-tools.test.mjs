@@ -741,7 +741,67 @@ test('devlog-sync creates daily log, appends updates, and updates candidate pool
     });
 
     assert.equal(secondResult.appendedLog, true);
+    assert.equal(secondResult.mergedLog, false);
     assert.ok(readFile(path.join(hostRoot, secondResult.logFile)).includes('## 补充更新 1'));
+});
+
+test('devlog-sync merges decision-like same-stage updates into the latest task block', () => {
+    const hostRoot = makeTempDir('pm-suite-devlog-merge-');
+
+    const firstResult = devlogSync({
+        hostRoot,
+        actor: 'tester',
+        date: '2026-04-15',
+        time: '10:00',
+        title: 'S1 需求收敛',
+        goal: '收敛首页服务表达',
+        action: '建立首页服务信息框架',
+        result: '已明确首页核心结构',
+        files: 'project-profile.md,docs/plans/execution-plan.md',
+        stage: 'S1',
+        conclusion: '需求收敛启动',
+        next: '继续确认提醒规则',
+        planPath: '',
+        reflection: '',
+        ruleScope: '',
+        ruleTarget: '',
+        ruleCheck: '',
+        ruleTitle: '',
+        dryRun: false,
+        json: false
+    });
+
+    const secondResult = devlogSync({
+        hostRoot,
+        actor: 'tester',
+        date: '2026-04-15',
+        time: '10:20',
+        title: '确认首页文案策略',
+        goal: '收敛首页动态文案口径',
+        action: '确认不同车辆状态显示不同提示文案',
+        result: '首页文案采用轻量动态变化',
+        files: 'project-profile.md,docs/plans/execution-plan.md,docs/brd/BRD-demo.md',
+        stage: 'S1',
+        conclusion: '',
+        next: '',
+        planPath: '',
+        reflection: '',
+        ruleScope: '',
+        ruleTarget: '',
+        ruleCheck: '',
+        ruleTitle: '',
+        dryRun: false,
+        json: false
+    });
+
+    const logContent = readFile(path.join(hostRoot, firstResult.logFile));
+
+    assert.equal(secondResult.appendedLog, false);
+    assert.equal(secondResult.mergedLog, true);
+    assert.ok(!logContent.includes('## 补充更新 1'));
+    assert.ok(logContent.includes('- **同主题补充**：'));
+    assert.ok(logContent.includes('10:20 确认首页文案策略'));
+    assert.ok(logContent.includes('docs/brd/BRD-demo.md'));
 });
 
 test('devlog-sync uses git user name for log file naming while preserving actor display text', () => {
