@@ -1,6 +1,6 @@
-# 产品设计与开发计划流水线（project-profile → PRD → 开发计划）
+# 产品设计与开发计划流水线（project-profile → PRD → 开发计划 → 代码实装）
 
-本文件描述从项目画像到 PRD 再到开发执行计划的完整流水线，包含 7 个执行 Skill + 2 个调度 Skill 的职责、依赖、产物，以及**产物在宿主项目中的物理存放位置**。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
+本文件描述从项目画像到 PRD、开发执行计划到代码实装的完整流水线，包含 8 个执行 Skill + 2 个调度 Skill 的职责、依赖、产物，以及**产物在宿主项目中的物理存放位置**。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
 
 相关协议：
 - 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/ai-project-manager/references/core/routing.md`](skills/ai-project-manager/references/core/routing.md)
@@ -9,15 +9,15 @@
 ## 流水线总览
 
 ```
-S0 阶段                S1 阶段                               S2 阶段                                                        S3 阶段
-──────────────      ────────         ──────────────────────────────────────────────────────────────  ──────────────
+S0 阶段                S1 阶段                               S2 阶段                                                        S3 阶段            S4 阶段
+──────────────      ────────         ──────────────────────────────────────────────────────────────  ──────────────     ──────────────────
                                        page-chief 调度                       prd-chief 调度
                                   ┌─────────────────────┐             ┌──────────────────────┐
-ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer → delivery-planner
-        │                │            │                │                    │                 │              │
-        ▼                ▼            ▼                ▼                    ▼                 ▼              ▼
-  project-profile      BRD       页面代码         流程/交互语义/权限      术语表/Schema/API   功能列表/主PRD/子PRD  开发执行计划
-                       台账      交付清单         差异（可选）            交付清单
+ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer → delivery-planner → coding-standards
+        │                │            │                │                    │                 │              │                    │
+        ▼                ▼            ▼                ▼                    ▼                 ▼              ▼                    ▼
+  project-profile      BRD       页面代码         流程/交互语义/权限      术语表/Schema/API   功能列表/主PRD/子PRD  开发执行计划        实装代码文件
+                       台账      交付清单         差异（可选）            交付清单                                                  Task 状态回写
 ```
 
 ### 调度层说明
@@ -54,6 +54,8 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 │   │   └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
 │   └── plans/                                # 开发执行计划层
 │       └── delivery-plan-<slug>.md           # delivery-planner 产出的开发执行计划
+├── src/                                      # 代码实装层（S4）
+│   └── ...                                   # coding-standards 按 Task 核心文件字段产出的实装代码
 ├── page-preview/                             # 前端页面与页面语义描述层
 │   ├── <Vue 3 前端工程>/                     # page-designer 产出的可运行代码（src/、package.json 等）
 │   ├── page-delivery-<slug>.md               # page-designer 交付清单（页面索引入口）
@@ -74,12 +76,13 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | `<host>/`（根） | 全局 | 项目身份与全局画像 | ai-project-manager | 所有下游 skill |
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
 | `<host>/page-preview/` | 页面层 | 可运行的前端页面 + 页面交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
-| `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、下游研发/编码环节 |
-| `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | 下游开发执行环节 |
+| `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
+| `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
+| `<host>/src/`（或项目约定代码根目录） | 实装层（S4） | 按 delivery-plan Phase/Task 产出的实际代码文件 | coding-standards | test-and-acceptance |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
-**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹；各 skill SKILL.md 和下方 §1-§6 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
+**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹；各 skill SKILL.md 和下方 §1-§7 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
 
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
@@ -90,6 +93,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
 | delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
+| coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写 `docs/plans/delivery-plan-<slug>.md` 中已完成 Task 的状态字段 |
 
 **不变式（写 skill 时的硬约束）：**
 
@@ -303,30 +307,51 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 ---
 
+## 7. coding-standards — S4 代码实装
+
+**职责**：消费 `delivery-plan-<slug>.md` 中的当前活跃 Task，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件，并回写 Task 状态。不负责需求澄清、方案设计、测试执行或发布决策。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| `delivery-plan-<slug>.md` | delivery-planner | `<host>/docs/plans/` |
+| Task 内 `PRD双链·读` 指向的文件 | foundation-builder / prd-writer | `<host>/docs/prd/` |
+| `coding-standards/references/<规范>.md` | 本 skill | `skills/coding-standards/references/` |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 实装代码文件 | 由 Task 的 `核心文件` 字段决定 | `<host>/src/` 或项目约定代码根目录 | 按 PRD 和编码规范产出的真实文件 |
+| Task 状态回写 | `delivery-plan-<slug>.md`（原地回写） | `<host>/docs/plans/` | 将已完成 Task 的状态改为 `已完成(YYYY-MM-DD)` |
+
+---
+
 ## 依赖关系矩阵
 
 下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖，👁 = 观察但不修改）：
 
-| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner |
+| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner | coding-standards |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ |
-| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ |
-| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | |
-| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | |
-| page-spec-entities | | | | 产出 | | | | | |
-| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | |
-| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | |
-| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ | |
-| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | | |
-| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | |
-| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ |
-| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ |
-| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ |
-| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ |
-| prd-feature-list | | | | | | 👁 | | 产出 | ✓ |
-| prd-main | | | | | | 👁 | | 产出 | ✓ |
-| prd-子文档 | | | | | | 👁 | | 产出 | ✓（按任务选读） |
-| delivery-plan | | | | | | | | | 产出 |
+| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ | |
+| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | |
+| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | |
+| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | |
+| page-spec-entities | | | | 产出 | | | | | | |
+| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | |
+| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | |
+| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | |
+| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | | | |
+| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | |
+| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） |
+| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） |
+| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） |
+| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ | |
+| prd-feature-list | | | | | | 👁 | | 产出 | ✓ | |
+| prd-main | | | | | | 👁 | | 产出 | ✓ | |
+| prd-子文档 | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） |
+| delivery-plan | | | | | | | | | 产出 | ✓（硬依赖，逐 Task 消费） |
 
 ---
 

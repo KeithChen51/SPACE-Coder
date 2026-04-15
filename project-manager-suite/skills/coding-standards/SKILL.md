@@ -19,7 +19,45 @@ Current scope note:
 - `10-testing.md` and `11-test-case-design.md` are **not currently present** under `references/`.
 - For test-related work, first check whether those files have been added later; if not, do not pretend they exist.
 
-## What to do
+## 管线定位
+
+本 skill 是 `project-manager-suite` 流水线的 **S4 代码实装阶段**，在 PIPELINE.md 中的位置：
+
+- **上游**：`delivery-planner`，消费其产出的 `docs/plans/delivery-plan-<slug>.md`
+- **下游**：`test-and-acceptance`，为其提供已完成的代码产物和 Task 状态回写
+- **相关协议**：[`../../PIPELINE.md`](../../PIPELINE.md)
+
+## 执行前置协议（管线硬约束，不可跳过）
+
+在开始任何实装工作之前，**必须按以下顺序执行**：
+
+```text
+1. 读取 docs/plans/delivery-plan-<slug>.md，定位当前活跃 Task
+
+2. 运行前置验证脚本：
+   node <suite-path>/skills/coding-standards/scripts/verify-task-context.mjs \
+     <host>/docs/plans/delivery-plan-<slug>.md <task-id>
+
+3. 脚本返回 canExecute: false 时：
+   - 输出缺失文件清单
+   - 即刻停止，不得开始写代码
+   - 不得凭记忆假设 PRD 内容并自行完成
+
+4. 脚本返回 canExecute: true 时：
+   - 按 Task 的 [PRD双链·读] 字段加载对应 PRD 文件
+   - 再按下方 routing table 加载匹配的编码规范，最多加载 2 份
+   - 开始实装
+
+5. 完成后：
+   - 对照 Task 的 [完成标准] 逐项核查，全部可核查后才能回写状态
+   - 将 Task 状态回写为 `已完成(YYYY-MM-DD)`，直接在 delivery-plan 原地修改
+```
+
+**硬禁令**：
+- 未运行 `verify-task-context.mjs` 前，禁止开始写任何代码
+- `canExecute: false` 时，禁止凭记忆假设 PRD 内容并继续执行
+- Task 的 `完成标准` 未全部核查通过前，禁止回写已完成状态
+
 
 1. Identify the main task type before editing files.
 2. Load only the 1-2 most relevant standards documents.
