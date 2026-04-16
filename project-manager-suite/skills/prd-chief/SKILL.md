@@ -44,6 +44,7 @@ prd-chief 检查前置文件是否存在。Stage 2 以后会读取产物内容�
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 - `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+- 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取；仅旧项目才回退检查 `page-preview/<工程名>/` 或 `可操作页面/`。
 - `foundation-*.md`、`prd-*.md` 优先从 `docs/prd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 
 ## 4) 出口检查清单
@@ -109,7 +110,7 @@ START
 1. 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`
 2. 检查文件存在性：
    - `docs/brd/` 中的 `BRD-<slug>-*.md`
-   - `page-preview/` 中的 `page-delivery-<slug>.md` + delivery 中列出的页面代码文件
+   - `page-preview/` 中的 `page-delivery-<slug>.md` + delivery 中列出的页面代码文件（位于项目根级工程目录）
    - `page-preview/` 中的 `explainer-flow-<slug>.md`
    - `page-preview/` 中的 `explainer-b-interaction-<slug>.md` + `explainer-b-permission-<slug>.md`
    - 包含 C 端页面时额外：`page-preview/` 中的 `explainer-c-interaction-<slug>.md`

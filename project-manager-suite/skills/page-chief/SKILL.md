@@ -38,6 +38,7 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 - `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+- 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取；仅旧项目才回退检查 `page-preview/<工程名>/` 或 `可操作页面/`。
 
 ## 4) 出口检查清单
 
@@ -48,7 +49,7 @@ page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在
 | 来源 | 检查文件 | 合格条件 |
 |------|---------|---------|
 | page-designer | `page-delivery-<slug>.md` | 存在 |
-| page-designer | delivery 中列出的页面代码文件 | 全部存在 |
+| page-designer | delivery 中列出的页面代码文件（位于项目根级工程目录） | 全部存在 |
 | page-explainer | `explainer-flow-<slug>.md` | 存在 |
 | page-explainer | `explainer-b-interaction-<slug>.md` | 存在，所有语义条目 status = locked |
 | page-explainer | `explainer-b-permission-<slug>.md` | 存在 |

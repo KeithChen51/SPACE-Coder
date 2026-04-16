@@ -49,6 +49,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 - `page-delivery-<slug>.md` 与 explainer 产物优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+- 实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取；仅旧项目尚未迁移时，才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`。
 - `foundation-*.md`、`prd-*.md` 优先从 `docs/prd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 
 **拆分消费协议**（适用于 foundation-schema、foundation-api）：

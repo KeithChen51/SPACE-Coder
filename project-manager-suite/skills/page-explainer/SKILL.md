@@ -45,7 +45,8 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-delivery-<slug>.md` 与实际页面代码优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+- `page-delivery-<slug>.md` 优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+- 实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取；仅旧项目尚未迁移时，才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`。
 
 ## 4) 产物
 

@@ -42,7 +42,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | 自身前次产出 | `foundation-*-<slug>.md` | 否 | 增量更新时读取 |
 
 > **注意**：不读取 `page-spec-entities-<slug>.md`。Schema 和 API 直接从前端页面代码反推，确保地基与前端实际消费对齐。
-> **目录读取口径**：`BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物优先从 `page-preview/` 读取；自身 `foundation-*.md` 优先从 `docs/prd/` 读取。仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+> **目录读取口径**：`BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物优先从 `page-preview/` 读取；实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取（仅旧项目才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`）；自身 `foundation-*.md` 优先从 `docs/prd/` 读取。仅旧项目尚未迁移时，才回退读取根目录同名文件。
 
 ## 4) 产物
 
