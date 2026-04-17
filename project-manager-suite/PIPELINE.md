@@ -9,15 +9,41 @@
 ## 流水线总览
 
 ```
-S0 阶段                S1 阶段                               S2 阶段                                                        S3 阶段            S4 阶段
-──────────────      ────────         ──────────────────────────────────────────────────────────────  ──────────────     ──────────────────
-                                       page-chief 调度                       prd-chief 调度
-                                  ┌─────────────────────┐             ┌──────────────────────┐
-ai-project-manager → brd-writer → page-designer → page-explainer → foundation-builder → prd-writer → delivery-planner → coding-standards
-        │                │            │                │                    │                 │              │                    │
-        ▼                ▼            ▼                ▼                    ▼                 ▼              ▼                    ▼
-  project-profile      BRD       页面代码         流程/交互语义/权限      术语表/Schema/API   功能列表/主PRD/子PRD  开发执行计划        实装代码文件
-                       台账      交付清单         差异（可选）            交付清单                                                  Task 状态回写
+S0 ─────────────────────────────────────────────
+   ai-project-manager
+       │
+       ▼  project-profile
+
+S1 ─────────────────────────────────────────────
+   brd-writer
+       │
+       ▼  BRD + 决策台账
+
+S2 ──────── page-chief 调度 ────────────────────
+   page-designer
+       │
+       ▼  Vue 3 页面工程 + 页面交付清单
+   page-explainer
+       │
+       ▼  流程图 / 交互语义 / B 端权限 / 差异(可选) / 交付清单
+
+S2 ──────── prd-chief 调度 ─────────────────────
+   foundation-builder
+       │
+       ▼  术语表 / Schema / API + 交付清单
+   prd-writer
+       │
+       ▼  功能列表 / 主 PRD / 子 PRD
+
+S3 ─────────────────────────────────────────────
+   delivery-planner
+       │
+       ▼  开发执行计划
+
+S4 ─────────────────────────────────────────────
+   coding-standards
+       │
+       ▼  实装代码文件 + Task 状态回写
 ```
 
 ### 调度层说明
