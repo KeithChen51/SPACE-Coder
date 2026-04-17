@@ -65,6 +65,7 @@ S4 ─────────────────────────�
 <host>/                                       # 宿主项目根目录
 ├── project-profile.md                        # ai-project-manager 产出；全局画像与状态入口
 ├── docs/
+│   ├── tech-stack-<slug>.md                  # delivery-planner S3 入口产出；技术约束基准
 │   ├── brd/                                  # 业务需求层
 │   │   ├── brd-ledger-<slug>.md              # brd-writer 过程台账
 │   │   └── BRD-<slug>-<YYYYMMDD-HHMM>.md     # brd-writer 最终交付 BRD
@@ -333,6 +334,7 @@ S4 ─────────────────────────�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
+| 技术栈约束文件 | `tech-stack-<slug>.md` | `<host>/docs/` | delivery-planner 在 S3 入口访谈后产出；含前端/服务端/数据库/部署方式，敏感连接信息隔离到 `.env.local` |
 | 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 包含 Phase/Task 拆解、完成标准、发布闸门、任务看板、风险等的完整执行计划 |
 
 ---
