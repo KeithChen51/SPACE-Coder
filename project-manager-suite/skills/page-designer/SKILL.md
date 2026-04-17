@@ -18,11 +18,19 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
 
 本 skill 启动时必须执行以下校验：
 
-### 2a) BRD 文件
+### 2a) BRD 文件与台账入口
 
-1. 优先在 `docs/brd/` 目录下搜索 `BRD-*.md` 文件；历史宿主项目兼容时才兜底搜索根目录同名文件。
-2. 若不存在：**中止执行**，提示用户 "未找到 BRD 文件，请先完成 brd-writer 阶段"。
-3. 若存在多个：先按目录优先级取 `docs/brd/`，同目录内再取最新的一份（按文件名时间戳排序）。
+1. 启动时先执行：
+   ```bash
+   node skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
+   ```
+2. `boot` 的职责：
+   - 优先在 `<host>/page-preview/` 搜索 `page-ledger-<slug>.json`
+   - 找到 1 个台账：恢复当前状态，返回 `action: "resumed"`
+   - 没找到台账：自动在 `docs/brd/` 搜索 `BRD-*.md`，旧项目兼容时才兜底搜根目录；若找到则创建台账并返回 `action: "created"`
+   - 若 BRD 不存在：**中止执行**，提示用户先完成 brd-writer
+   - 若找到多个台账：**中止执行**，提示用户先清理异常状态
+3. 台账创建时，脚本会同时创建 `<host>/page-preview/screenshots/` 目录，供参考截图长期复用。
 
 从 BRD 中读取以下字段：
 
@@ -72,6 +80,11 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
 | 来源 | 文件 | 必需 | 说明 |
 |------|------|------|------|
 | page-explainer | `explainer-c-gap-<slug>.md` / `explainer-b-gap-<slug>.md` | 否 | 回环时读取 design_gap/logic_conflict 类型的差异条目，按修改建议调整页面 |
+
+回环读取规则：
+- 当台账 `loopRound > 0` 时，读取台账中的 `gapFilesConsumed`
+- `gapFilesConsumed` 是本轮实际消费的 gap 文件绝对路径清单
+- page-designer 自己决定如何消费 gap；page-chief 只读不写台账
 
 ## 3) 路径分叉
 
@@ -151,14 +164,31 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 
 #### Phase 1: 输入收集
 
-1. 读取 BRD 关键字段（见第 2 节）。
-2. 读取 tech-stack.md 确定技术栈。
-3. 询问用户是否有参考截图。
-   - 有 → 用 Read 工具读取图片，利用多模态能力提取：
+1. 运行：
+   ```bash
+   node skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
+   ```
+2. 若返回 `action: "resumed"`，按台账 phase 进入断点恢复流程；若返回 `action: "created"`，继续执行下面步骤。
+3. 读取 BRD 关键字段（见第 2 节），并判定项目走 `C+B` 或 `纯B` 路径。
+4. 运行：
+   ```bash
+   node skills/page-designer/scripts/page-ledger-mutate.mjs set-path --host-dir <host>/ --path <C+B|纯B>
+   ```
+5. 读取 `tech-stack.md` 确定技术栈。
+6. 询问用户是否有参考截图。
+   - 有 → 请用户将截图放入 `<host>/page-preview/screenshots/`；再读取图片并利用多模态能力提取：
      - 布局结构（导航位置、内容分区、栅格方式）
      - 视觉风格（配色倾向、圆角/直角、间距密度）
      - 组件模式（卡片/列表/表格、弹窗/抽屉）
    - 无 → 跳过，完全基于 BRD 信息。
+7. 运行：
+   ```bash
+   node skills/page-designer/scripts/page-ledger-mutate.mjs mark-asked --host-dir <host>/ --field screenshot
+   ```
+8. 完成入口门禁后，运行：
+   ```bash
+   node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 1
+   ```
 
 #### Phase 2: 设计系统确定
 
@@ -194,6 +224,12 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 3. 每个页面生成后让用户在浏览器中操作确认。
 4. 不满意则迭代调整，直到用户确认。
 
+用户确认全部 C 端页面后，推进台账：
+
+```bash
+node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 3
+```
+
 #### Phase 4: C 端实体中间文件落盘
 
 用户确认全部 C 端页面后，从已确认的页面代码中提取实体信息，落盘为中间文件。
@@ -228,6 +264,12 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 - 每个 C 端页面展示的数据都必须归属到一个实体。
 - 实体的"运营操作"列决定了控制台该实体管理模块的功能。
 
+实体文件落盘后，推进台账：
+
+```bash
+node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 4
+```
+
 #### Phase 5: B 端控制台设计
 
 1. 读取 `page-spec-entities-<project_slug>.md`（强依赖，不能凭空设计）。
@@ -236,15 +278,27 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 4. 控制台逻辑：C 端展示什么 → 控制台管理什么。
 5. 用户确认。
 
+用户确认 B 端页面后，推进台账：
+
+```bash
+node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 5
+```
+
 #### Phase 6: 交付清单落盘
 
 全部完成后，生成交付清单文件。见第 8 节。
+
+交付清单落盘后，推进台账：
+
+```bash
+node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 6
+```
 
 ### 路径 2：纯 B
 
 #### Phase 1: 输入收集
 
-同路径 1 Phase 1。
+同路径 1 Phase 1（同样必须通过 `page-ledger-mutate.mjs boot` 进入）。
 
 #### Phase 2: 设计系统确定
 
@@ -272,9 +326,52 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 2. mock 数据。
 3. 用户确认。
 
+用户确认页面后，推进台账：
+
+```bash
+node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 3
+```
+
 #### Phase 4: 交付清单落盘
 
 全部完成后，生成交付清单文件。见第 8 节。
+
+交付清单落盘后，推进台账：
+
+```bash
+node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 4
+```
+
+### 回环场景
+
+page-chief 判定需要回环时，只做自然语言指示："下一步请重新执行 page-designer"。page-chief 不修改 page-designer 的台账。
+
+page-designer 重新启动时：
+1. 先执行 `page-ledger-mutate.mjs boot --host-dir <host>/`
+2. 若台账 phase 已处于交付态（C+B: 6，纯B: 4），检查 `page-preview/` 下 gap 文件是否存在未解决的 `design_gap` 或 `logic_conflict`
+3. 若存在未解决条目，则运行：
+   ```bash
+   node skills/page-designer/scripts/page-ledger-mutate.mjs start-loop --host-dir <host>/ --gap-files <file1,file2>
+   ```
+4. `start-loop` 会将：
+   - `loopRound + 1`
+   - `gapFilesConsumed` 记录为本轮消费的 gap 文件
+   - `phase` 重置回 `1`
+5. 若 gap 已全部 `resolved`，或仅剩 `clarification` / `out_of_scope`，则不触发回环，保持当前 phase。
+
+### 断点恢复
+
+会话重启时，`page-ledger-mutate.mjs boot` 返回 `action: "resumed"` 后，按台账 phase 恢复：
+
+| phase | 恢复行为 |
+|------|---------|
+| 0 | 重新执行 Phase 1 的路径判定、截图询问、入口门禁 |
+| 1 | 进入设计系统与页面设计连续工作阶段 |
+| 3（C+B） | 从实体中间文件提取开始 |
+| 4（C+B） | 从 B 端控制台设计开始 |
+| 5（C+B） | 从交付清单落盘开始 |
+| 3（纯B） | 从交付清单落盘开始 |
+| 4（纯B） / 6（C+B） | 视为已交付；若仍有未解决 gap，则进入回环判断 |
 
 ## 7) 产物清单与存放位置
 
@@ -291,6 +388,7 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 
 | 场景 | 产物 | 形式 | 存放位置 |
 |------|------|------|---------|
+| 通用 | 台账 | `page-ledger-<slug>.json` | `<host>/page-preview/` |
 | C+B | C 端可交互页面 | 前端项目代码（技术栈见 tech-stack.md），mock 数据 | `<host>/<C端工程名>/` |
 | C+B | 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/page-preview/` |
 | C+B | B 端控制台可交互页面 | 前端项目代码（技术栈见 tech-stack.md），mock 数据 | `<host>/<B端工程名>/` |
@@ -392,22 +490,30 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 
 ## 9) 状态标记（强制）
 
-每轮回复第一行必须包含状态标记：
+每轮回复前，先执行：
 
-```
-【Skill状态】page-designer | phase=<N> | <路径> | RUNNING
+```bash
+node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
 ```
 
-各阶段完成时更新：
+状态标记不再由 AI 自行声明，必须由台账派生。
 
+执行中：
+
+```text
+【Skill状态】page-designer | phase=<N> | <路径> | loop=<N> | RUNNING
 ```
-【Skill状态】page-designer | phase=<N> | <路径> | PHASE_DONE
+
+阶段完成时：
+
+```text
+【Skill状态】page-designer | phase=<N> | <路径> | loop=<N> | PHASE_DONE
 ```
 
 交付清单落盘成功后：
 
-```
-【Skill状态】page-designer | DONE
+```text
+【Skill状态】page-designer | phase=<N> | <路径> | loop=<N> | DONE
 ```
 
 ## 10) 禁止事项

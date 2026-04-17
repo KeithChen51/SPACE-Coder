@@ -11,6 +11,9 @@
 - `install-suite-into-host.mjs`
 - `devlog-sync.mjs`
 - `check-protocol-alignment.mjs`
+- `page-ledger-io.mjs`
+- `page-ledger-mutate.mjs`
+- `page-ledger-query.mjs`
 
 运行方式：
 

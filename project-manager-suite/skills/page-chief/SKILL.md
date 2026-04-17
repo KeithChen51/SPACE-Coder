@@ -25,7 +25,7 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 | H1 | BRD 文件必须存在才启动 | 无 BRD 无法启动 page-designer |
 | H2 | 必须先完成 page-designer 再启动 page-explainer | explainer 需要消费 designer 的产物 |
 | H3 | page-explainer 产出 gap 且含 design_gap / logic_conflict 时，必须判定回环 | 不能带着已知设计缺陷进入下游 |
-| H4 | 回环次数上限 3 轮，超过后向用户升级 | 防止无限循环 |
+| H4 | 回环次数上限按 `page-ledger-<slug>.json` 的 `loopRound` 判断，达到 3 轮后每次回环都需向用户升级 | 防止无限循环，同时保持事实计数不可回退 |
 | H5 | 不向子 skill 传递任何指令或参数，子 skill 按自身逻辑独立运行 | 子 skill 不感知调度层存在 |
 | H6 | 只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成，不依赖子 skill 的聊天输出或状态标记 | 判断依据是文件事实，不是对话状态 |
 
@@ -34,9 +34,11 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 | 来源 | 文件 | 必需 | 用途 |
 |------|------|------|------|
 | brd-writer | `BRD-<slug>-*.md` | 是 | 确认项目范围，判断是否具备启动条件 |
+| page-designer | `page-ledger-<slug>.json` | 否 | 只读页面阶段状态、路径判定、回环轮次；不存在表示 page-designer 尚未启动 |
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `page-ledger-<slug>.json` 优先从 `page-preview/` 读取；不存在不是异常，只表示 page-designer 尚未启动。
 - `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
 - 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取；仅旧项目才回退检查 `page-preview/<工程名>/` 或 `可操作页面/`。
 
@@ -48,6 +50,7 @@ page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在
 
 | 来源 | 检查文件 | 合格条件 |
 |------|---------|---------|
+| page-designer | `page-ledger-<slug>.json` | phase 达到已交付（C+B: 6，纯B: 4） |
 | page-designer | `page-delivery-<slug>.md` | 存在 |
 | page-designer | delivery 中列出的页面代码文件（位于项目根级工程目录） | 全部存在 |
 | page-explainer | `explainer-flow-<slug>.md` | 存在 |
@@ -73,11 +76,11 @@ START
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│  page-designer   │── 等待 delivery + 页面代码文件存在
+│  page-designer   │── 先读 ledger phase，再校验 delivery + 页面代码文件
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│ 校验 designer    │── page-delivery + 页面代码文件存在？
+│ 校验 designer    │── ledger 已交付 且 page-delivery + 页面代码文件存在？
 │ 产物完整性       │── 不完整 → 提示用户，不进入下一步
 └────────┬────────┘
          ▼
@@ -90,7 +93,7 @@ START
   DONE    有 gap（design_gap / logic_conflict）
     │         │
     │         ▼
-    │    回环次数 < 3？
+    │    loopRound < 3？
     │    ┌──┴──┐
     │   是     否
     │    │      │
@@ -122,9 +125,19 @@ START
 
 1. 指示：`下一步请执行 page-designer`
 2. 观察产物状态：
+   - 先执行：
+     ```bash
+     node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
+     ```
+   - 若返回 `{ exists: false }`：说明 page-designer 尚未启动，继续指示用户执行 page-designer
+   - 若返回 `{ exists: true }`：读取 `phase`、`path`、`loopRound`
    - `page-preview/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查 `可操作页面/` 或根目录同名文件）
    - delivery 中列出的页面代码文件是否均存在
-3. 产物完整 → 进入 Stage 3
+3. 判定规则：
+   - 台账不存在 → page-designer 尚未启动，不进入下一步
+   - 台账存在但 phase 未到已交付（C+B: 6，纯B: 4）→ page-designer 尚未完成，不进入下一步
+   - 台账 phase 已交付，但 delivery 或页面代码文件缺失 → 产物不完整，不进入下一步
+   - 台账 phase 已交付，且 delivery 和页面代码文件齐全 → 进入 Stage 3
 
 ### Stage 3: page-explainer
 
@@ -157,14 +170,17 @@ START
 ### Stage 3a: 回环判定
 
 1. 读取 gap 文件，统计未解决的 `design_gap` 和 `logic_conflict` 条目数
-2. 检查回环计数器：
-   - **< 3 轮**：向用户展示未解决 gap 摘要，判定：`需要回环，下一步请重新执行 page-designer`，回环计数器 +1
+2. 读取 page-designer 台账中的 `loopRound`
+   - 通过 `node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/` 获取
+   - `loopRound` 的唯一写入方是 page-designer 的 `start-loop` 命令，page-chief 不写台账
+3. 检查 `loopRound`：
+   - **< 3 轮**：向用户展示未解决 gap 摘要，判定：`需要回环，下一步请重新执行 page-designer`
      - page-designer 按自身逻辑运行（它自己能读取 gap 文件作为可选输入）
      - page-designer 完成后，判定：`下一步请重新执行 page-explainer 进行复查`
      - page-explainer 按自身逻辑运行（它自己有回环复查流程）
      - 回到 Stage 3 观察结果
    - **≥ 3 轮**：向用户升级，展示所有未解决 gap，请用户决定：
-     - 继续回环 → 重置计数器（用户明确承担风险）
+     - 继续回环 → 允许本次回环，但不重置计数器；之后每一轮仍需用户逐次授权
      - 用户通过子 skill 处理剩余 gap（如用 page-designer 修改页面、用 page-explainer 重新评估并标记 resolved）→ page-chief 重新检查文件状态
      - 中止 → 中止流程
 

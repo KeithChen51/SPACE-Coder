@@ -59,6 +59,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 ├── <Vue 3 前端工程>/                             # page-designer 产出的可运行代码（src/、package.json 等）
 │   └── ...                                       # C+B 项目有 C 端和 B 端两个独立工程目录
 ├── page-preview/                                 # 页面元数据与页面语义描述层
+│   ├── page-ledger-<slug>.json               # page-designer 台账（phase、路径、回环轮次）
 │   ├── page-delivery-<slug>.md               # page-designer 交付清单（页面索引入口）
 │   ├── page-spec-entities-<slug>.md          # page-designer C 端实体中间文件（仅 C+B 项目）
 │   ├── explainer-flow-<slug>.md              # page-explainer 用户流程图
@@ -77,7 +78,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 | `<host>/`（根） | 全局 | 项目身份与全局画像 | ai-project-manager | 所有下游 skill |
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
 | `<host>/<工程名>/` | 代码层 | page-designer 产出的可运行前端工程（C+B 项目有多个工程目录） | page-designer | page-explainer、foundation-builder、prd-writer |
-| `<host>/page-preview/` | 页面元数据层 | 页面交付清单、实体中间文件、交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
+| `<host>/page-preview/` | 页面元数据层 | 页面台账、交付清单、实体中间文件、交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
 | `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
 | `<host>/src/`（或项目约定代码根目录） | 实装层（S4） | 按 delivery-plan Phase/Task 产出的实际代码文件 | coding-standards | test-and-acceptance |
@@ -90,7 +91,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 |-------|--------------|----------------|
 | ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
 | brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
-| page-designer | `<host>/<工程名>/`（代码）+ `<host>/page-preview/`（元数据） | Vue 3 前端工程目录写入 `<host>/<工程名>/`；`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 等元数据文件写入 `<host>/page-preview/` |
+| page-designer | `<host>/<工程名>/`（代码）+ `<host>/page-preview/`（元数据） | Vue 3 前端工程目录写入 `<host>/<工程名>/`；`page-ledger-<slug>.json`、`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 等元数据文件写入 `<host>/page-preview/` |
 | page-explainer | `<host>/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
@@ -190,6 +191,7 @@ ai-project-manager → brd-writer → page-designer → page-explainer → found
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
+| 页面台账 | `page-ledger-<slug>.json` | `<host>/page-preview/` | phase 状态、路径判定、回环轮次 |
 | C 端页面代码 | Vue 3 工程 | `<host>/<工程名>/` | 可交互，mock 数据（仅 C+B） |
 | B 端控制台页面代码 | Vue 3 工程 | `<host>/<工程名>/` | 可交互，mock 数据 |
 | 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/page-preview/` | C 端实体规格（仅 C+B） |
