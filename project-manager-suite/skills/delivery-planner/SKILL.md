@@ -112,6 +112,9 @@ changelog: |
 1. 写入 `<host>/docs/tech-stack-<slug>.md`（非敏感信息）：记录前端/服务端/数据库类型/部署方式。
 2. 写入 `<host>/.env.local`（敏感信息）：记录 `DB_*` 和 `SSH_*` 等信息。如果 `.env.local` 存在则**追加**，不覆盖已有内容。需要提醒用户确认 `.gitignore` 包含该文件。
 
+**冻结声明：**
+技术栈文件一经生成即视为**冻结**。在本次开发计划生成过程中，**禁止修改 `tech-stack-<slug>.md` 的内容**。如需变更技术选型，必须在计划开始前由用户显式确认，并重新走 Step 0.25 访谈流程更新文件。计划输出的所有 `核心文件`、`完成标准` 和技术判断依据都必须与冻结后的技术栈保持一致。
+
 ---
 
 ### Step 0.5-trigger：先判断任务类型
@@ -173,12 +176,19 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 
 ---
 
-### Step 1：在脚本清单基础上补读仓库规则
+### Step 1：在脚本清单基础上补读仓库规则与技术约束
 
 脚本只扫描 docs/ 产物文件，不扫描仓库规则源。在消费脚本输出后，还需补读：
 
 读取顺序见：
 - `references/source-loading-order.md`（第二节〜第三节：仓库规则源、现有计划源）
+
+**【必须优先读取】技术栈文件（计划写作约束基准）：**
+- `<host>/docs/tech-stack-<slug>.md`（由 Step 0 / Step 0.25 产出）
+
+> 这是本次开发计划的**技术约束基准**，必须在写任何任务拆解、核心文件路径、完成标准之前读取。
+> 所有 Task 的 `核心文件`、`核心逻辑`、`完成标准` 必须与此文件中的前端框架、服务端语言/框架、数据库类型保持一致。
+> 禁止在计划中出现与冻结技术栈矛盾的技术选型（如 tech-stack 写的是 Spring Boot，计划中不得出现 Django 或 Express 实现细节）。
 
 生成新计划前，再读取：
 - `templates/delivery-plan-template.md`
