@@ -62,6 +62,7 @@ function cmdStatus(flags) {
         path: ledger.path,
         loopRound: ledger.loopRound,
         screenshotAsked: ledger.screenshotAsked,
+        entitiesApproved: ledger.entitiesApproved === true,
         ledgerPath
     });
 }

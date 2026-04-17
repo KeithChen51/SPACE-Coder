@@ -185,7 +185,7 @@ test('C+B flow can advance through delivery and then start a loop', () => {
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '1');
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '3');
 
-    const phase4Failure = runCliExpectFailure(
+    const phase4MissingFile = runCliExpectFailure(
         'page-ledger-mutate.mjs',
         'advance',
         '--host-dir',
@@ -193,9 +193,23 @@ test('C+B flow can advance through delivery and then start a loop', () => {
         '--to',
         '4'
     );
-    assert.equal(phase4Failure.error, 'precondition_failed');
+    assert.equal(phase4MissingFile.error, 'precondition_failed');
+    assert.match(phase4MissingFile.message, /entities file is missing/);
 
     writeEntities(hostRoot, slug);
+
+    const phase4MissingApproval = runCliExpectFailure(
+        'page-ledger-mutate.mjs',
+        'advance',
+        '--host-dir',
+        hostRoot,
+        '--to',
+        '4'
+    );
+    assert.equal(phase4MissingApproval.error, 'precondition_failed');
+    assert.match(phase4MissingApproval.message, /entities file has not been approved/);
+
+    runCli('page-ledger-mutate.mjs', 'mark-approved', '--host-dir', hostRoot, '--field', 'entities');
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '4');
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '5');
 
@@ -223,12 +237,50 @@ test('C+B flow can advance through delivery and then start a loop', () => {
 
     assert.equal(loop.phase, 1);
     assert.equal(loop.loopRound, 1);
+    assert.equal(loop.entitiesApproved, false);
 
     const ledger = readJson(path.join(hostRoot, 'page-preview', `page-ledger-${slug}.json`));
     assert.equal(ledger.phase, 1);
     assert.equal(ledger.loopRound, 1);
     assert.equal(ledger.path, 'C+B');
     assert.equal(ledger.gapFilesConsumed.length, 2);
+    assert.equal(ledger.entitiesApproved, false);
+});
+
+test('mark-approved rejects pure B path because entities file is C+B only', () => {
+    const { hostRoot } = createHostWithBrd({ slug: 'pure-b-approval' });
+
+    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', '纯B');
+
+    const failure = runCliExpectFailure(
+        'page-ledger-mutate.mjs',
+        'mark-approved',
+        '--host-dir',
+        hostRoot,
+        '--field',
+        'entities'
+    );
+
+    assert.equal(failure.error, 'invalid_approval');
+});
+
+test('mark-approved refuses when entities file does not exist yet', () => {
+    const { hostRoot } = createHostWithBrd({ slug: 'missing-entities' });
+
+    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', 'C+B');
+
+    const failure = runCliExpectFailure(
+        'page-ledger-mutate.mjs',
+        'mark-approved',
+        '--host-dir',
+        hostRoot,
+        '--field',
+        'entities'
+    );
+
+    assert.equal(failure.error, 'precondition_failed');
 });
 
 test('pure B flow delivers at phase 4 and rejects premature loop start', () => {

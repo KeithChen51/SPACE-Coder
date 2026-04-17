@@ -8,6 +8,7 @@ import {
     findBrd,
     findLedger,
     getDeliveryPhase,
+    getEntitiesFilePath,
     getLedgerPath,
     getScreenshotsDir,
     nowTimestamp,
@@ -146,6 +147,43 @@ function cmdMarkAsked(flags) {
     });
 }
 
+function cmdMarkApproved(flags) {
+    const hostDir = resolveHostDir(flags['host-dir']);
+    const field = flags['field'];
+
+    if (field !== 'entities') {
+        fail('unknown_field', `unsupported field for mark-approved: ${field ?? 'null'}`);
+    }
+
+    const { ledgerPath, ledger } = requireLedger(hostDir);
+
+    if (ledger.path !== 'C+B') {
+        fail(
+            'invalid_approval',
+            `mark-approved --field entities only applies to C+B path, current path: ${ledger.path ?? 'unset'}`
+        );
+    }
+
+    const entitiesFile = getEntitiesFilePath(hostDir, ledger.slug);
+    if (!fs.existsSync(entitiesFile)) {
+        fail(
+            'precondition_failed',
+            `entities file must exist before approval: ${entitiesFile}`
+        );
+    }
+
+    ledger.entitiesApproved = true;
+    ledger.updatedAt = nowTimestamp();
+    writeLedger(ledgerPath, ledger);
+
+    ok({
+        success: true,
+        action: 'mark-approved',
+        ledgerPath,
+        entitiesApproved: ledger.entitiesApproved
+    });
+}
+
 function cmdAdvance(flags) {
     const hostDir = resolveHostDir(flags['host-dir']);
     const toPhase = parsePhase(flags['to']);
@@ -193,6 +231,7 @@ function cmdStartLoop(flags) {
     ledger.loopRound += 1;
     ledger.gapFilesConsumed = parseGapFiles(flags['gap-files']);
     ledger.phase = 1;
+    ledger.entitiesApproved = false;
     ledger.updatedAt = nowTimestamp();
     writeLedger(ledgerPath, ledger);
 
@@ -202,7 +241,8 @@ function cmdStartLoop(flags) {
         ledgerPath,
         phase: ledger.phase,
         loopRound: ledger.loopRound,
-        gapFilesConsumed: ledger.gapFilesConsumed
+        gapFilesConsumed: ledger.gapFilesConsumed,
+        entitiesApproved: ledger.entitiesApproved
     });
 }
 
@@ -219,6 +259,9 @@ function main() {
                 return;
             case 'mark-asked':
                 cmdMarkAsked(flags);
+                return;
+            case 'mark-approved':
+                cmdMarkApproved(flags);
                 return;
             case 'advance':
                 cmdAdvance(flags);

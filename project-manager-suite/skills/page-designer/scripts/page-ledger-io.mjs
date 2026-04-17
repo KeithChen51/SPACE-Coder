@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-export const SCHEMA_VERSION = '1.0.0';
+export const SCHEMA_VERSION = '1.1.0';
 
 export const PHASE_GRAPH = {
     'C+B': {
@@ -153,6 +153,7 @@ export function buildNewLedger(hostDir, brdFile) {
         phase: 0,
         loopRound: 0,
         gapFilesConsumed: [],
+        entitiesApproved: false,
         createdAt: timestamp,
         updatedAt: timestamp
     };
@@ -206,6 +207,13 @@ export function buildAdvanceCheck(ledger, hostDir, toPhase) {
             return {
                 canAdvance: false,
                 reason: `entities file is missing: ${entitiesFile}`,
+                error: 'precondition_failed'
+            };
+        }
+        if (ledger.entitiesApproved !== true) {
+            return {
+                canAdvance: false,
+                reason: 'entities file has not been approved by user',
                 error: 'precondition_failed'
             };
         }
