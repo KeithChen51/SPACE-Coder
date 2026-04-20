@@ -20,11 +20,13 @@ project-manager-suite/skills/page-designer/docs/
 project-manager-suite/skills/page-explainer/docs/
 fortest/
 CLAUDE.md
+AGENTS.md
 精诚养护档案/
 精诚养护中心/
 working/
 doc-governance/
 docs/superpowers/
+docs/refactor-plans/
 
 # Dependencies
 node_modules/
