@@ -44,6 +44,17 @@ S4 ─────────────────────────�
    coding-standards
        │
        ▼  实装代码文件 + Task 状态回写
+
+S5 ──────── test-case-chief 调度 ────────────────
+   prd-acceptance-reviewer
+       │
+       ▼  验收文档（主索引 + 区块子文件） + PRD 验收回链
+   test-case-writer
+       │
+       ▼  TC 主索引 + 域 TC 文件 + SQL 数据准备
+   test-case-reviewer
+       │
+       ▼  待裁定 TC 问题清单 + TC 修正
 ```
 
 ### 调度层说明
@@ -52,6 +63,7 @@ S4 ─────────────────────────�
 |-----------|---------|------|---------|
 | `page-chief` | page-designer → page-explainer | 观察产物文件状态，判断下一步子 skill；有 gap 时判定回环（上限 3 轮） | 无（纯调度，不产出文件） |
 | `prd-chief` | foundation-builder → prd-writer | 校验上游产物链完整性，线性推进 foundation → PRD | 无（纯调度，不产出文件） |
+| `test-case-chief` | prd-acceptance-reviewer → test-case-writer → test-case-reviewer | 观察三子 skill 产物状态，线性推进；reviewer 发现 TC 错误时回 writer 重做（上限 3 轮） | 无（纯调度，不产出文件） |
 
 调度层不向子 skill 传递指令，子 skill 不感知调度层存在。调度层只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成。
 
@@ -95,6 +107,17 @@ S4 ─────────────────────────�
 │   ├── explainer-c-gap-<slug>.md             # page-explainer C 端差异（可选，有差异时产出）
 │   ├── explainer-b-gap-<slug>.md             # page-explainer B 端差异（可选，有差异时产出）
 │   └── explainer-delivery-<slug>.md          # page-explainer 交付清单（入口索引 + 一致性自查）
+└── docs/test-case/                            # 测试用例层（S5 产物）
+    ├── acceptance-<slug>.md                  # prd-acceptance-reviewer 验收文档主索引
+    ├── acceptance-<slug>/                    # 按 PRD 区块拆的子验收文档
+    │   └── <区块名>.md                        # 每个区块一份，对应一个子 PRD
+    ├── tc-main-<slug>.md                     # test-case-writer 测试用例主索引
+    ├── <业务域>/                              # test-case-writer 按业务域组织的 TC 文件夹
+    │   ├── tc-<业务域>.md                     # 域内测试用例文件
+    │   └── sql/                              # 本域测试数据 SQL
+    │       └── <编号>-<场景>.sql
+    └── tc-reviews/                           # test-case-reviewer 待裁定 TC 问题清单
+        └── <日期>-issues.md
 ```
 
 ### 目录语义
@@ -108,6 +131,7 @@ S4 ─────────────────────────�
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
 | `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
 | `<host>/src/`（或项目约定代码根目录） | 实装层（S4） | 按 delivery-plan Phase/Task 产出的实际代码文件 | coding-standards | test-and-acceptance |
+| `<host>/docs/test-case/` | 测试用例层（S5） | 验收文档 + 测试用例 + TC 核查报告 | prd-acceptance-reviewer、test-case-writer、test-case-reviewer | test-case-runner |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
@@ -123,6 +147,9 @@ S4 ─────────────────────────�
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
 | delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
 | coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写 `docs/plans/delivery-plan-<slug>.md` 中已完成 Task 的状态字段 |
+| prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另需对 `<host>/docs/prd/` 下已产出的 PRD 文件做验收回链与 baseline 维护（原地回写） |
+| test-case-writer | `<host>/docs/test-case/` | `tc-main-<slug>.md`、`<业务域>/tc-<业务域>.md`、`<业务域>/sql/*.sql` |
+| test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`；对已产出 TC 文件做原地修正 |
 
 **不变式（写 skill 时的硬约束）：**
 
@@ -358,30 +385,113 @@ S4 ─────────────────────────�
 
 ---
 
+## 8. prd-acceptance-reviewer — 验收标准审阅
+
+**职责**：消费子 PRD 中每个功能子区域 §X 末尾的 X.6 验收小节，拉齐到独立的验收文档，按 PRD 区块拆文件；在 PRD 侧给每个验收点补回链，并维护 PRD baseline / changelog。不改 PRD 正文、不编写测试用例。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| `project-profile.md` | ai-project-manager | `<host>/project-profile.md` |
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 验收文档主索引 | `acceptance-<slug>.md` | `<host>/docs/test-case/` | 全局入口，索引所有区块验收子文件 |
+| 验收文档子文件 | `acceptance-<slug>/<区块名>.md` | `<host>/docs/test-case/acceptance-<slug>/` | 按 PRD 区块拆，一份对应一个子 PRD 的 X.6 验收汇总 |
+| PRD 验收回链 + baseline 维护（原地回写） | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 在子 PRD 每个 X.6 小节加到验收文档子文件的回链；维护 PRD baseline / changelog（具体形式由 prd-writer 规定） |
+
+---
+
+## 9. test-case-writer — 测试用例编写
+
+**职责**：以验收文档为唯一验收权威源，结合 foundation（glossary / schema / api）、PRD（辅助上下文）、BRD（辅助上下文），产出按业务域组织的测试用例文件和配套 SQL 数据准备。不改 PRD、不改验收文档。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` |
+| `acceptance-<slug>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/` |
+| `acceptance-<slug>/<区块名>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/acceptance-<slug>/` |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| TC 主索引 | `tc-main-<slug>.md` | `<host>/docs/test-case/` | 全局 TC 入口，按业务域索引所有域 TC 文件 |
+| 域 TC 文件 | `<业务域>/tc-<业务域>.md` | `<host>/docs/test-case/<业务域>/` | 单个业务域下的完整测试用例 |
+| 测试数据 SQL | `<业务域>/sql/<编号>-<场景>.sql` | `<host>/docs/test-case/<业务域>/sql/` | 本域测试用例对应的数据准备脚本 |
+
+---
+
+## 10. test-case-reviewer — 测试用例核查
+
+**职责**：对 test-case-writer 产出的 TC 做质量检查，发现 TC 内部问题（覆盖不全、与验收文档对应错位、SQL 与用例脱节等）时，可直接原地修正 TC 文件；修正不了、需要用户裁定的问题写入待裁定问题清单。只管 TC 自身质量，不查 PRD 或验收文档——上游有问题不是本 skill 的回环范围。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| `acceptance-<slug>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/` |
+| `acceptance-<slug>/<区块名>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/acceptance-<slug>/` |
+| `tc-main-<slug>.md` | test-case-writer | `<host>/docs/test-case/` |
+| `<业务域>/tc-<业务域>.md` | test-case-writer | `<host>/docs/test-case/<业务域>/` |
+| `<业务域>/sql/<编号>-<场景>.sql` | test-case-writer | `<host>/docs/test-case/<业务域>/sql/` |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 待裁定 TC 问题清单 | `tc-reviews/<日期>-issues.md` | `<host>/docs/test-case/tc-reviews/` | 列出 reviewer 发现但需用户裁定的疑问 |
+| TC 原地修正 | `<业务域>/tc-<业务域>.md` 等 | `<host>/docs/test-case/<业务域>/` | 可自行修正的 TC 内部问题，直接改对应文件 |
+
+---
+
 ## 依赖关系矩阵
 
 下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖，👁 = 观察但不修改）：
 
-| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner | coding-standards |
-|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ | |
-| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | |
-| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | |
-| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | |
-| page-spec-entities | | | | 产出 | | | | | | |
-| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | |
-| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | |
-| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | |
-| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | | | |
-| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | |
-| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） |
-| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） |
-| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） |
-| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ | |
-| prd-feature-list | | | | | | 👁 | | 产出 | ✓ | |
-| prd-main | | | | | | 👁 | | 产出 | ✓ | |
-| prd-子文档 | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） |
-| delivery-plan | | | | | | | | | 产出 | ✓（硬依赖，逐 Task 消费） |
+| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner | coding-standards | test-case-chief | prd-acceptance-reviewer | test-case-writer | test-case-reviewer |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ | | | ✓ | | |
+| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | | | ✓ | ✓ | |
+| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | |
+| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | |
+| page-spec-entities | | | | 产出 | | | | | | | | | | |
+| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
+| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | | | | | |
+| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
+| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | | | | | | | |
+| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
+| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
+| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
+| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
+| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ | | 👁 | ✓ | ✓ | |
+| prd-feature-list | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
+| prd-main | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
+| prd-子文档 | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） | 👁 | ✓ | ✓ | |
+| delivery-plan | | | | | | | | | 产出 | ✓（硬依赖，逐 Task 消费） | 👁 | | | |
+| 验收文档（主索引 + 子文件） | | | | | | | | | | | 👁 | 产出 | ✓ | ✓ |
+| TC 主索引 + 域 TC + SQL | | | | | | | | | | | 👁 | | 产出 | ✓（原地修正） |
+| TC 问题清单 | | | | | | | | | | | 👁 | | | 产出 |
 
 ---
 
