@@ -43,7 +43,7 @@
 ## 三、真实依据门禁
 
 逐项确认：
-- [ ] 读过 `docs/tech-stack-<slug>.md`（技术栈约束基准，所有 Task 的核心文件与完成标准必须与此一致）
+- [ ] 读过 `<suite-path>/skills/ai-project-manager/references/defaults/tech-stack.md`（套包内置技术栈参考，所有 Task 技术实现细节应与实际技术栈一致）
 - [ ] 读过仓库规则源
 - [ ] 读过当前计划或目标样板计划
 - [ ] 读过 PRD 主文档 / 需求导航文档
