@@ -147,7 +147,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
 | delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
 | coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写 `docs/plans/delivery-plan-<slug>.md` 中已完成 Task 的状态字段 |
-| prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另需对 `<host>/docs/prd/` 下已产出的 PRD 文件做验收回链与 baseline 维护（原地回写） |
+| prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另可对 `<host>/docs/prd/` 下子 PRD 的 §X.6 验收小节做条目修订与回链追加（原地回写），不做 baseline / changelog / baseline.md 维护 |
 | test-case-writer | `<host>/docs/test-case/` | `tc-main-<slug>.md`、`<业务域>/tc-<业务域>.md`、`<业务域>/sql/*.sql` |
 | test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`；对已产出 TC 文件做原地修正 |
 
@@ -387,7 +387,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ## 8. prd-acceptance-reviewer — 验收标准审阅
 
-**职责**：消费子 PRD 中每个功能子区域 §X 末尾的 X.6 验收小节，拉齐到独立的验收文档，按 PRD 区块拆文件；在 PRD 侧给每个验收点补回链，并维护 PRD baseline / changelog。不改 PRD 正文、不编写测试用例。
+**职责**：消费子 PRD 中每个功能子区域 §X 末尾的 X.6 验收小节，拉齐到独立的验收文档，按 PRD 区块拆文件；在 PRD 侧只允许修订 §X.6 内部验收条目并在 §X.6 末尾追加回链。不改 PRD 正文、不编写测试用例、不维护 baseline / changelog / baseline.md。
 
 **依赖文件**：
 
@@ -409,7 +409,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 |------|--------|---------|------|
 | 验收文档主索引 | `acceptance-<slug>.md` | `<host>/docs/test-case/` | 全局入口，索引所有区块验收子文件 |
 | 验收文档子文件 | `acceptance-<slug>/<区块名>.md` | `<host>/docs/test-case/acceptance-<slug>/` | 按 PRD 区块拆，一份对应一个子 PRD 的 X.6 验收汇总 |
-| PRD 验收回链 + baseline 维护（原地回写） | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 在子 PRD 每个 X.6 小节加到验收文档子文件的回链；维护 PRD baseline / changelog（具体形式由 prd-writer 规定） |
+| PRD §X.6 验收条目修订 + 回链追加（原地回写） | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 仅在子 PRD 每个 §X.6 小节内部修订验收条目，并在 §X.6 末尾追加到验收文档子文件的回链；不维护 baseline / changelog / baseline.md |
 
 ---
 
