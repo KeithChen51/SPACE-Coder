@@ -45,7 +45,7 @@ const routeTargets = {
 const gatingRules = {
     startupMinimum: {
         description: '启动最小必需字段包必须足以恢复上下文',
-        fields: ['project_name', 'project_one_liner', 'target_users', 'main_problem', 'collaboration_mode'],
+        fields: ['project_name', 'project_one_liner', 'target_users', 'main_problem'],
         blockOnMissing: true
     },
     pageTaskRequired: {

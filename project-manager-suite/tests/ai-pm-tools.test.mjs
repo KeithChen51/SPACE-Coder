@@ -40,7 +40,6 @@ function buildStartupInterview(overrides = {}) {
         project_one_liner: '帮助团队稳定推进项目',
         target_users: '运营人员',
         main_problem: '推进信息分散',
-        collaboration_mode: '业务单人 + AI执行',
         ...overrides
     };
 }

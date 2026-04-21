@@ -20,8 +20,7 @@ const fieldPackages = {
         'project_name',
         'project_one_liner',
         'target_users',
-        'main_problem',
-        'collaboration_mode'
+        'main_problem'
     ],
     identity: ['identity_policy', 'multi_operator_identifiers'],
     pageTaskRequired: [
@@ -101,7 +100,7 @@ const fileContracts = {
             key: 'collaboration_mode',
             label: '协作模式',
             level: FIELD_LEVELS.REQUIRED,
-            source: FIELD_SOURCES.USER_CONFIRMED
+            source: FIELD_SOURCES.SYSTEM_INFERRED
         },
         {
             key: 'coverage_scope',

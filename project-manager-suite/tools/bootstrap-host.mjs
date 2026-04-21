@@ -361,7 +361,6 @@ function fillProfileTemplate(templateContent, interviewInput) {
     const replacements = [
         ['项目名称', interviewInput.answers.project_name],
         ['项目一句话目标', interviewInput.answers.project_one_liner],
-        ['协作模式', interviewInput.answers.collaboration_mode],
         ['目标用户', interviewInput.answers.target_users],
         ['主要问题', interviewInput.answers.main_problem]
     ];
