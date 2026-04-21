@@ -76,6 +76,16 @@ changelog: |
 
 ### Step 0：先判断任务类型
 
+在判断「新建计划 / 更新计划 / 局部补 Phase」之前，必须先判断**当前仓库角色**：
+
+- **宿主项目**：当前仓库是被服务的业务项目，允许继续走正式 `delivery-plan-<slug>.md` 生成流程
+- **套件 / 框架 / skill 源码仓库**：当前仓库主要承载规则、脚本、模板、插件或文档，不是某个宿主业务项目
+
+若判定为**套件 / 框架 / skill 源码仓库**：
+- **不得**把当前仓库视为 `<host>`
+- **不得**在当前仓库的 `docs/plans/` 下生成 `delivery-plan-<slug>.md`
+- 应改为输出内部维护文档、改造计划或设计文档，落到更合适的 `docs/` 或 `docs/tooling/` 位置
+
 先确认当前属于哪一种：
 - **新建计划**：从需求、PRD、现状差距开始，输出一份完整计划
 - **更新计划**：已有计划文档，补状态、日期、依赖、验收口径、风险、闸门
@@ -130,6 +140,8 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 3. 在计划头部元信息中注明 `上游发现模式: 兜底模式（未检测到 PIPELINE 命名约定）`
 4. 不触发失败分支，`missingExpected` 检测被禁用
 5. `canProceed` 始终为 `true`
+
+> 但若同时满足“`slug = null` + 无 PRD / foundation 主链 + 当前仓库明显是套件 / 框架 / skill 源码仓库”，则只允许进入内部维护文档路线，不允许把该仓库当宿主生成正式 `delivery-plan-<slug>.md`。
 
 ---
 
