@@ -46,7 +46,6 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | 文件 | 位置 | 用途 |
 |------|------|------|
 | `methodology.md` | `../test-case-chief/knowledge/methodology.md` | 测试设计方法论 + BCDE 覆盖 |
-| `checklist.md` | `../test-case-chief/knowledge/checklist.md` | 生成后自检与常见陷阱 |
 | `templates-shared.md` | `../test-case-chief/knowledge/templates-shared.md` | 文件头、验收矩阵、主文档、版本历史模板 |
 
 ## 3) 产出
@@ -95,7 +94,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 
 ### Phase 5：自检
 
-1. 对照 `../test-case-chief/knowledge/checklist.md` 做单条用例 / 文件级 / 体系级检查
+1. 对照 `references/self-check.md` 做单条用例 / 文件级 / 体系级检查
 2. 确认所有验收文档条目在矩阵中有 TC 覆盖或已明确标记原因
 3. 确认没有从 PRD 正文直接新增验收点
 4. 确认没有把代码实现当作预期 oracle
@@ -119,7 +118,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 |------|------|---------|
 | `../test-case-chief/knowledge/methodology.md` | 方法论 + BCDE 覆盖维度 | Phase 1 / 3 设计用例时 |
 | `../test-case-chief/knowledge/templates-shared.md` | 主文档、验收矩阵、文件头模板 | Phase 2-4 生成文档时 |
-| `../test-case-chief/knowledge/checklist.md` | 自检清单、陷阱速查 | Phase 5 自检时 |
+| `references/self-check.md` | 生成期自检清单、陷阱速查 | Phase 5 自检时 |
 | `references/type-domain.md` | 业务域 TC：API / UI / 管理台闭环策略 | 生成业务域文件时 |
 | `references/type-config.md` | 管理台 CRUD 测试策略 | 生成独立管理台配置文件时 |
 | `references/type-regression.md` | 缺陷回归测试策略 | 输入有已知缺陷记录时 |
