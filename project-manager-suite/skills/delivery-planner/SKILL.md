@@ -159,6 +159,21 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 > 宿主项目若已有明确技术约定（如项目规则文件、README 或 BRD 中注明），以宿主约定为准，tech-stack.md 作为兜底参考。
 > 所有 Task 的技术实现细节（框架、语言、ORM 等）应与实际使用技术栈一致，避免混用不同框架的实现方式。
 
+#### Solo 本地开发模式（默认）
+
+当宿主项目按 1人+1AI 的 solo 方式开发时，执行计划默认按以下假设规划：
+
+- **数据库**：本地实例（本地 MySQL / Docker MySQL / SQLite），不要求必须有云端数据库
+- **后端服务**：本地 dev server，不要求必须有云服务器或远程联调环境
+- **前端服务**：本地 dev server（如 Vite / Webpack Dev Server）
+- **联调方式**：本地全栈联调，前后端均在本地启动，通过 localhost 联调
+- **部署**：暂不规划云端部署阶段（K8s / CI/CD），后续按需补充
+- **验证环境**：所有完成标准和验证门禁默认以本地环境为验收基准
+
+> 当宿主项目已显式切换到云端开发环境或团队协作模式时，以宿主项目实际环境为准，覆盖以上默认假设。
+> 
+计划头部元信息中应注明 `开发模式: solo-local` 或 `开发模式: 团队协作`。
+
 生成新计划前，再读取：
 - `templates/delivery-plan-template.md`
 - `references/plan-anatomy.md`
@@ -193,6 +208,8 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 11. 风险与应对
 12. AI 执行示例
 13. PRD → 任务反向索引
+
+> Solo 模式下，`分工与边界` 章节的角色可精简为 `AI`（执行）与 `人类 Owner`（审核决策），不必列出多个团队角色。
 
 每个任务默认必须包含：
 - `PRD 双链·读`
