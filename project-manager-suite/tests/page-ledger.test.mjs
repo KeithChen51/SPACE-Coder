@@ -78,14 +78,14 @@ function createHostWithBrd({
 
 function writeEntities(hostRoot, slug) {
     writeFile(
-        path.join(hostRoot, 'page-preview', `page-spec-entities-${slug}.md`),
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-spec-entities-${slug}.md`),
         '# Entities\n'
     );
 }
 
 function writeDelivery(hostRoot, slug) {
     writeFile(
-        path.join(hostRoot, 'page-preview', `page-delivery-${slug}.md`),
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-delivery-${slug}.md`),
         '# Delivery\n\n- 文件路径：/abs/path/demo\n'
     );
 }
@@ -109,8 +109,8 @@ test('boot creates a new ledger and screenshot directory from docs/brd input', (
     assert.equal(result.screenshotAsked, false);
     assert.equal(result.brdFile, brdPath);
 
-    const ledgerPath = path.join(hostRoot, 'page-preview', `page-ledger-${slug}.json`);
-    const screenshotDir = path.join(hostRoot, 'page-preview', 'screenshots');
+    const ledgerPath = path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-ledger-${slug}.json`);
+    const screenshotDir = path.join(hostRoot, 'src', 'frontend', 'page-preview', 'screenshots');
     const ledger = readJson(ledgerPath);
 
     assert.equal(result.ledgerPath, ledgerPath);
@@ -232,14 +232,14 @@ test('C+B flow can advance through delivery and then start a loop', () => {
         '--host-dir',
         hostRoot,
         '--gap-files',
-        `${path.join(hostRoot, 'page-preview', `explainer-c-gap-${slug}.md`)},${path.join(hostRoot, 'page-preview', `explainer-b-gap-${slug}.md`)}`
+        `${path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-c-gap-${slug}.md`)},${path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-b-gap-${slug}.md`)}`
     );
 
     assert.equal(loop.phase, 1);
     assert.equal(loop.loopRound, 1);
     assert.equal(loop.entitiesApproved, false);
 
-    const ledger = readJson(path.join(hostRoot, 'page-preview', `page-ledger-${slug}.json`));
+    const ledger = readJson(path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-ledger-${slug}.json`));
     assert.equal(ledger.phase, 1);
     assert.equal(ledger.loopRound, 1);
     assert.equal(ledger.path, 'C+B');
@@ -298,7 +298,7 @@ test('pure B flow delivers at phase 4 and rejects premature loop start', () => {
         '--host-dir',
         hostRoot,
         '--gap-files',
-        path.join(hostRoot, 'page-preview', `explainer-b-gap-${slug}.md`)
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-b-gap-${slug}.md`)
     );
     assert.equal(loopFailure.error, 'invalid_loop_start');
 

@@ -37,8 +37,17 @@ export function resolveHostDir(hostDir) {
     return path.resolve(hostDir);
 }
 
+export function getPagePreviewSearchDirs(hostDir) {
+    const absoluteHostDir = resolveHostDir(hostDir);
+    return [
+        path.join(absoluteHostDir, 'src', 'frontend', 'page-preview'),
+        path.join(absoluteHostDir, 'page-preview'),
+        path.join(absoluteHostDir, '可操作页面')
+    ];
+}
+
 export function getPagePreviewDir(hostDir) {
-    return path.join(resolveHostDir(hostDir), 'page-preview');
+    return getPagePreviewSearchDirs(hostDir)[0];
 }
 
 export function getScreenshotsDir(hostDir) {
@@ -46,24 +55,24 @@ export function getScreenshotsDir(hostDir) {
 }
 
 export function findLedger(hostDir) {
-    const previewDir = getPagePreviewDir(hostDir);
-    if (!fs.existsSync(previewDir)) {
-        return null;
-    }
-
-    const matches = fs.readdirSync(previewDir)
-        .filter((name) => /^page-ledger-.*\.json$/.test(name))
-        .sort();
+    const matches = getPagePreviewSearchDirs(hostDir)
+        .filter((previewDir) => fs.existsSync(previewDir))
+        .flatMap((previewDir) =>
+            fs.readdirSync(previewDir)
+                .filter((name) => /^page-ledger-.*\.json$/.test(name))
+                .sort()
+                .map((name) => path.join(previewDir, name))
+        );
 
     if (matches.length === 0) {
         return null;
     }
 
     if (matches.length > 1) {
-        throw new Error(`multiple page ledgers found under ${previewDir}`);
+        throw new Error(`multiple page ledgers found under ${resolveHostDir(hostDir)}`);
     }
 
-    return path.join(previewDir, matches[0]);
+    return matches[0];
 }
 
 export function findBrd(hostDir) {
@@ -167,6 +176,17 @@ export function getDeliveryFilePath(hostDir, slug) {
     return path.join(getPagePreviewDir(hostDir), `page-delivery-${slug}.md`);
 }
 
+export function findPagePreviewArtifact(hostDir, fileName) {
+    for (const previewDir of getPagePreviewSearchDirs(hostDir)) {
+        const candidate = path.join(previewDir, fileName);
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
 export function parsePhase(value) {
     const parsed = Number(value);
     if (!Number.isInteger(parsed)) {
@@ -202,7 +222,9 @@ export function buildAdvanceCheck(ledger, hostDir, toPhase) {
     }
 
     if (toPhase === 4 && ledger.path === 'C+B') {
-        const entitiesFile = getEntitiesFilePath(hostDir, ledger.slug);
+        const entitiesFile =
+            findPagePreviewArtifact(hostDir, `page-spec-entities-${ledger.slug}.md`) ??
+            getEntitiesFilePath(hostDir, ledger.slug);
         if (!fs.existsSync(entitiesFile)) {
             return {
                 canAdvance: false,
@@ -220,7 +242,9 @@ export function buildAdvanceCheck(ledger, hostDir, toPhase) {
     }
 
     if ((toPhase === 4 && ledger.path === '纯B') || toPhase === 6) {
-        const deliveryFile = getDeliveryFilePath(hostDir, ledger.slug);
+        const deliveryFile =
+            findPagePreviewArtifact(hostDir, `page-delivery-${ledger.slug}.md`) ??
+            getDeliveryFilePath(hostDir, ledger.slug);
         if (!fs.existsSync(deliveryFile)) {
             return {
                 canAdvance: false,

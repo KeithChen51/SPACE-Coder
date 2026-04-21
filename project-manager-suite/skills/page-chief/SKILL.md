@@ -38,8 +38,8 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-ledger-<slug>.json` 优先从 `page-preview/` 读取；不存在不是异常，只表示 page-designer 尚未启动。
-- `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `page-preview/` 读取；仅旧项目尚未迁移时，才回退读取 `可操作页面/` 或根目录同名文件。
+- `page-ledger-<slug>.json` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`；不存在不是异常，只表示 page-designer 尚未启动。
+- `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件。
 - 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取；仅旧项目才回退检查 `page-preview/<工程名>/` 或 `可操作页面/`。
 
 ## 4) 出口检查清单
@@ -131,7 +131,7 @@ START
      ```
    - 若返回 `{ exists: false }`：说明 page-designer 尚未启动，继续指示用户执行 page-designer
    - 若返回 `{ exists: true }`：读取 `phase`、`path`、`loopRound`
-   - `page-preview/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查 `可操作页面/` 或根目录同名文件）
+   - `src/frontend/page-preview/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查根级 `page-preview/`、`可操作页面/` 或根目录同名文件）
    - delivery 中列出的页面代码文件是否均存在
 3. 判定规则：
    - 台账不存在 → page-designer 尚未启动，不进入下一步
@@ -145,17 +145,17 @@ START
 2. 按 `has_c_end` 检查完整产物集是否全部存在：
 
    **包含 C 端页面时必须存在**：
-   - `page-preview/` 中的 `explainer-flow-<slug>.md`
-   - `page-preview/` 中的 `explainer-c-interaction-<slug>.md`
-   - `page-preview/` 中的 `explainer-b-interaction-<slug>.md`
-   - `page-preview/` 中的 `explainer-b-permission-<slug>.md`
-   - `page-preview/` 中的 `explainer-delivery-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-flow-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-c-interaction-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-b-interaction-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-b-permission-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-delivery-<slug>.md`
 
    **不包含 C 端页面时必须存在**：
-   - `page-preview/` 中的 `explainer-flow-<slug>.md`
-   - `page-preview/` 中的 `explainer-b-interaction-<slug>.md`
-   - `page-preview/` 中的 `explainer-b-permission-<slug>.md`
-   - `page-preview/` 中的 `explainer-delivery-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-flow-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-b-interaction-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-b-permission-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-delivery-<slug>.md`
 
 3. 任一必需文件缺失 → page-explainer 尚未完成，继续等待
 4. 全部存在后，逐文件检查：

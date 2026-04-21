@@ -25,12 +25,12 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
    node skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
    ```
 2. `boot` 的职责：
-   - 优先在 `<host>/page-preview/` 搜索 `page-ledger-<slug>.json`
+   - 优先在 `<host>/src/frontend/page-preview/` 搜索 `page-ledger-<slug>.json`
    - 找到 1 个台账：恢复当前状态，返回 `action: "resumed"`
    - 没找到台账：自动在 `docs/brd/` 搜索 `BRD-*.md`，旧项目兼容时才兜底搜根目录；若找到则创建台账并返回 `action: "created"`
    - 若 BRD 不存在：**中止执行**，提示用户先完成 brd-writer
    - 若找到多个台账：**中止执行**，提示用户先清理异常状态
-3. 台账创建时，脚本会同时创建 `<host>/page-preview/screenshots/` 目录，供参考截图长期复用。
+3. 台账创建时，脚本会同时创建 `<host>/src/frontend/page-preview/screenshots/` 目录，供参考截图长期复用。
 
 从 BRD 中读取以下字段：
 
@@ -176,7 +176,7 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
    ```
 5. 读取 `tech-stack.md` 确定技术栈。
 6. 询问用户是否有参考截图。
-   - 有 → 请用户将截图放入 `<host>/page-preview/screenshots/`；再读取图片并利用多模态能力提取：
+   - 有 → 请用户将截图放入 `<host>/src/frontend/page-preview/screenshots/`；再读取图片并利用多模态能力提取：
      - 布局结构（导航位置、内容分区、栅格方式）
      - 视觉风格（配色倾向、圆角/直角、间距密度）
      - 组件模式（卡片/列表/表格、弹窗/抽屉）
@@ -290,7 +290,7 @@ node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <hos
 ```
 ✅ 已生成实体中间文件，请打开并逐项核对：
 
-📄 文件路径（绝对路径）：<host>/page-preview/page-spec-entities-<slug>.md
+📄 文件路径（绝对路径）：<host>/src/frontend/page-preview/page-spec-entities-<slug>.md
 
 建议按以下顺序检查：
 1. 顶部"实体识别 Checklist"——确认每一项都 ✓，有疑问的勾掉
@@ -399,7 +399,7 @@ page-chief 判定需要回环时，只做自然语言指示："下一步请重�
 
 page-designer 重新启动时：
 1. 先执行 `page-ledger-mutate.mjs boot --host-dir <host>/`
-2. 若台账 phase 已处于交付态（C+B: 6，纯B: 4），检查 `page-preview/` 下 gap 文件是否存在未解决的 `design_gap` 或 `logic_conflict`
+2. 若台账 phase 已处于交付态（C+B: 6，纯B: 4），检查 `src/frontend/page-preview/` 下 gap 文件是否存在未解决的 `design_gap` 或 `logic_conflict`
 3. 若存在未解决条目，则运行：
    ```bash
    node skills/page-designer/scripts/page-ledger-mutate.mjs start-loop --host-dir <host>/ --gap-files <file1,file2>
@@ -433,21 +433,21 @@ page-designer 重新启动时：
 | 产物类型 | 存放位置 | 说明 |
 |----------|---------|------|
 | Vue 3 前端工程代码 | `<host>/<工程名>/` | 项目根级目录，C+B 项目有 C 端和 B 端两个独立工程目录 |
-| 元数据文件（交付清单、实体中间文件） | `<host>/page-preview/` | 页面元数据层 |
+| 元数据文件（交付清单、实体中间文件） | `<host>/src/frontend/page-preview/` | 页面元数据层 |
 
-**关键原则**：前端工程代码是项目级产物，直接放在宿主项目根目录下，不嵌套在 `page-preview/` 中。`page-preview/` 仅存放交付清单和实体中间文件等元数据。
+**关键原则**：前端工程代码是项目级产物，直接放在宿主项目根目录下，不嵌套在 `page-preview/` 中。`src/frontend/page-preview/` 仅存放交付清单和实体中间文件等元数据。
 
 ### 产物列表
 
 | 场景 | 产物 | 形式 | 存放位置 |
 |------|------|------|---------|
-| 通用 | 台账 | `page-ledger-<slug>.json` | `<host>/page-preview/` |
+| 通用 | 台账 | `page-ledger-<slug>.json` | `<host>/src/frontend/page-preview/` |
 | C+B | C 端可交互页面 | 前端项目代码（技术栈见 tech-stack.md），mock 数据 | `<host>/<C端工程名>/` |
-| C+B | 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/page-preview/` |
+| C+B | 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/src/frontend/page-preview/` |
 | C+B | B 端控制台可交互页面 | 前端项目代码（技术栈见 tech-stack.md），mock 数据 | `<host>/<B端工程名>/` |
-| C+B | 交付清单 | `page-delivery-<slug>.md` | `<host>/page-preview/` |
+| C+B | 交付清单 | `page-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` |
 | 纯 B | B 端可交互页面 | 前端项目代码（技术栈见 tech-stack.md），mock 数据 | `<host>/<工程名>/` |
-| 纯 B | 交付清单 | `page-delivery-<slug>.md` | `<host>/page-preview/` |
+| 纯 B | 交付清单 | `page-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` |
 
 ## 8) 交付清单
 

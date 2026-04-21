@@ -257,7 +257,7 @@ test('route-check stays in startup/bootstrap mode when page signal appears befor
     assert.ok(result.blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
 });
 
-test('route-check prefers docs/brd and page-preview over legacy page directories and root-level artifacts', () => {
+test('route-check prefers docs/brd and src/frontend/page-preview over legacy page directories and root-level artifacts', () => {
     const hostRoot = createHostFixture({
         profileOverrides: {
             current_stage: 'S2',
@@ -279,17 +279,17 @@ test('route-check prefers docs/brd and page-preview over legacy page directories
         '# BRD\n\n- 是否包含 C 端页面：否\n'
     );
     writeFile(
-        path.join(hostRoot, 'page-preview', 'page-delivery-demo.md'),
-        '# 页面交付清单\n\n| 页面 | 文件路径 |\n|---|---|\n| 首页 | page-preview/demo-app/src/pages/home.vue |\n'
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', 'page-delivery-demo.md'),
+        '# 页面交付清单\n\n| 页面 | 文件路径 |\n|---|---|\n| 首页 | demo-app/src/pages/home.vue |\n'
     );
-    writeFile(path.join(hostRoot, 'page-preview', 'demo-app', 'src', 'pages', 'home.vue'), '<template>home</template>\n');
-    writeFile(path.join(hostRoot, 'page-preview', 'explainer-flow-demo.md'), '# flow\n');
+    writeFile(path.join(hostRoot, 'demo-app', 'src', 'pages', 'home.vue'), '<template>home</template>\n');
+    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-flow-demo.md'), '# flow\n');
     writeFile(
-        path.join(hostRoot, 'page-preview', 'explainer-b-interaction-demo.md'),
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-interaction-demo.md'),
         '| id | status |\n|---|---|\n| demo.home.button.1 | locked |\n'
     );
-    writeFile(path.join(hostRoot, 'page-preview', 'explainer-b-permission-demo.md'), '# permission\n');
-    writeFile(path.join(hostRoot, 'page-preview', 'explainer-delivery-demo.md'), '# delivery\n');
+    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-permission-demo.md'), '# permission\n');
+    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-delivery-demo.md'), '# delivery\n');
     writeFile(path.join(hostRoot, '可操作页面', 'page-delivery-demo.md'), '# 旧目录页面交付清单\n');
 
     writeFile(
@@ -307,7 +307,7 @@ test('route-check prefers docs/brd and page-preview over legacy page directories
     assert.equal(result.routeTarget.skill, 'prd-chief');
     assert.equal(result.gateChecks.pageStageClosedForPrd.pass, true);
     assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.brdPath, 'docs/brd/BRD-demo-20260408-1000.md');
-    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageDeliveryPath, 'page-preview/page-delivery-demo.md');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageDeliveryPath, 'src/frontend/page-preview/page-delivery-demo.md');
 });
 
 test('route-check enters S7 when release signal and test execution reports are ready', () => {
