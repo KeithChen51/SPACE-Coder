@@ -1,6 +1,6 @@
-# AI Project Manager Tools
+# AI Development Assistant Tools
 
-本目录存放 `ai-project-manager` 第一阶段脚本化改造的工具脚本。
+本目录存放开发助手主入口 `ai-project-manager` 第一阶段脚本化改造的工具脚本。
 
 当前目标不是替代主入口，而是把已经稳定、可判定、可重复执行的部分收敛成工具层能力。
 

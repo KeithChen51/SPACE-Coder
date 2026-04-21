@@ -1,6 +1,6 @@
-# AI PM Protocol Layer
+# AI Development Assistant Protocol Layer
 
-这一层是 `ai-project-manager` 后续脚本化改造的统一规则源。
+这一层是开发助手内部主入口 `ai-project-manager` 后续脚本化改造的统一规则源。
 
 当前阶段只做第一版协议配置落地，不直接承担执行逻辑。
 
