@@ -32,6 +32,12 @@ Current scope note:
 在开始任何实装工作之前，**必须按以下顺序执行**：
 
 ```text
+0.5. 执行环境自检（在读 delivery-plan 之前）：
+   node <suite-path>/skills/coding-standards/scripts/verify-task-context.mjs \
+     <delivery-plan-path> <task-id> --env-check
+   - envReady: true  → 继续读计划
+   - envReady: false → 输出缺失依赖清单，停止，不得开始写代码
+
 1. 读取 docs/plans/delivery-plan-<slug>.md，定位当前活跃 Task
 
 2. 运行前置验证脚本：
@@ -55,6 +61,7 @@ Current scope note:
 
 **硬禁令**：
 - 未运行 `verify-task-context.mjs` 前，禁止开始写任何代码
+- 环境自检 envReady: false 时，禁止继续执行（即使 PRD 文件全部存在）
 - `canExecute: false` 时，禁止凭记忆假设 PRD 内容并继续执行
 - Task 的 `完成标准` 未全部核查通过前，禁止回写已完成状态
 
