@@ -27,7 +27,7 @@
 
 变更联动提示：
 
-- 若改的是首轮访谈字段、追问条件或展示顺序，同时检查 `lib/ai-pm-protocol/field-contracts.js`、`skills/ai-project-manager/assets/global-files/project-profile.md`、`tools/bootstrap-host.mjs`、`tools/validate-global-files.mjs`
+- 若改的是首轮访谈字段或展示顺序，同时检查 `lib/ai-pm-protocol/field-contracts.js`、`skills/ai-project-manager/assets/global-files/project-profile.md`、`tools/bootstrap-host.mjs`、`tools/validate-global-files.mjs`
 - 若改的是运行顺序或脚本优先链路，同时检查 `tools/route-check.mjs`、`tools/devlog-sync.mjs`、`hooks/session-start`
 - 若改的是阶段判断或 S2 页面先行协议，同时检查 `lib/ai-pm-protocol/stages.js`、`lib/ai-pm-protocol/routing.js`、`skills/ai-project-manager/assets/global-files/project-profile.md`、`tools/route-check.mjs`
 
@@ -355,16 +355,6 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 | 3 | 主要给谁用？ | `目标用户` | "门店店长和巡检人员" |
 | 4 | 你现在最想先解决的业务痛点是什么？ | `主要问题` | "现在靠 Excel 和微信群，漏检和跟进不及时" |
 
-### 条件追问
-
-| 条件 | 追问 | 对应字段 |
-|------|------|----------|
-| 即将进入 S1/S2/S3，且第一版目标尚不清楚 | 第一版最想先实现什么？ | `第一版核心目标` |
-| 即将进入 S1/S2/S3 | 第一版最需要先做哪几块？ | `第一版范围` |
-| 当前轮目标开始收敛到页面、原型或前端界面，且项目整体覆盖对象还不明确 | 这个项目整体主要是给外部用户用、给内部人员用，还是两边都有？ | `项目覆盖对象` |
-| 当前轮目标开始收敛到页面、原型或前端界面，且页面主要服务对象还不明确 | 这次这个页面主要给谁用？ | `当前页面主要给谁用` |
-| 当前轮目标开始收敛到页面、原型或前端界面，且页面主要用途还不明确 | 这个页面主要是让使用者处理业务、查看内容，还是做系统配置和管理？ | `当前页面主要用途` |
-
 ### 展示规则
 - 严格按顺序单问单答：一次只问 1 个问题，拿到回答后再决定是否进入下一问
 - 不允许把“首次必问”一次性整组抛给用户，也不要改写成问卷式多问题消息
@@ -389,7 +379,7 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 
 当前产品定位只聚焦 **solo 模式**。
 
-- 主入口默认按 `业务单人 + AI执行` 处理，不再把协作模式作为首轮必问
+- 主入口默认按 `业务单人 + AI执行` 处理，不再把协作模式作为启动阶段固定补问
 - 项目画像中的 `协作模式` 默认回写为 `业务单人 + AI执行`
 - `多操作者识别信息` 当前不作为启动门禁，也不作为首轮访谈必补字段
 
