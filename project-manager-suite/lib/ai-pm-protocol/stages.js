@@ -12,7 +12,7 @@ const stages = [
     {
         id: STAGE_IDS.S0,
         name: '需求调研',
-        signals: ['需求仍在访谈和业务理解层', '尚未形成正式需求文档'],
+        signals: ['首次必问尚未完成，启动最小必需字段包仍有缺口', '需求仍停留在访谈和业务理解层'],
         minimumDeliverable: '需求清单',
         ownerSkill: null,
         gatekeeping: ['startupMinimum']
@@ -20,7 +20,7 @@ const stages = [
     {
         id: STAGE_IDS.S1,
         name: '业务需求文档',
-        signals: ['调研信息基本齐全', '需要形成可评审的业务需求文档'],
+        signals: ['首次必问已结束，启动最小必需字段包已齐', '需要形成可评审的业务需求文档'],
         minimumDeliverable: '业务需求文档 / BRD',
         ownerSkill: 'brd-writer',
         gatekeeping: ['startupMinimum']
@@ -77,7 +77,7 @@ const stages = [
 
 const stageDecisionRules = [
     '多个阶段可选时，优先较早阶段',
-    '缺关键业务信息时不跳过 S0',
+    '首次必问未结束、启动最小必需字段包未补齐前，不跳过 S0；补齐后即可进入 S1',
     '用户要求先给方案时进入 S1 或 S2',
     '用户要求拆任务、拆开发任务、制定开发计划时进入 S3',
     '用户要求实现某模块但上下文不足时，先补上下文再进入 S3/S4',

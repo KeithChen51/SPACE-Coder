@@ -749,6 +749,11 @@ function isPageDesignTagResolved(value) {
     return /(C端|B端|后台)/.test(value);
 }
 
+function hasStartupMinimum(profileContext) {
+    const values = fieldValueMap(profileContext);
+    return collectMissingFields(fieldPackages.startupMinimum, values).length === 0;
+}
+
 function inferRecommendedStage(profileContext, planContext) {
     if (profileContext.fields.recommended_stage) {
         return profileContext.fields.recommended_stage;
@@ -768,6 +773,10 @@ function inferRecommendedStage(profileContext, planContext) {
 
     if (hasPageTaskSignal(profileContext, planContext)) {
         return STAGE_IDS.S2;
+    }
+
+    if (hasStartupMinimum(profileContext)) {
+        return STAGE_IDS.S1;
     }
 
     if (planContext.currentGoal.some((item) => /BRD|业务需求文档/.test(item))) {
