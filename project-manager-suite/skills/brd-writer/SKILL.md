@@ -162,7 +162,7 @@ node scripts/ledger-mutate.mjs init \
 
 ### Phase B 诊断与需求真伪鉴别
 
-Phase B 通常需要 2-3 轮完成。每轮仍遵守单焦点原则。
+Phase B 通常需要 2-3 轮完成。每轮仍遵守单焦点原则。本阶段结束时批量锁定三个事实型字段：**项目背景、利益相关角色、核心痛点**（P0 通用 #4-#6）——它们的信息已在 project-profile.md 中就绪，Phase B 在诊断/角色识别过程中与需求方对齐后统一入账，不再在 Phase C 逐题追问。
 
 **第 1 轮（诊断轮）**：
 1. 用一句非常苛刻的话指出当前方案最致命问题。
@@ -178,13 +178,13 @@ Phase B 通常需要 2-3 轮完成。每轮仍遵守单焦点原则。
    - 不同角色之间有没有利益冲突？
 6. **需求真伪鉴别**：读取 `references/interrogation-patterns.md` 中的"需求真伪鉴别"部分执行。若角色识别的追问已覆盖了真伪鉴别的核心问题，不重复追问。
 
-Phase B 结束条件：角色识别完成 + 最致命问题已暴露 + 无需再做真伪鉴别（或已完成）。
+Phase B 结束条件：项目背景已与需求方对齐 + 角色识别完成 + 最致命问题已暴露 + 无需再做真伪鉴别（或已完成）。
 
-**台账动作（批量锁定）**：Phase B 结束时执行批量锁定：
+**台账动作（批量锁定）**：Phase B 结束时批量锁定项目背景、利益相关角色、核心痛点：
 ```bash
 node scripts/ledger-mutate.mjs lock \
   --ledger <ledger-state-<slug>.json 路径> \
-  --fields '[{"id":"stakeholder_roles","value":"...","methodology":"来源: ..."},...]' \
+  --fields '[{"id":"project_background","value":"...","methodology":"来源: project-profile"},{"id":"stakeholder_roles","value":"...","methodology":"来源: ..."},{"id":"core_pain_points","value":"...","methodology":"来源: ..."}]' \
   --round <n> --requester-quote "需求方原话摘要"
 ```
 若返回 `rule_conflict`，先向需求方指出冲突，确认解决方式后调用 `resolve-conflict`，再重试 `lock`。
@@ -196,9 +196,10 @@ node scripts/ledger-mutate.mjs set-phase --ledger <path> --phase C --round <n>
 
 ### Phase C 单题选项追问
 1. 每轮只问 1 个最高阻塞问题。
-2. 每题提供 2-4 个互斥选项。
-3. 必须给推荐项，并说明取舍。推荐理由须映射到 `references/methodology.md` 中的适用方法论（如用 RICE 排优先级、用 JTBD 判场景匹配），禁止无方法论依据的"我觉得"。
-4. 需求方若回答模糊，读取 `references/interrogation-patterns.md` 中的"追问范式库"精准逼问，不可跳过。
+2. **优先级判定规则：通用 P0 字段优先于追加 P0 字段**——通用 P0 未全部锁定前，不进入类型追加字段的追问；通用 P0 全部 locked 后再按阻塞优先级挑追加 P0。
+3. 每题提供 2-4 个互斥选项。
+4. 必须给推荐项，并说明取舍。推荐理由须映射到 `references/methodology.md` 中的适用方法论（如用 RICE 排优先级、用 JTBD 判场景匹配），禁止无方法论依据的"我觉得"。
+5. 需求方若回答模糊，读取 `references/interrogation-patterns.md` 中的"追问范式库"精准逼问，不可跳过。
 
 ### Phase D 决策锁定
 1. 锁定需求方本轮已确认的选择。
