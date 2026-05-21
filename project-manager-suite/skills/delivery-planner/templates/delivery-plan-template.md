@@ -116,6 +116,9 @@
 | Java (JDK) | >= 17 | `java -version` | ⬜ 未确认 |
 | Maven | >= 3.8 | `mvn -v` | ⬜ 未确认 |
 | MySQL | >= 8.0（本地实例可用） | `mysql -u root -e "SELECT 1"` | ⬜ 未确认 |
+| Python | >= 3.11 | `python3 --version` | ⬜ 未确认 |
+| pip / uv | >= 23.0 | `pip --version` | ⬜ 未确认 |
+| Ruff | >= 0.4 | `ruff --version` | ⬜ 未确认 |
 
 ### 前端工程依赖
 
@@ -128,6 +131,12 @@
 | 工程目录 | 就绪条件 | 状态 |
 |---------|---------|------|
 | `<后端工程目录>/` | `mvn dependency:resolve` 可成功执行 | ⬜ 未确认 |
+
+### Python 工程依赖
+
+| 工程目录 | 就绪条件 | 状态 |
+|---------|---------|------|
+| `<Python 工程目录>/` | 虚拟环境已激活且 `pip install -e .` 或 `uv sync` 已执行 | ⬜ 未确认 |
 
 > **门禁规则**：`coding-standards` 在 `verify-task-context.mjs` 返回 `canExecute: true` 之前，
 > 还需将本区块所有状态栏标为 ✅，否则禁止开始写代码。

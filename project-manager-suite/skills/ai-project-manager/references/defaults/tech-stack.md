@@ -39,3 +39,12 @@
 
 ## 部署
 1. 容器编排：K8s
+
+## Python 服务 / 脚本（示例）
+1. 语言：Python 3.11+
+2. 框架：FastAPI（API 服务） / 无框架（独立脚本）
+3. 数据建模：Pydantic v2
+4. 依赖管理：pyproject.toml + uv / pip
+5. Lint / 格式化：Ruff
+6. 测试：pytest
+7. 虚拟环境：uv / venv

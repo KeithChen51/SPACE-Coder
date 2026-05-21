@@ -1,6 +1,6 @@
 ---
 name: coding-standards
-description: Load the project coding standards and route Claude to the right rule document before writing, modifying, reviewing, or refactoring Java, Vue, SQL, API, or test-related artifacts. Use this skill only after the task has clearly entered an implementation activity such as code changes, database schema work, REST API design, automated tests, or test case document maintenance, even if the user does not explicitly mention "standards" or "规范".
+description: Load the project coding standards and route Claude to the right rule document before writing, modifying, reviewing, or refactoring Java, Vue, Python, SQL, API, or test-related artifacts. Use this skill only after the task has clearly entered an implementation activity such as code changes, database schema work, REST API design, automated tests, or test case document maintenance, even if the user does not explicitly mention "standards" or "规范".
 ---
 
 # Coding Standards Router
@@ -15,9 +15,10 @@ Boundary note:
 - Load this skill only after the main entry has determined that the current round is performing implementation work.
 
 Current scope note:
-- The repository currently contains **9 active standards documents**: `01` to `09`.
-- `10-testing.md` and `11-test-case-design.md` are **not currently present** under `references/`.
-- For test-related work, first check whether those files have been added later; if not, do not pretend they exist.
+- The repository currently contains **11 active standards documents**: `01` to `11`.
+- `01`-`09` cover Java, MySQL, Vue, and API standards. `10`-`11` cover Python standards.
+- Testing-specific standards documents are **not currently present** under `references/`.
+- For test-related work, first check whether testing files have been added later; if not, do not pretend they exist.
 
 ## 管线定位
 
@@ -86,6 +87,12 @@ Current scope note:
 | Layering, package structure, domain model, module boundaries | `references/08-engineering.md` |
 | REST endpoint design, request or response schema, pagination | `references/09-api-design.md` |
 | Swagger / OpenAPI annotation, @Operation, @Schema, @Tag, API doc | `references/09-api-design.md` |
+| Python class, function, variable, constant naming | `references/10-python-naming-style.md` |
+| Python import ordering, type hints, type annotations | `references/10-python-naming-style.md` |
+| Python docstring, Google-style docstring, function documentation | `references/10-python-naming-style.md` |
+| Python exception handling, custom exception, error class | `references/11-python-engineering.md` |
+| Python logging, logger setup, log level | `references/11-python-engineering.md` |
+| Python project structure, package layout, pyproject.toml, dependency management | `references/11-python-engineering.md` |
 | Unit tests, integration tests, automated test code | `Not currently available in references/; check before loading` |
 | Test case document, acceptance matrix, regression case maintenance | `Not currently available in references/; check before loading` |
 
@@ -108,6 +115,9 @@ Use these combinations as defaults:
 - Vue page plus backend API integration: `07-vue-frontend.md`, plus `09-api-design.md` if the API contract also changes
 - Feature delivery with tests: load the main implementation document first, then check whether `10-testing.md` exists before loading it
 - Automated tests plus test case document update: first check whether `10-testing.md` and `11-test-case-design.md` exist; if not, do not route to missing files
+- Python script or module: `10-python-naming-style.md`, plus `11-python-engineering.md` if the task involves project structure or exception design
+- Python service with REST API: `10-python-naming-style.md` or `11-python-engineering.md`, plus `09-api-design.md` if the API contract also changes
+- Python with Java interop (e.g., calling Java API): load the primary Python document, plus `09-api-design.md` for interface alignment
 
 ## Operating rules
 
@@ -116,7 +126,7 @@ Use these combinations as defaults:
 - Do not treat this router as the source of truth; the source of truth is the referenced document.
 - If you need a full index inside this skill, start from `references/README.md`.
 - Treat any duplicate copy under project `docs/` as a human-facing mirror, not the primary source for this skill.
-- Do not route to `10-testing.md` or `11-test-case-design.md` unless those files actually exist in `references/`.
+- Do not route to testing-related files (e.g., future `12-testing.md`) unless those files actually exist in `references/`.
 
 ## Quick examples
 
@@ -128,3 +138,9 @@ Load `07-vue-frontend.md`. If the task changes the backend contract, also load `
 
 Example: "补单测并补充测试用例文档。"
 Check whether `10-testing.md` and `11-test-case-design.md` exist first. If they do not exist, fall back to the closest active standards file and explicitly note the gap.
+
+Example: "写一个 Python 数据处理脚本，需要从数据库读取数据并导出 CSV。"
+Load `10-python-naming-style.md` and `11-python-engineering.md`. If the task also involves database schema changes, also load `05-mysql-table.md` or `06-mysql-sql-orm.md`.
+
+Example: "用 FastAPI 写一个新的 REST API 服务。"
+Load `10-python-naming-style.md` and `09-api-design.md`. If the task also involves project scaffolding, swap in `11-python-engineering.md`.

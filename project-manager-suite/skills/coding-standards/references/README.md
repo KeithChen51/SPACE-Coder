@@ -1,7 +1,7 @@
 # 编码规范索引
 
-> **适用项目**：通用 Java Spring Boot + Vue 3 + MySQL 技术栈项目
-> **规范来源**：阿里巴巴 Java 开发手册 + 项目实际技术栈定制
+> **适用项目**：通用 Java Spring Boot + Vue 3 + MySQL + Python 技术栈项目
+> **规范来源**：阿里巴巴 Java 开发手册 + PEP 8 / Google Python Style Guide + 项目实际技术栈定制
 > **使用方式**：AI 通过 `project-manager-suite/skills/coding-standards/SKILL.md` 自动导航；人工可直接浏览本索引
 > **权威源说明**：本目录是当前 skill 的规范权威源；若当前 AI IDE 不支持 skill，直接从本文件进入即可
 
@@ -30,14 +30,16 @@
 | 07 | [07-vue-frontend.md](./07-vue-frontend.md) | Vue 3 组件、页面、交互与样式规范 |
 | 08 | [08-engineering.md](./08-engineering.md) | 工程分层、领域模型、模块边界 |
 | 09 | [09-api-design.md](./09-api-design.md) | REST API 设计、请求响应格式、分页与契约 |
+| 10 | [10-python-naming-style.md](./10-python-naming-style.md) | Python 命名、导入、类型注解、Docstring（Google 风格） |
+| 11 | [11-python-engineering.md](./11-python-engineering.md) | Python 异常处理、日志、项目结构、依赖管理 |
 
 ---
 
 ## 当前范围说明
 
-- 当前仓库实际内置的是 `01` 到 `09` 共 9 份规范文档。
+- 当前仓库实际内置的是 `01` 到 `11` 共 11 份规范文档（`01`-`09` 为 Java/MySQL/Vue/API，`10`-`11` 为 Python）。
 - 测试规范和测试用例文档规范目前**未在本目录落地文件**，维护索引时不应提前列出不存在的文件。
-- 若后续补充 `10-testing.md`、`11-test-case-design.md`，应同步更新本索引和 `coding-standards/SKILL.md` 的路由表。
+- 若后续补充测试相关规范，应同步更新本索引和 `coding-standards/SKILL.md` 的路由表。
 
 ---
 
