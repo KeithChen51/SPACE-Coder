@@ -91,7 +91,7 @@ class DesignSystemGenerator:
 
         if not rule:
             return {
-                "pattern": "Hero + Features + CTA",
+                "pattern": "Sidebar Nav + Main Workspace + Action Bar",
                 "style_priority": ["Minimalism", "Flat Design"],
                 "color_mood": "Professional",
                 "typography_mood": "Clean",
@@ -198,9 +198,9 @@ class DesignSystemGenerator:
             "project_name": project_name or query.upper(),
             "category": category,
             "pattern": {
-                "name": best_landing.get("Pattern Name", reasoning.get("pattern", "Hero + Features + CTA")),
-                "sections": best_landing.get("Section Order", "Hero > Features > CTA"),
-                "cta_placement": best_landing.get("Primary CTA Placement", "Above fold"),
+                "name": best_landing.get("Pattern Name", reasoning.get("pattern", "Sidebar Nav + Main Workspace + Action Bar")),
+                "sections": best_landing.get("Section Order", "Sidebar > Header > Main Workspace > Action Bar"),
+                "cta_placement": best_landing.get("Primary CTA Placement", ""),
                 "color_strategy": best_landing.get("Color Strategy", ""),
                 "conversion": best_landing.get("Conversion Optimization", "")
             },
@@ -214,12 +214,26 @@ class DesignSystemGenerator:
                 "accessibility": best_style.get("Accessibility", "")
             },
             "colors": {
-                "primary": best_color.get("Primary (Hex)", "#2563EB"),
-                "secondary": best_color.get("Secondary (Hex)", "#3B82F6"),
-                "cta": best_color.get("CTA (Hex)", "#F97316"),
-                "background": best_color.get("Background (Hex)", "#F8FAFC"),
-                "text": best_color.get("Text (Hex)", "#1E293B"),
-                "notes": best_color.get("Notes", "")
+                "primary": best_color.get("Primary", "#2563EB"),
+                "on_primary": best_color.get("On Primary", ""),
+                "secondary": best_color.get("Secondary", "#3B82F6"),
+                "on_secondary": best_color.get("On Secondary", ""),
+                "accent": best_color.get("Accent", "#F97316"),
+                "on_accent": best_color.get("On Accent", ""),
+                "background": best_color.get("Background", "#F8FAFC"),
+                "foreground": best_color.get("Foreground", "#1E293B"),
+                "card": best_color.get("Card", ""),
+                "card_foreground": best_color.get("Card Foreground", ""),
+                "muted": best_color.get("Muted", ""),
+                "muted_foreground": best_color.get("Muted Foreground", ""),
+                "border": best_color.get("Border", ""),
+                "destructive": best_color.get("Destructive", ""),
+                "on_destructive": best_color.get("On Destructive", ""),
+                "ring": best_color.get("Ring", ""),
+                "notes": best_color.get("Notes", ""),
+                # Backward-compat keys so existing emitters keep working
+                "cta": best_color.get("Accent", "#F97316"),
+                "text": best_color.get("Foreground", "#1E293B"),
             },
             "typography": {
                 "heading": best_typography.get("Heading Font", "Inter"),
@@ -304,13 +318,31 @@ def format_ascii_box(design_system: dict) -> str:
         lines.append(f"|     {perf_a11y}".ljust(BOX_WIDTH) + "|")
     lines.append("|" + " " * BOX_WIDTH + "|")
 
-    # Colors section
+    # Colors section (extended palette: full semantic token set)
     lines.append("|  COLORS:".ljust(BOX_WIDTH) + "|")
-    lines.append(f"|     Primary:    {colors.get('primary', '')}".ljust(BOX_WIDTH) + "|")
-    lines.append(f"|     Secondary:  {colors.get('secondary', '')}".ljust(BOX_WIDTH) + "|")
-    lines.append(f"|     CTA:        {colors.get('cta', '')}".ljust(BOX_WIDTH) + "|")
-    lines.append(f"|     Background: {colors.get('background', '')}".ljust(BOX_WIDTH) + "|")
-    lines.append(f"|     Text:       {colors.get('text', '')}".ljust(BOX_WIDTH) + "|")
+    color_entries = [
+        ("Primary",          "primary",          "--color-primary"),
+        ("On Primary",       "on_primary",       "--color-on-primary"),
+        ("Secondary",        "secondary",        "--color-secondary"),
+        ("On Secondary",     "on_secondary",     "--color-on-secondary"),
+        ("Accent/CTA",       "accent",           "--color-accent"),
+        ("On Accent",        "on_accent",        "--color-on-accent"),
+        ("Background",       "background",       "--color-background"),
+        ("Foreground",       "foreground",       "--color-foreground"),
+        ("Card",             "card",             "--color-card"),
+        ("Card Foreground",  "card_foreground",  "--color-card-foreground"),
+        ("Muted",            "muted",            "--color-muted"),
+        ("Muted Foreground", "muted_foreground", "--color-muted-foreground"),
+        ("Border",           "border",           "--color-border"),
+        ("Destructive",      "destructive",      "--color-destructive"),
+        ("On Destructive",   "on_destructive",   "--color-on-destructive"),
+        ("Ring",             "ring",             "--color-ring"),
+    ]
+    for label, key, css_var in color_entries:
+        hex_val = colors.get(key, "")
+        if not hex_val:
+            continue
+        lines.append(f"|     {label + ':':18s}{hex_val:10s} ({css_var})".ljust(BOX_WIDTH) + "|")
     if colors.get("notes"):
         for line in wrap_text(f"Notes: {colors.get('notes', '')}", "|     ", BOX_WIDTH):
             lines.append(line.ljust(BOX_WIDTH) + "|")
@@ -401,15 +433,32 @@ def format_markdown(design_system: dict) -> str:
         lines.append(f"- **Performance:** {style.get('performance', '')} | **Accessibility:** {style.get('accessibility', '')}")
     lines.append("")
 
-    # Colors section
+    # Colors section (extended palette: full semantic token set)
     lines.append("### Colors")
-    lines.append(f"| Role | Hex |")
-    lines.append(f"|------|-----|")
-    lines.append(f"| Primary | {colors.get('primary', '')} |")
-    lines.append(f"| Secondary | {colors.get('secondary', '')} |")
-    lines.append(f"| CTA | {colors.get('cta', '')} |")
-    lines.append(f"| Background | {colors.get('background', '')} |")
-    lines.append(f"| Text | {colors.get('text', '')} |")
+    lines.append("| Role | Hex | CSS Variable |")
+    lines.append("|------|-----|--------------|")
+    md_color_entries = [
+        ("Primary",          "primary",          "--color-primary"),
+        ("On Primary",       "on_primary",       "--color-on-primary"),
+        ("Secondary",        "secondary",        "--color-secondary"),
+        ("On Secondary",     "on_secondary",     "--color-on-secondary"),
+        ("Accent/CTA",       "accent",           "--color-accent"),
+        ("On Accent",        "on_accent",        "--color-on-accent"),
+        ("Background",       "background",       "--color-background"),
+        ("Foreground",       "foreground",       "--color-foreground"),
+        ("Card",             "card",             "--color-card"),
+        ("Card Foreground",  "card_foreground",  "--color-card-foreground"),
+        ("Muted",            "muted",            "--color-muted"),
+        ("Muted Foreground", "muted_foreground", "--color-muted-foreground"),
+        ("Border",           "border",           "--color-border"),
+        ("Destructive",      "destructive",      "--color-destructive"),
+        ("On Destructive",   "on_destructive",   "--color-on-destructive"),
+        ("Ring",             "ring",             "--color-ring"),
+    ]
+    for label, key, css_var in md_color_entries:
+        hex_val = colors.get(key, "")
+        if hex_val:
+            lines.append(f"| {label} | `{hex_val}` | `{css_var}` |")
     if colors.get("notes"):
         lines.append(f"\n*Notes: {colors.get('notes', '')}*")
     lines.append("")
@@ -556,7 +605,7 @@ def format_master_md(design_system: dict) -> str:
     # Logic header
     lines.append("# Design System Master File")
     lines.append("")
-    lines.append("> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.")
+    lines.append("> **LOGIC:** When building a specific page, first check `design-system/<project>/pages/[page-name].md`.")
     lines.append("> If that file exists, its rules **override** this Master file.")
     lines.append("> If not, strictly follow the rules below.")
     lines.append("")
@@ -578,11 +627,28 @@ def format_master_md(design_system: dict) -> str:
     lines.append("")
     lines.append("| Role | Hex | CSS Variable |")
     lines.append("|------|-----|--------------|")
-    lines.append(f"| Primary | `{colors.get('primary', '#2563EB')}` | `--color-primary` |")
-    lines.append(f"| Secondary | `{colors.get('secondary', '#3B82F6')}` | `--color-secondary` |")
-    lines.append(f"| CTA/Accent | `{colors.get('cta', '#F97316')}` | `--color-cta` |")
-    lines.append(f"| Background | `{colors.get('background', '#F8FAFC')}` | `--color-background` |")
-    lines.append(f"| Text | `{colors.get('text', '#1E293B')}` | `--color-text` |")
+    master_color_entries = [
+        ("Primary",          "primary",          "--color-primary"),
+        ("On Primary",       "on_primary",       "--color-on-primary"),
+        ("Secondary",        "secondary",        "--color-secondary"),
+        ("On Secondary",     "on_secondary",     "--color-on-secondary"),
+        ("Accent/CTA",       "accent",           "--color-accent"),
+        ("On Accent",        "on_accent",        "--color-on-accent"),
+        ("Background",       "background",       "--color-background"),
+        ("Foreground",       "foreground",       "--color-foreground"),
+        ("Card",             "card",             "--color-card"),
+        ("Card Foreground",  "card_foreground",  "--color-card-foreground"),
+        ("Muted",            "muted",            "--color-muted"),
+        ("Muted Foreground", "muted_foreground", "--color-muted-foreground"),
+        ("Border",           "border",           "--color-border"),
+        ("Destructive",      "destructive",      "--color-destructive"),
+        ("On Destructive",   "on_destructive",   "--color-on-destructive"),
+        ("Ring",             "ring",             "--color-ring"),
+    ]
+    for label, key, css_var in master_color_entries:
+        hex_val = colors.get(key, "")
+        if hex_val:
+            lines.append(f"| {label} | `{hex_val}` | `{css_var}` |")
     lines.append("")
     if colors.get("notes"):
         lines.append(f"**Color Notes:** {colors.get('notes', '')}")
@@ -819,7 +885,7 @@ def format_page_override_md(design_system: dict, page_name: str, page_query: str
     lines.append(f"> **Generated:** {timestamp}")
     lines.append(f"> **Page Type:** {page_overrides.get('page_type', 'General')}")
     lines.append("")
-    lines.append("> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).")
+    lines.append("> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/<project>/MASTER.md`).")
     lines.append("> Only deviations from the Master are documented here. For all other rules, refer to the Master.")
     lines.append("")
     lines.append("---")

@@ -1,19 +1,17 @@
 # page-designer
 
-基于 BRD 产出可交互的前端页面。内置设计知识库（BM25 搜索引擎 + CSV 数据），技术栈从 tech-stack.md 读取。
+基于 BRD 产出可交互的前端页面。内置设计知识库（BM25 搜索引擎 + CSV 数据），技术栈从 tech-stack.md 读取。单线 4-Phase 流程。
 
 ## 做什么
 
-- C+B 项目：先出 C 端页面 → 用户确认 → 提取实体中间文件 → 基于中间文件反推控制台
-- 纯 B 项目：直接出 B 端页面
-
-产物是可点击、可操作的前端页面，不是设计文档。
+- 读 BRD → 选设计系统 → 出可交互页面 → 落交付清单
+- 产物是可点击、可操作的前端页面，不是设计文档。
 
 ## 上游
 
 | 上游 Skill | 消费的产物 | 读取的字段 |
 |-----------|-----------|-----------|
-| brd-writer | `BRD-<slug>-<YYYYMMDD-HHMM>.md` | 项目类型、是否含 C 端页面、架构约束、用户画像、核心业务模型、付费触发点、页面定位全部 |
+| brd-writer | `BRD-<slug>-<YYYYMMDD-HHMM>.md` | 项目类型、利益相关角色与场景、核心价值模型、页面定位（操作/配置/查看） |
 
 BRD 文件是强依赖，不存在则不启动。
 
@@ -21,7 +19,9 @@ BRD 文件是强依赖，不存在则不启动。
 
 | 下游 Skill | 提供的产物 | 用途 |
 |-----------|-----------|------|
-| 地基构建 | 交付清单 + 实体规格文件 | 数据模型设计、BFF 接口定义、模块划分 |
+| page-explainer | 交付清单 + 页面文件路径 | 沉淀交互语义、回环判断 |
+| foundation-builder | 交付清单中的页面路由表 | 反推数据模型与 API |
+| prd-writer | 交付清单 | 基于已确认页面反推 PRD |
 
 下游只需读取交付清单（`page-delivery-<slug>.md`）即可索引到所有产物。
 
@@ -29,27 +29,24 @@ BRD 文件是强依赖，不存在则不启动。
 
 | 文件 | 说明 |
 |------|------|
-| C 端页面代码 | 可交互，mock 数据（仅 C+B） |
-| `page-spec-entities-<slug>.md` | 实体中间文件，C→B 的桥梁（仅 C+B） |
-| B 端页面代码 | 可交互，mock 数据 |
+| 前端页面代码 | 可交互，mock 数据 |
 | `page-delivery-<slug>.md` | 交付清单，下游索引入口 |
+| `page-ledger-<slug>.json` | 台账，跟踪 phase 推进与回环状态 |
 
 ## 内部结构
 
 ```
 page-designer/
 ├── SKILL.md        # skill 定义
-├── brand/          # 公司品牌约束 (C 端专用)
-│   ├── company-color-spec.md    # 主色 + 功能色 + 中性色
-│   ├── company-font-spec.md     # 字族 + 9 级字号阶梯
-│   ├── company-radius-spec.md   # 4 级语义化圆角
-│   └── company-icon-spec.md     # 图标尺寸/粗细/热区/状态/命名
-├── scripts/        # BM25 搜索引擎
-│   ├── core.py     # 搜索核心 + CSV 配置
-│   ├── search.py   # CLI 入口
-│   └── design_system.py  # 设计系统生成器
+├── scripts/        # BM25 搜索引擎 + 台账操作
+│   ├── core.py             # 搜索核心 + CSV 配置
+│   ├── search.py           # CLI 入口
+│   ├── design_system.py    # 设计系统生成器
+│   ├── page-ledger-io.mjs       # 台账数据结构 + advance check
+│   ├── page-ledger-mutate.mjs   # boot / mark-asked / advance / start-loop
+│   └── page-ledger-query.mjs    # status / can-advance
 ├── design-db/      # 通用设计知识库 (CSV, BM25 可搜索)
-│   ├── styles.csv, colors.csv, typography.csv, ...
+│   ├── styles.csv, colors.csv, typography.csv, products.csv, charts.csv, ...
 │   └── stacks/     # 13 个技术栈指南
-└── references/
+└── docs/           # 历史设计稿
 ```
