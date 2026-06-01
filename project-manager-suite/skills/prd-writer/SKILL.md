@@ -32,17 +32,16 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 | # | 文件 | 来源 | 用途 |
 |---|------|------|------|
-| 1 | `BRD-<slug>-*.md` | brd-writer | 产品背景、用户画像、业务模型 |
+| 1 | `BRD-<slug>-*.md` | brd-writer | 产品背景、使用者画像、业务模型 |
 | 2 | `page-delivery-<slug>.md` | page-designer | 页面路由表、文件路径清单 |
 | 3 | 页面代码文件（Vue 3 组件） | page-designer | 从 delivery 中列出的路径逐个读取 |
 | 4 | `explainer-flow-<slug>.md` | page-explainer | 用户流程全貌 |
-| 5 | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | 结构化交互语义（仅消费 locked 条目） |
-| 6 | `explainer-b-permission-<slug>.md` | page-explainer | 权限模型 |
-| 7 | `explainer-delivery-<slug>.md` | page-explainer | 入口索引：产物清单、流程 → 产物映射、本环节一致性自查结论 |
-| 8 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
-| 9 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema（可能为拆分模式索引，见下方注） |
-| 10 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计（可能为拆分模式索引，见下方注） |
-| 11 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
+| 5 | `explainer-b-interaction-<slug>.md` | page-explainer | 结构化交互语义（仅消费 locked 条目） |
+| 6 | `explainer-delivery-<slug>.md` | page-explainer | 入口索引：产物清单、流程 → 产物映射、本环节一致性自查结论 |
+| 7 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
+| 8 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema（可能为拆分模式索引，见下方注） |
+| 9 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计（可能为拆分模式索引，见下方注） |
+| 10 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
 
 缺任何一个就**中止**，提示用户先完成对应上游 skill。
 
@@ -71,7 +70,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 ```
 Phase 1: 输入收集（见 §7）
-  → 校验 10 个上游文件 → 读取页面代码 + foundation 产物 → 判定 C+B/纯B
+  → 校验 9 个上游文件 → 读取页面代码 + foundation 产物
   ↓
 Phase 2: 功能列表
   → 加载 templates/feature-list.md
@@ -107,17 +106,15 @@ Phase 5: 一致性自查
 1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
 2. 优先在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**
 3. 优先在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-4. 优先在 `src/frontend/page-preview/` 搜索 `explainer-b-permission-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-5. 优先在 `src/frontend/page-preview/` 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`）；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**
-6. 优先在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
-7. 优先在 `docs/prd/` 搜索 `foundation-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
-8. 从 foundation-delivery 中获取 glossary/schema/api 主文件路径，逐个校验存在
-9. 对 schema / api 主文件：stat 同名子目录是否存在
+4. 优先在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**
+5. 优先在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+6. 优先在 `docs/prd/` 搜索 `foundation-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
+7. 从 foundation-delivery 中获取 glossary/schema/api 主文件路径，逐个校验存在
+8. 对 schema / api 主文件：stat 同名子目录是否存在
    - 存在（拆分模式）→ 从 foundation-delivery 的"拆分子文件"列读清单，逐个校验每个子文件存在；任一缺失则**中止**，提示用户补齐 delivery 或重跑 foundation-builder
    - 不存在（单文件模式）→ 跳过子文件校验
-10. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-11. 从 BRD 读取：产品背景、用户画像、是否含 C 端
-12. 判定 C+B / 纯 B 路径
+9. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+10. 从 BRD 读取：产品背景、使用者画像
 
 ## 8) 状态标记（强制）
 
@@ -155,5 +152,5 @@ Phase 完成时：
 2. 子 PRD 数据链路表中每个"来源表.列"必须在 foundation-schema 中存在
 3. 子 PRD 引用的每个接口必须在 foundation-api 中存在
 4. 主文档子 PRD 索引表必须与实际产出的子文档一致
-5. 子 PRD 中每个功能子区域 §X 都必须有 X.6 验收小节；验收表按该子区域实际涉及的维度选写（业务规则 / UX 交互 / 管理台闭环 / 异常兜底 四类中取适用项），不强制四类齐全
+5. 子 PRD 中每个功能子区域 §X 都必须有 X.6 验收小节；验收表按该子区域实际涉及的维度选写（业务规则 / UX 交互 / 异常兜底 三类中取适用项），不强制三类齐全
 6. 子 PRD 边界严格——字段/接口/管理页不越界（详见 anti-patterns.md）

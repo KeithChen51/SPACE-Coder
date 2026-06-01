@@ -59,8 +59,6 @@ function fail(obj) {
 
 function cmdInit(opts) {
   const projectType  = opts['project-type'];
-  const hasCPage     = opts['has-c-page'];
-  const isCommercial = opts['is-commercial'];
   const slug         = opts['slug'];
   const projectName  = opts['project-name'];
   const outputDir    = opts['output-dir'];
@@ -69,12 +67,9 @@ function cmdInit(opts) {
     fail({ success: false, error: 'missing_args', message: '--project-type, --slug, --project-name, --output-dir are required' });
   }
 
-  const hasCPageBool     = hasCPage     === true || hasCPage     === 'true';
-  const isCommercialBool = isCommercial === true || isCommercial === 'true';
-
   let data;
   try {
-    data = createEmptyLedger(projectName, slug, projectType, hasCPageBool, isCommercialBool);
+    data = createEmptyLedger(projectName, slug, projectType);
   } catch (err) {
     fail({ success: false, error: 'create_failed', message: err.message });
   }

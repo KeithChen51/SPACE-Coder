@@ -22,12 +22,12 @@ const fieldPackages = {
         'target_users',
         'main_problem'
     ],
-    identity: ['identity_policy', 'multi_operator_identifiers'],
+    identity: ['identity_policy'],
     pageTaskRequired: [
         'coverage_scope',
         'page_primary_user',
         'page_primary_purpose',
-        'page_design_tag'
+        'page_positioning_tag'
     ],
     runtimeWriteback: [
         'current_stage',
@@ -86,7 +86,7 @@ const fileContracts = {
         },
         {
             key: 'target_users',
-            label: '目标用户',
+            label: '目标使用者',
             level: FIELD_LEVELS.REQUIRED,
             source: FIELD_SOURCES.USER_CONFIRMED
         },
@@ -124,8 +124,8 @@ const fileContracts = {
             requiredWhen: ['page_task']
         },
         {
-            key: 'page_design_tag',
-            label: '页面设计标签',
+            key: 'page_positioning_tag',
+            label: '页面定位标签',
             level: FIELD_LEVELS.OPTIONAL,
             source: FIELD_SOURCES.PM_WRITTEN,
             requiredWhen: ['page_task']
@@ -181,12 +181,6 @@ const fileContracts = {
         {
             key: 'identity_policy',
             label: '身份识别口径',
-            level: FIELD_LEVELS.INFERRED,
-            source: FIELD_SOURCES.SYSTEM_INFERRED
-        },
-        {
-            key: 'multi_operator_identifiers',
-            label: '多操作者识别信息',
             level: FIELD_LEVELS.INFERRED,
             source: FIELD_SOURCES.SYSTEM_INFERRED
         },

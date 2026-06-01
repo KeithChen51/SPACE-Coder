@@ -19,6 +19,7 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { fileURLToPath } from 'url';
 import {
     FILE_ROLE_IDS,
     STAGE_IDS,
@@ -29,9 +30,13 @@ import {
     validationPolicy
 } from '../lib/ai-pm-protocol/index.js';
 import { validateGlobalFiles } from './validate-global-files.mjs';
+import { validatePlan } from '../skills/delivery-planner/scripts/validate-plan-structure.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
 
 const STAGE_ORDER = [
     STAGE_IDS.S0,
+    STAGE_IDS.S0_5,
     STAGE_IDS.S1,
     STAGE_IDS.S2,
     STAGE_IDS.S3,
@@ -43,7 +48,7 @@ const STAGE_ORDER = [
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S1|S2|S3|S4|S5|S6|S7] [--json]'
+        'Usage: node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S0.5|S1|S2|S3|S4|S5|S6|S7] [--json]'
     );
 }
 
@@ -107,16 +112,18 @@ function isPlaceholderText(value) {
     return (
         /^(待填写|待建立|待确认)$/.test(text) ||
         /^例如/.test(text) ||
-        /^S0\s*\/\s*S1\s*\/\s*S2\s*\/\s*S3\s*\/\s*S4\s*\/\s*S5\s*\/\s*S6\s*\/\s*S7$/.test(text) ||
-        /^C端\s*\/\s*B端\s*\/\s*后台\s*\/\s*待确认$/.test(text) ||
-        /^仅用户侧\s*\/\s*仅内部侧\s*\/\s*两边都有\s*\/\s*待确认$/.test(text)
+        /^S0(?:\.5)?\s*\/\s*S1\s*\/\s*S2\s*\/\s*S3\s*\/\s*S4\s*\/\s*S5\s*\/\s*S6\s*\/\s*S7$/.test(text) ||
+        /^S0\s*\/\s*S0\.5\s*\/\s*S1\s*\/\s*S2\s*\/\s*S3\s*\/\s*S4\s*\/\s*S5\s*\/\s*S6\s*\/\s*S7$/.test(text) ||
+        /^本地工具\s*\/\s*内网工具\s*\/\s*待确认$/.test(text) ||
+        /^业务处理\s*\/\s*系统管理\s*\/\s*内容展示\s*\/\s*待确认$/.test(text) ||
+        /^操作\s*\/\s*配置\s*\/\s*查看\s*\/\s*待确认$/.test(text)
     );
 }
 
 function extractStageId(text) {
     if (!text) return null;
     if (isPlaceholderText(text)) return null;
-    const match = String(text).match(/\b(S[0-7])\b/);
+    const match = String(text).match(/\b(S0\.5|S[0-7])\b/);
     return match ? match[1] : null;
 }
 
@@ -430,17 +437,6 @@ function listResolvedFiles(hostRoot, rawPaths) {
     };
 }
 
-function extractHasCEndFromBrd(content) {
-    if (!content) return null;
-
-    const match = content.match(/是否包含\s*C\s*端页面[^：:\n]*[：:]\s*`?(是|否)`?/);
-    if (!match) {
-        return null;
-    }
-
-    return match[1] === '是';
-}
-
 function extractInteractionStatuses(content) {
     if (!content) return [];
 
@@ -492,48 +488,29 @@ function inspectS2Artifacts(hostRoot) {
         /^explainer-b-interaction-.+\.md$/,
         DESIGN_ARTIFACT_DIRS.page
     );
-    const explainerCInteraction = findLatestMatchingFile(
-        hostRoot,
-        markdownFiles,
-        /^explainer-c-interaction-.+\.md$/,
-        DESIGN_ARTIFACT_DIRS.page
-    );
-    const explainerBPermission = findLatestMatchingFile(
-        hostRoot,
-        markdownFiles,
-        /^explainer-b-permission-.+\.md$/,
-        DESIGN_ARTIFACT_DIRS.page
-    );
     const explainerDelivery = findLatestMatchingFile(
         hostRoot,
         markdownFiles,
         /^explainer-delivery-.+\.md$/,
         DESIGN_ARTIFACT_DIRS.page
     );
-    const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-(c|b)-gap-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
+    const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-b-gap-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
 
-    const brdContent = brd ? loadMarkdownFile(brd.filePath) : null;
     const pageDeliveryContent = pageDelivery ? loadMarkdownFile(pageDelivery.filePath) : null;
-    const hasCEnd = extractHasCEndFromBrd(brdContent);
 
     const pageCodeCheck = pageDeliveryContent
         ? listResolvedFiles(hostRoot, extractFilePathColumnValues(pageDeliveryContent))
         : { files: [], allExist: false };
 
     const bInteractionStatuses = explainerBInteraction ? extractInteractionStatuses(loadMarkdownFile(explainerBInteraction.filePath)) : [];
-    const cInteractionStatuses = explainerCInteraction ? extractInteractionStatuses(loadMarkdownFile(explainerCInteraction.filePath)) : [];
     const unresolvedGapCategories = gapFiles.flatMap((file) => extractUnresolvedGapCategories(loadMarkdownFile(file.filePath)));
 
-    const requiresCInteraction = hasCEnd === true || (hasCEnd == null && Boolean(explainerCInteraction));
     const bInteractionLocked = bInteractionStatuses.length > 0 && bInteractionStatuses.every((status) => status === 'locked');
-    const cInteractionLocked = !requiresCInteraction || (cInteractionStatuses.length > 0 && cInteractionStatuses.every((status) => status === 'locked'));
 
     const explainerFilesComplete =
         Boolean(explainerFlow) &&
         Boolean(explainerBInteraction) &&
-        Boolean(explainerBPermission) &&
-        Boolean(explainerDelivery) &&
-        (!requiresCInteraction || Boolean(explainerCInteraction));
+        Boolean(explainerDelivery);
 
     return {
         brdExists: Boolean(brd),
@@ -542,13 +519,10 @@ function inspectS2Artifacts(hostRoot) {
         pageDeliveryPath: pageDelivery?.relativePath || null,
         pageCodeFiles: pageCodeCheck.files,
         pageCodeFilesAllExist: pageCodeCheck.allExist,
-        hasCEnd,
-        requiresCInteraction,
         explainerFilesComplete,
         explainerDeliveryPath: explainerDelivery?.relativePath || null,
         bInteractionLocked,
-        cInteractionLocked,
-        interactionStatusesLocked: bInteractionLocked && cInteractionLocked,
+        interactionStatusesLocked: bInteractionLocked,
         unresolvedGapCategories,
         pageStageClosed:
             Boolean(brd) &&
@@ -556,7 +530,6 @@ function inspectS2Artifacts(hostRoot) {
             pageCodeCheck.allExist &&
             explainerFilesComplete &&
             bInteractionLocked &&
-            cInteractionLocked &&
             unresolvedGapCategories.length === 0
     };
 }
@@ -604,6 +577,197 @@ function inspectPrdArtifacts(hostRoot) {
     };
 }
 
+const BASELINE_ROUTE_SKILLS = new Set(['brd-writer', 'page-explainer', 'foundation-builder', 'prd-writer']);
+const BASELINE_NEXT_SKILLS = new Set(['ai-project-manager', ...BASELINE_ROUTE_SKILLS]);
+
+function inspectBaselineAudit(hostRoot) {
+    const jsonFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.json']);
+    const auditFiles = jsonFiles
+        .map((filePath) => ({
+            filePath,
+            relativePath: normalizePathForMatch(hostRoot, filePath),
+            mtimeMs: fs.statSync(filePath).mtimeMs
+        }))
+        .filter((item) => /^docs\/baseline\/baseline-audit-.+\.json$/.test(item.relativePath))
+        .sort((a, b) => b.mtimeMs - a.mtimeMs || a.relativePath.localeCompare(b.relativePath));
+
+    const latest = auditFiles[0];
+    if (!latest) {
+        return {
+            exists: false,
+            usable: false
+        };
+    }
+
+    try {
+        const parsed = JSON.parse(loadMarkdownFile(latest.filePath));
+        const recommendedNextSkill = parsed.summary?.recommended_next_skill || null;
+        const artifacts = Array.isArray(parsed.artifacts)
+            ? parsed.artifacts.filter((artifact) => BASELINE_ROUTE_SKILLS.has(artifact.recommended_skill))
+            : [];
+
+        return {
+            exists: true,
+            auditPath: latest.relativePath,
+            mode: parsed.mode || null,
+            scope: parsed.scope || null,
+            slug: parsed.slug || null,
+            recommendedNextSkill,
+            artifacts,
+            usable:
+                parsed.mode === 'existing-project-baseline' &&
+                parsed.scope === 'maintenance-docs-only' &&
+                BASELINE_NEXT_SKILLS.has(recommendedNextSkill)
+        };
+    } catch (error) {
+        return {
+            exists: true,
+            auditPath: latest.relativePath,
+            usable: false,
+            parseError: error.message
+        };
+    }
+}
+
+function directoryHasCodeFiles(rootDir, relativeDir, maxDepth = 4) {
+    const startDir = path.join(rootDir, relativeDir);
+    if (!fs.existsSync(startDir) || !fs.statSync(startDir).isDirectory()) {
+        return false;
+    }
+
+    function recurse(currentDir, depth) {
+        if (depth > maxDepth) return false;
+
+        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(currentDir, entry.name);
+            const relativePath = normalizePathForMatch(rootDir, fullPath);
+
+            if (entry.isDirectory()) {
+                if (shouldIgnoreDir(relativePath)) {
+                    continue;
+                }
+                if (recurse(fullPath, depth + 1)) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (entry.isFile() && /\.(vue|tsx?|jsx?|java|py|go|rb|php|cs|sql)$/i.test(entry.name)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    return recurse(startDir, 0);
+}
+
+function hasExistingCodebaseSignal(hostRoot) {
+    const rootMarkers = [
+        'package.json',
+        'pom.xml',
+        'build.gradle',
+        'pyproject.toml',
+        'requirements.txt',
+        'go.mod',
+        'Cargo.toml',
+        'composer.json'
+    ];
+
+    if (rootMarkers.some((marker) => fs.existsSync(path.join(hostRoot, marker)))) {
+        return true;
+    }
+
+    return ['src', 'app', 'frontend', 'backend', 'server', 'web'].some((relativeDir) =>
+        directoryHasCodeFiles(hostRoot, relativeDir)
+    );
+}
+
+function inspectDevelopmentPlanArtifacts(hostRoot) {
+    const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
+    const deliveryPlan = findLatestMatchingFile(
+        hostRoot,
+        markdownFiles,
+        /^delivery-plan-.+\.md$/,
+        ['docs/plans']
+    );
+    const validation = deliveryPlan
+        ? validatePlan(loadMarkdownFile(deliveryPlan.filePath))
+        : null;
+
+    return {
+        deliveryPlanExists: Boolean(deliveryPlan),
+        deliveryPlanPath: deliveryPlan?.relativePath || null,
+        structureValid: validation ? validation.passed : false,
+        structureErrors: validation ? validation.errors.map((error) => error.message) : []
+    };
+}
+
+function reviewIssueSortValue(relativePath) {
+    const filename = path.basename(relativePath);
+    const match = filename.match(/^(?<prefix>.+)-issues(?:-(?<suffix>\d+))?\.md$/);
+    if (!match) {
+        return { prefix: filename, suffix: 0 };
+    }
+
+    return {
+        prefix: match.groups.prefix,
+        suffix: Number(match.groups.suffix || 1)
+    };
+}
+
+function compareReviewIssueFiles(a, b) {
+    const left = reviewIssueSortValue(a.relativePath);
+    const right = reviewIssueSortValue(b.relativePath);
+    return (
+        left.prefix.localeCompare(right.prefix) ||
+        left.suffix - right.suffix ||
+        a.relativePath.localeCompare(b.relativePath)
+    );
+}
+
+function isPositiveReviewConclusion(content) {
+    const text = content.replace(/\s+/g, ' ').trim();
+    if (!text) {
+        return false;
+    }
+
+    if (/未通过|不通过|未完工|需\s*(?:writer\s*)?续改|需补|返工|BLOCK(?:ED)?/i.test(text)) {
+        return false;
+    }
+
+    return /结论\s*[=:：]\s*(?:已完工|通过|DONE)|(?:^|\s)(?:已完工|DONE)(?:\s|$)/i.test(text);
+}
+
+function inspectTestCaseArtifacts(hostRoot) {
+    const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
+    const relativeFiles = markdownFiles.map((filePath) => ({
+        filePath,
+        relativePath: normalizePathForMatch(hostRoot, filePath)
+    }));
+
+    const tcMain = relativeFiles.find((item) => /^docs\/test-case\/tc-main-.+\.md$/.test(item.relativePath));
+    const domainTcFiles = relativeFiles.filter((item) =>
+        /^docs\/test-case\/(?!reports\/|tc-reviews\/|acceptance-)[^/]+\/tc-[^/]+\.md$/.test(item.relativePath)
+    );
+    const reviewIssues = relativeFiles
+        .filter((item) => /^docs\/test-case\/tc-reviews\/.+-issues(?:-\d+)?\.md$/.test(item.relativePath))
+        .sort(compareReviewIssueFiles);
+    const latestReview = reviewIssues[reviewIssues.length - 1] || null;
+    const latestReviewDone = latestReview ? isPositiveReviewConclusion(loadMarkdownFile(latestReview.filePath)) : false;
+
+    return {
+        tcMainExists: Boolean(tcMain),
+        tcMainPath: tcMain?.relativePath || null,
+        domainTcCount: domainTcFiles.length,
+        latestReviewPath: latestReview?.relativePath || null,
+        latestReviewDone,
+        testCasesReady: Boolean(tcMain) && domainTcFiles.length > 0 && latestReviewDone
+    };
+}
+
 function inspectTestExecutionArtifacts(hostRoot) {
     const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
     const relativeFiles = markdownFiles.map((filePath) => ({
@@ -611,8 +775,8 @@ function inspectTestExecutionArtifacts(hostRoot) {
         relativePath: normalizePathForMatch(hostRoot, filePath)
     }));
 
-    const indexReports = relativeFiles.filter((item) => /^docs\/test-case\/reports\/[^/]+\/index\.md$/.test(item.relativePath));
-    const blockReports = relativeFiles.filter((item) => /^docs\/test-case\/reports\/[^/]+\/测试验收-.+\.md$/.test(item.relativePath));
+    const indexReports = relativeFiles.filter((item) => /^docs\/test-case\/reports\/index\.md$/.test(item.relativePath));
+    const blockReports = relativeFiles.filter((item) => /^docs\/test-case\/reports\/测试验收-.+\.md$/.test(item.relativePath));
     const defectsFile = relativeFiles.find((item) => item.relativePath === 'docs/test-case/reports/defects.md');
 
     return {
@@ -710,7 +874,7 @@ function hasPageTaskSignal(profileContext, planContext) {
         profileContext.fields.coverage_scope,
         profileContext.fields.page_primary_user,
         profileContext.fields.page_primary_purpose,
-        profileContext.fields.page_design_tag
+        profileContext.fields.page_positioning_tag
     ];
 
     const textPool = [
@@ -724,7 +888,7 @@ function hasPageTaskSignal(profileContext, planContext) {
         return true;
     }
 
-    return /页面|原型|前端|界面|UI|UX|后台配置页|C端|H5|小程序/.test(textPool);
+    return /页面|原型|前端|界面|UI|UX/.test(textPool);
 }
 
 function hasSecurityGateSignal(profileContext, planContext) {
@@ -739,14 +903,31 @@ function hasSecurityGateSignal(profileContext, planContext) {
         .filter(Boolean)
         .join(' ');
 
-    return /上线|发版|生产发布|发布生产|go-live|go live|release|安全放行|最终安全检查|security gate|security scan/i.test(
+    return /完工|落地放行|go-live|go live|release|安全放行|最终安全检查|security gate|security scan/i.test(
         textPool
     );
 }
 
-function isPageDesignTagResolved(value) {
+function hasBuildAvailableForValidation(profileContext, planContext) {
+    const textPool = [
+        profileContext.fields.current_round_deliverable,
+        profileContext.fields.largest_uncertainty,
+        ...planContext.currentGoal,
+        ...planContext.nextTasks,
+        ...planContext.inProgressTasks,
+        ...planContext.completionCriteria
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return /开发完成|已实现|可验证基础|具备可验证|可运行版本|本地可运行|构建完成|ready for test|build available/i.test(
+        textPool
+    );
+}
+
+function isPagePositioningTagResolved(value) {
     if (isMissingValue(value)) return false;
-    return /(C端|B端|后台)/.test(value);
+    return /(操作|配置|查看)/.test(value);
 }
 
 function hasStartupMinimum(profileContext) {
@@ -754,7 +935,7 @@ function hasStartupMinimum(profileContext) {
     return collectMissingFields(fieldPackages.startupMinimum, values).length === 0;
 }
 
-function inferRecommendedStage(profileContext, planContext) {
+function inferRecommendedStage(profileContext, planContext, hostRoot) {
     if (profileContext.fields.recommended_stage) {
         return profileContext.fields.recommended_stage;
     }
@@ -769,6 +950,10 @@ function inferRecommendedStage(profileContext, planContext) {
 
     if (hasSecurityGateSignal(profileContext, planContext)) {
         return STAGE_IDS.S7;
+    }
+
+    if (!hasStartupMinimum(profileContext) && hasExistingCodebaseSignal(hostRoot)) {
+        return STAGE_IDS.S0_5;
     }
 
     if (hasPageTaskSignal(profileContext, planContext)) {
@@ -796,7 +981,7 @@ function fieldValueMap(profileContext) {
         coverage_scope: profileContext.fields.coverage_scope,
         page_primary_user: profileContext.fields.page_primary_user,
         page_primary_purpose: profileContext.fields.page_primary_purpose,
-        page_design_tag: profileContext.fields.page_design_tag,
+        page_positioning_tag: profileContext.fields.page_positioning_tag,
         current_stage: profileContext.fields.current_stage,
         recommended_stage: profileContext.fields.recommended_stage,
         current_round_deliverable: profileContext.fields.current_round_deliverable,
@@ -807,8 +992,8 @@ function fieldValueMap(profileContext) {
 
 function collectMissingFields(fieldKeys, values, extraChecks = {}) {
     return fieldKeys.filter((fieldKey) => {
-        if (fieldKey === 'page_design_tag') {
-            return !isPageDesignTagResolved(values[fieldKey]);
+        if (fieldKey === 'page_positioning_tag') {
+            return !isPagePositioningTagResolved(values[fieldKey]);
         }
 
         if (extraChecks[fieldKey]) {
@@ -851,6 +1036,9 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
     const s2Artifacts = inspectS2Artifacts(hostRoot);
     const foundationArtifacts = inspectFoundationArtifacts(hostRoot);
     const prdArtifacts = inspectPrdArtifacts(hostRoot);
+    const developmentPlanArtifacts = inspectDevelopmentPlanArtifacts(hostRoot);
+    const baselineAudit = inspectBaselineAudit(hostRoot);
+    const testCaseArtifacts = inspectTestCaseArtifacts(hostRoot);
     const testExecutionArtifacts = inspectTestExecutionArtifacts(hostRoot);
 
     checks.startupMinimum = {
@@ -859,6 +1047,14 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
     };
 
     if (targetStage === STAGE_IDS.S2) {
+        checks.brdReadyForPage = {
+            pass: s2Artifacts.brdExists,
+            evidence: {
+                brdExists: s2Artifacts.brdExists,
+                brdPath: s2Artifacts.brdPath
+            }
+        };
+
         checks.pageTaskRequired = {
             pass: collectMissingFields(fieldPackages.pageTaskRequired, values).length === 0,
             missingFields: collectMissingFields(fieldPackages.pageTaskRequired, values)
@@ -888,7 +1084,7 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
         };
     }
 
-    if (targetStage === STAGE_IDS.S3) {
+    if (targetStage === STAGE_IDS.S3 || targetStage === STAGE_IDS.S5) {
         checks.fullPrdReady = {
             pass: prdArtifacts.fullPrdReady,
             evidence: {
@@ -899,12 +1095,48 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
         };
     }
 
+    if (targetStage === STAGE_IDS.S3) {
+        checks.foundationReadyForDevelopmentPlan = {
+            pass: foundationArtifacts.foundationDeliveryExists && foundationArtifacts.artifactsReady,
+            evidence: {
+                foundationDeliveryExists: foundationArtifacts.foundationDeliveryExists,
+                foundationDeliveryPath: foundationArtifacts.foundationDeliveryPath || null,
+                artifactsReady: foundationArtifacts.artifactsReady
+            }
+        };
+    }
+
+    if (targetStage === STAGE_IDS.S5) {
+        const buildSignalPresent = hasBuildAvailableForValidation(profileContext, planContext);
+        checks.buildAvailableForValidation = {
+            pass: buildSignalPresent,
+            evidence: {
+                buildSignalPresent
+            }
+        };
+    }
+
     if (targetStage === STAGE_IDS.S4) {
         checks.developmentPlanReady = {
-            pass: planContext.currentStage === STAGE_IDS.S3 || planContext.inProgressTasks.length > 0,
+            pass: developmentPlanArtifacts.deliveryPlanExists && developmentPlanArtifacts.structureValid,
             evidence: {
-                planStage: planContext.currentStage,
-                inProgressTasks: planContext.inProgressTasks.length
+                deliveryPlanExists: developmentPlanArtifacts.deliveryPlanExists,
+                deliveryPlanPath: developmentPlanArtifacts.deliveryPlanPath,
+                structureValid: developmentPlanArtifacts.structureValid,
+                structureErrors: developmentPlanArtifacts.structureErrors
+            }
+        };
+    }
+
+    if (targetStage === STAGE_IDS.S6) {
+        checks.testCasesReady = {
+            pass: testCaseArtifacts.testCasesReady,
+            evidence: {
+                tcMainExists: testCaseArtifacts.tcMainExists,
+                tcMainPath: testCaseArtifacts.tcMainPath,
+                domainTcCount: testCaseArtifacts.domainTcCount,
+                latestReviewPath: testCaseArtifacts.latestReviewPath,
+                latestReviewDone: testCaseArtifacts.latestReviewDone
             }
         };
     }
@@ -931,17 +1163,48 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
         evidence: validationResult.authority[FILE_ROLE_IDS.DEVLOG]
     };
 
+    if (targetStage === STAGE_IDS.S0_5 || baselineAudit.exists) {
+        checks.projectBaselineAuditReady = {
+            pass: baselineAudit.usable,
+            evidence: {
+                auditPath: baselineAudit.auditPath || null,
+                mode: baselineAudit.mode || null,
+                scope: baselineAudit.scope || null,
+                recommendedNextSkill: baselineAudit.recommendedNextSkill || null,
+                parseError: baselineAudit.parseError || null
+            }
+        };
+    }
+
     return checks;
 }
 
 function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gateChecks }) {
     const reasons = [];
 
-    if (!gateChecks.startupMinimum.pass) {
+    if (targetStage !== STAGE_IDS.S0_5 && !gateChecks.startupMinimum.pass) {
         reasons.push({
             code: 'startup_minimum_missing',
             message: gatingRules.startupMinimum.description,
             missingFields: gateChecks.startupMinimum.missingFields
+        });
+    }
+
+    if (
+        targetStage === STAGE_IDS.S0_5 &&
+        gateChecks.projectBaselineAuditReady?.evidence.auditPath &&
+        !gateChecks.projectBaselineAuditReady.pass
+    ) {
+        reasons.push({
+            code: 'baseline_audit_missing',
+            message: gatingRules.projectBaselineAuditReady.description
+        });
+    }
+
+    if (targetStage === STAGE_IDS.S2 && gateChecks.brdReadyForPage && !gateChecks.brdReadyForPage.pass) {
+        reasons.push({
+            code: 'brd_missing',
+            message: gatingRules.brdReadyForPage.description
         });
     }
 
@@ -953,17 +1216,43 @@ function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gat
         });
     }
 
-    if (targetStage === STAGE_IDS.S3 && gateChecks.fullPrdReady && !gateChecks.fullPrdReady.pass) {
+    if ((targetStage === STAGE_IDS.S3 || targetStage === STAGE_IDS.S5) && gateChecks.fullPrdReady && !gateChecks.fullPrdReady.pass) {
         reasons.push({
             code: 'full_prd_missing',
             message: gatingRules.fullPrdReady.description
         });
     }
 
-    if (targetStage === STAGE_IDS.S4 && gateChecks.developmentPlanReady && !gateChecks.developmentPlanReady.pass) {
+    if (
+        targetStage === STAGE_IDS.S3 &&
+        gateChecks.foundationReadyForDevelopmentPlan &&
+        !gateChecks.foundationReadyForDevelopmentPlan.pass
+    ) {
         reasons.push({
-            code: 'development_plan_missing',
+            code: 'foundation_missing',
+            message: gatingRules.foundationReadyForDevelopmentPlan.description
+        });
+    }
+
+    if (targetStage === STAGE_IDS.S5 && gateChecks.buildAvailableForValidation && !gateChecks.buildAvailableForValidation.pass) {
+        reasons.push({
+            code: 'build_available_for_validation_missing',
+            message: gatingRules.buildAvailableForValidation.description
+        });
+    }
+
+    if (targetStage === STAGE_IDS.S4 && gateChecks.developmentPlanReady && !gateChecks.developmentPlanReady.pass) {
+        const hasPlan = gateChecks.developmentPlanReady.evidence.deliveryPlanExists;
+        reasons.push({
+            code: hasPlan ? 'development_plan_invalid' : 'development_plan_missing',
             message: gatingRules.developmentPlanReady.description
+        });
+    }
+
+    if (targetStage === STAGE_IDS.S6 && gateChecks.testCasesReady && !gateChecks.testCasesReady.pass) {
+        reasons.push({
+            code: 'test_cases_missing',
+            message: gatingRules.testCasesReady.description
         });
     }
 
@@ -989,6 +1278,24 @@ function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gat
 }
 
 function resolveRouteTarget(targetStage, gateChecks) {
+    if (targetStage === STAGE_IDS.S0_5 && gateChecks.projectBaselineAuditReady?.pass) {
+        if (gateChecks.projectBaselineAuditReady.evidence.recommendedNextSkill === 'ai-project-manager') {
+            return {
+                skill: 'ai-project-manager',
+                source: 'baseline-audit',
+                auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
+                exclusiveDeliverable: false
+            };
+        }
+
+        return {
+            skill: gateChecks.projectBaselineAuditReady.evidence.recommendedNextSkill,
+            source: 'baseline-audit',
+            auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
+            exclusiveDeliverable: true
+        };
+    }
+
     const baseTarget = routeTargets[targetStage];
     if (!baseTarget) {
         return null;
@@ -1014,6 +1321,10 @@ function resolveRouteTarget(targetStage, gateChecks) {
 }
 
 function resolveNextActionWithContext({ validationResult, targetStage, resolvedRouteTarget, blockers, gateChecks }) {
+    if (targetStage === STAGE_IDS.S0_5 && resolvedRouteTarget?.skill === 'project-baseline-auditor') {
+        return '可进入 S0.5，默认交由 project-baseline-auditor，先扫描代码并生成/更新 project-profile.md 与 baseline-audit 清单';
+    }
+
     if (!validationResult.authority[FILE_ROLE_IDS.PROFILE]) {
         return '停留主入口，发起首轮极简访谈并补齐项目画像';
     }
@@ -1026,6 +1337,21 @@ function resolveNextActionWithContext({ validationResult, targetStage, resolvedR
     const pageBlocker = blockers.find((item) => item.code === 'page_task_required_missing');
     if (pageBlocker) {
         return '停留主入口，补齐页面任务必补字段包并回写页面设计标签';
+    }
+
+    const brdBlocker = blockers.find((item) => item.code === 'brd_missing');
+    if (brdBlocker) {
+        return '停留主入口或回到 S1，先补齐 BRD 权威文档，再进入页面阶段';
+    }
+
+    const foundationBlocker = blockers.find((item) => item.code === 'foundation_missing');
+    if (foundationBlocker) {
+        return '停留 S2，先完成 foundation-builder 产物并确认交付清单中的文件真实存在';
+    }
+
+    const baselineBlocker = blockers.find((item) => item.code === 'baseline_audit_missing');
+    if (baselineBlocker) {
+        return '先调用 project-baseline-auditor 生成 docs/baseline/baseline-audit-<slug>.json，再按关键文件缺口路由';
     }
 
     const writebackBlocker = blockers.find((item) => item.code === 'stage_transition_writeback_missing');
@@ -1044,6 +1370,10 @@ function resolveNextActionWithContext({ validationResult, targetStage, resolvedR
             }
             return '可进入 S2，页面环节已收口，下一步进入 prd-chief，并继续推进 prd-writer';
         }
+    }
+
+    if (targetStage === STAGE_IDS.S0_5 && resolvedRouteTarget?.source === 'baseline-audit') {
+        return `读取 ${resolvedRouteTarget.auditPath}，按 maintenance-docs-only 缺口交由 ${resolvedRouteTarget.skill}`;
     }
 
     if (targetStage === STAGE_IDS.S7 && resolvedRouteTarget?.skill === 'security-scan') {
@@ -1077,7 +1407,7 @@ function routeCheck({ hostRoot, targetStage = '' }) {
     const planContext = extractPlanContext(planContent);
 
     const currentStage = profileContext.fields.current_stage || planContext.currentStage || null;
-    const recommendedStage = inferRecommendedStage(profileContext, planContext);
+    const recommendedStage = inferRecommendedStage(profileContext, planContext, resolvedHostRoot);
     const resolvedTargetStage = targetStage || recommendedStage || currentStage || STAGE_IDS.S0;
     const gateChecks = buildGateChecks({
         targetStage: resolvedTargetStage,
@@ -1094,9 +1424,11 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         gateChecks
     });
     const resolvedRouteTarget = resolveRouteTarget(resolvedTargetStage, gateChecks);
+    const isBaselineEntry = resolvedTargetStage === STAGE_IDS.S0_5;
     const hasStartupBootstrapBlocker =
-        !validationResult.authority[FILE_ROLE_IDS.PROFILE] ||
-        blockingReasons.some((item) => item.code === 'startup_minimum_missing');
+        !isBaselineEntry &&
+        (!validationResult.authority[FILE_ROLE_IDS.PROFILE] ||
+            blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
     const visibleRouteTarget = hasStartupBootstrapBlocker ? null : resolvedRouteTarget;
 
     const result = {
@@ -1117,7 +1449,15 @@ function routeCheck({ hostRoot, targetStage = '' }) {
             pendingItems: {
                 profile: profileContext.pendingItems,
                 plan: planContext.pendingItems
-            }
+            },
+            baselineAudit: gateChecks.projectBaselineAuditReady
+                ? {
+                      auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
+                      scope: gateChecks.projectBaselineAuditReady.evidence.scope,
+                      recommendedNextSkill: gateChecks.projectBaselineAuditReady.evidence.recommendedNextSkill,
+                      usable: gateChecks.projectBaselineAuditReady.pass
+                  }
+                : null
         },
         nextAction: resolveNextActionWithContext({
             validationResult,
@@ -1169,6 +1509,9 @@ function main() {
 
     if (options.json) {
         console.log(JSON.stringify(result, null, 2));
+        if (!result.canEnter) {
+            process.exitCode = 1;
+        }
         return;
     }
 
@@ -1179,7 +1522,7 @@ function main() {
     }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     try {
         main();
     } catch (error) {

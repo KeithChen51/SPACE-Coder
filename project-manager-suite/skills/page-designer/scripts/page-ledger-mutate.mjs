@@ -5,10 +5,9 @@ import fs from 'fs';
 import {
     buildAdvanceCheck,
     buildNewLedger,
+    DELIVERY_PHASE,
     findBrd,
     findLedger,
-    getDeliveryPhase,
-    getEntitiesFilePath,
     getLedgerPath,
     getScreenshotsDir,
     nowTimestamp,
@@ -69,7 +68,6 @@ function cmdBoot(flags) {
             ledgerPath: existingLedgerPath,
             brdFile: ledger.brdFile,
             phase: ledger.phase,
-            path: ledger.path,
             loopRound: ledger.loopRound,
             screenshotAsked: ledger.screenshotAsked
         });
@@ -93,36 +91,8 @@ function cmdBoot(flags) {
         ledgerPath,
         brdFile: ledger.brdFile,
         phase: ledger.phase,
-        path: ledger.path,
         loopRound: ledger.loopRound,
         screenshotAsked: ledger.screenshotAsked
-    });
-}
-
-function cmdSetPath(flags) {
-    const hostDir = resolveHostDir(flags['host-dir']);
-    const nextPath = flags['path'];
-
-    if (!['C+B', '纯B'].includes(nextPath)) {
-        fail('invalid_path', `--path must be C+B or 纯B, received: ${nextPath ?? 'null'}`);
-    }
-
-    const { ledgerPath, ledger } = requireLedger(hostDir);
-
-    if (ledger.path && ledger.path !== nextPath) {
-        fail('path_locked', `path is already locked as ${ledger.path}`);
-    }
-
-    ledger.path = nextPath;
-    ledger.updatedAt = nowTimestamp();
-    writeLedger(ledgerPath, ledger);
-
-    ok({
-        success: true,
-        action: 'set-path',
-        ledgerPath,
-        path: ledger.path,
-        phase: ledger.phase
     });
 }
 
@@ -147,43 +117,6 @@ function cmdMarkAsked(flags) {
     });
 }
 
-function cmdMarkApproved(flags) {
-    const hostDir = resolveHostDir(flags['host-dir']);
-    const field = flags['field'];
-
-    if (field !== 'entities') {
-        fail('unknown_field', `unsupported field for mark-approved: ${field ?? 'null'}`);
-    }
-
-    const { ledgerPath, ledger } = requireLedger(hostDir);
-
-    if (ledger.path !== 'C+B') {
-        fail(
-            'invalid_approval',
-            `mark-approved --field entities only applies to C+B path, current path: ${ledger.path ?? 'unset'}`
-        );
-    }
-
-    const entitiesFile = getEntitiesFilePath(hostDir, ledger.slug);
-    if (!fs.existsSync(entitiesFile)) {
-        fail(
-            'precondition_failed',
-            `entities file must exist before approval: ${entitiesFile}`
-        );
-    }
-
-    ledger.entitiesApproved = true;
-    ledger.updatedAt = nowTimestamp();
-    writeLedger(ledgerPath, ledger);
-
-    ok({
-        success: true,
-        action: 'mark-approved',
-        ledgerPath,
-        entitiesApproved: ledger.entitiesApproved
-    });
-}
-
 function cmdAdvance(flags) {
     const hostDir = resolveHostDir(flags['host-dir']);
     const toPhase = parsePhase(flags['to']);
@@ -193,8 +126,7 @@ function cmdAdvance(flags) {
     if (!check.canAdvance) {
         fail(check.error, check.reason, {
             from: ledger.phase,
-            to: toPhase,
-            path: ledger.path
+            to: toPhase
         });
     }
 
@@ -207,7 +139,6 @@ function cmdAdvance(flags) {
         action: 'advance',
         ledgerPath,
         phase: ledger.phase,
-        path: ledger.path,
         loopRound: ledger.loopRound
     });
 }
@@ -215,15 +146,13 @@ function cmdAdvance(flags) {
 function cmdStartLoop(flags) {
     const hostDir = resolveHostDir(flags['host-dir']);
     const { ledgerPath, ledger } = requireLedger(hostDir);
-    const deliveryPhase = getDeliveryPhase(ledger.path);
 
-    if (!deliveryPhase || ledger.phase !== deliveryPhase) {
+    if (ledger.phase !== DELIVERY_PHASE) {
         fail(
             'invalid_loop_start',
-            `loop can only start from delivered phase ${deliveryPhase ?? 'unknown'} for path ${ledger.path ?? 'unset'}`,
+            `loop can only start from delivered phase ${DELIVERY_PHASE}`,
             {
-                phase: ledger.phase,
-                path: ledger.path
+                phase: ledger.phase
             }
         );
     }
@@ -231,7 +160,6 @@ function cmdStartLoop(flags) {
     ledger.loopRound += 1;
     ledger.gapFilesConsumed = parseGapFiles(flags['gap-files']);
     ledger.phase = 1;
-    ledger.entitiesApproved = false;
     ledger.updatedAt = nowTimestamp();
     writeLedger(ledgerPath, ledger);
 
@@ -241,8 +169,7 @@ function cmdStartLoop(flags) {
         ledgerPath,
         phase: ledger.phase,
         loopRound: ledger.loopRound,
-        gapFilesConsumed: ledger.gapFilesConsumed,
-        entitiesApproved: ledger.entitiesApproved
+        gapFilesConsumed: ledger.gapFilesConsumed
     });
 }
 
@@ -254,14 +181,8 @@ function main() {
             case 'boot':
                 cmdBoot(flags);
                 return;
-            case 'set-path':
-                cmdSetPath(flags);
-                return;
             case 'mark-asked':
                 cmdMarkAsked(flags);
-                return;
-            case 'mark-approved':
-                cmdMarkApproved(flags);
                 return;
             case 'advance':
                 cmdAdvance(flags);

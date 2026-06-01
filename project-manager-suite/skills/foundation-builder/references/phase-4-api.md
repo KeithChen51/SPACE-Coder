@@ -19,15 +19,8 @@ Phase 3 Schema 已获用户确认后进入。
 ```
 已确认的 Schema 表
   ↓
-逐表推导接口：
+逐表推导接口（统一前缀 /api/admin/，单端工具默认场景）：
 
-C 端（/api/xxx）：
-  - 列表页消费的表 → GET /api/<resource> 列表接口（带分页）
-  - 详情页消费的表 → GET /api/<resource>/:id 详情接口
-  - 一般只读（除非页面有表单提交动作，如用户下单、提交表单）
-  - 聚合/统计展示 → GET /api/<resource>/summary
-
-运营端（/api/admin/xxx）：
   - 固定行配置表（如全局配置，行数不变）→ GET + PUT
   - 可增删资源表 → 完整 CRUD：
     - GET    /api/admin/<resource>     列表（带分页+筛选）
@@ -39,7 +32,11 @@ C 端（/api/xxx）：
     - 上下架：PUT /api/admin/<resource>/:id/status
     - 排序：  PUT /api/admin/<resource>/sort
     - 批量操作：POST /api/admin/<resource>/batch-<action>
+  - 列表只读展示：GET /api/admin/<resource>（不带写入接口）
+  - 聚合/统计展示：GET /api/admin/<resource>/summary
 ```
+
+> 路径前缀 `/api/admin/` 是套包默认值。如果宿主项目有其他前缀约定（如 `/internal-api/`），按宿主项目实际为准。
 
 ## coding-standards/09 规范要点（提醒）
 
@@ -48,8 +45,7 @@ C 端（/api/xxx）：
 | 规范项 | 要求 |
 |--------|------|
 | 路径格式 | 全小写，连字符分隔（如 `/api/admin/order-label`） |
-| C 端路径前缀 | `/api/xxx` |
-| 管理台路径前缀 | `/api/admin/xxx` |
+| 默认路径前缀 | `/api/admin/xxx`（单端工具，由宿主项目决定是否使用其他前缀） |
 | 响应格式 | `{ code: number, msg: string, data: T }` |
 | JSON 字段命名 | camelCase |
 | 分页请求 | `page` + `pageSize` 参数 |
@@ -71,46 +67,17 @@ C 端（/api/xxx）：
 
 ## §1 全接口总览
 
-### C 端接口
-
 | # | 方法 | 路径 | 来源 | 用途 | 详见 |
 |---|------|------|------|------|------|
-| 1 | GET | /api/xxx | 自建 | xxx | §2.1 |
-| 2 | GET | /api/xxx | 外部·纯引用 | xxx | §2.2 |
-| 3 | GET | /api/xxx | 外部·需改动 | xxx | §2.3 |
-
-### 管理台接口
-
-| # | 方法 | 路径 | 来源 | 用途 | 详见 |
-|---|------|------|------|------|------|
-| 1 | GET | /api/admin/xxx | 自建 | xxx | §3.1 |
+| 1 | GET | /api/admin/xxx | 自建 | xxx | §2.1 |
+| 2 | GET | /api/admin/xxx | 外部·纯引用 | xxx | §2.2 |
+| 3 | GET | /api/admin/xxx | 外部·需改动 | xxx | §2.3 |
 
 ---
 
-## §2 C 端接口
+## §2 接口详情
 
-### 自建接口格式
-
-### 2.1 `GET /api/xxx` — 用途
-
-> 消费页面: <页面名称>
-> 数据源表: <table_name>
-
-**请求参数**：
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-
-**响应 data**：
-
-| 字段 | 类型 | 说明 | 来源表.列 |
-|------|------|------|----------|
-
----
-
-## §3 管理台接口
-
-### 3.1 `GET /api/admin/xxx` — 用途
+### 2.1 `GET /api/admin/xxx` — 用途
 
 > 消费页面: <管理台页面名称>
 > 数据源表: <table_name>
@@ -186,8 +153,8 @@ Phase 4 完成后，回填 `foundation-schema-<slug>.md` 中每张表的 **使�
 向用户确认时，提示关注：
 
 1. 接口是否覆盖了所有页面的数据操作需求
-2. C 端是否只有读取接口（除非页面有明确的提交动作）
-3. 管理台的 CRUD 是否完整
+2. 列表/查看页面是否只有读取接口（除非页面有明确的提交动作）
+3. 资源表的 CRUD 是否完整
 4. 特殊操作（上下架、排序等）是否有独立接口
 5. 分页接口的筛选参数是否合理
 

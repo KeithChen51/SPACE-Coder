@@ -1,24 +1,19 @@
 import fs from 'fs';
 import path from 'path';
 
-export const SCHEMA_VERSION = '1.1.0';
+export const SCHEMA_VERSION = '2.0.0';
 
+// Linear phase graph for the single 4-Phase delivery flow.
+// 0: boot → 1: phase 1 done → 3: phase 3 done → 4: delivery done.
+// Phase 2 (design system generation) is implicit — covered by the 1 → 3 transition.
 export const PHASE_GRAPH = {
-    'C+B': {
-        0: [1],
-        1: [3],
-        3: [4],
-        4: [5],
-        5: [6],
-        6: []
-    },
-    '纯B': {
-        0: [1],
-        1: [3],
-        3: [4],
-        4: []
-    }
+    0: [1],
+    1: [3],
+    3: [4],
+    4: []
 };
+
+export const DELIVERY_PHASE = 4;
 
 export function nowTimestamp() {
     const current = new Date();
@@ -137,16 +132,12 @@ export function writeLedger(filePath, data) {
     fs.renameSync(tempPath, filePath);
 }
 
-export function isValidAdvance(from, to, routePath) {
+export function isValidAdvance(from, to) {
     if (from === to) {
         return true;
     }
 
-    if (!routePath || !PHASE_GRAPH[routePath]) {
-        return false;
-    }
-
-    return PHASE_GRAPH[routePath][from]?.includes(to) ?? false;
+    return PHASE_GRAPH[from]?.includes(to) ?? false;
 }
 
 export function buildNewLedger(hostDir, brdFile) {
@@ -155,21 +146,15 @@ export function buildNewLedger(hostDir, brdFile) {
     return {
         schemaVersion: SCHEMA_VERSION,
         slug,
-        path: null,
         brdFile,
         screenshotAsked: false,
         screenshotDir: getScreenshotsDir(hostDir),
         phase: 0,
         loopRound: 0,
         gapFilesConsumed: [],
-        entitiesApproved: false,
         createdAt: timestamp,
         updatedAt: timestamp
     };
-}
-
-export function getEntitiesFilePath(hostDir, slug) {
-    return path.join(getPagePreviewDir(hostDir), `page-spec-entities-${slug}.md`);
 }
 
 export function getDeliveryFilePath(hostDir, slug) {
@@ -201,47 +186,20 @@ export function buildAdvanceCheck(ledger, hostDir, toPhase) {
     }
 
     if (toPhase === 1) {
-        if (!ledger.path) {
-            return { canAdvance: false, reason: 'path is not set', error: 'precondition_failed' };
-        }
         if (ledger.screenshotAsked !== true) {
             return { canAdvance: false, reason: 'screenshot has not been asked', error: 'precondition_failed' };
         }
     }
 
-    if (!ledger.path) {
-        return { canAdvance: false, reason: 'path is not set', error: 'precondition_failed' };
-    }
-
-    if (!isValidAdvance(ledger.phase, toPhase, ledger.path)) {
+    if (!isValidAdvance(ledger.phase, toPhase)) {
         return {
             canAdvance: false,
-            reason: `invalid transition from ${ledger.phase} to ${toPhase} for path ${ledger.path}`,
+            reason: `invalid transition from ${ledger.phase} to ${toPhase}`,
             error: 'invalid_transition'
         };
     }
 
-    if (toPhase === 4 && ledger.path === 'C+B') {
-        const entitiesFile =
-            findPagePreviewArtifact(hostDir, `page-spec-entities-${ledger.slug}.md`) ??
-            getEntitiesFilePath(hostDir, ledger.slug);
-        if (!fs.existsSync(entitiesFile)) {
-            return {
-                canAdvance: false,
-                reason: `entities file is missing: ${entitiesFile}`,
-                error: 'precondition_failed'
-            };
-        }
-        if (ledger.entitiesApproved !== true) {
-            return {
-                canAdvance: false,
-                reason: 'entities file has not been approved by user',
-                error: 'precondition_failed'
-            };
-        }
-    }
-
-    if ((toPhase === 4 && ledger.path === '纯B') || toPhase === 6) {
+    if (toPhase === DELIVERY_PHASE) {
         const deliveryFile =
             findPagePreviewArtifact(hostDir, `page-delivery-${ledger.slug}.md`) ??
             getDeliveryFilePath(hostDir, ledger.slug);
@@ -255,10 +213,6 @@ export function buildAdvanceCheck(ledger, hostDir, toPhase) {
     }
 
     return { canAdvance: true, reason: 'ok', error: null };
-}
-
-export function getDeliveryPhase(routePath) {
-    return routePath === 'C+B' ? 6 : routePath === '纯B' ? 4 : null;
 }
 
 export function parseGapFiles(raw) {

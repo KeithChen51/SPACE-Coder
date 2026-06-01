@@ -58,8 +58,10 @@
 | **缺项目画像文件（新项目首次启动）** | **停留在主入口，向用户发起首轮极简访谈** | 否 | 发送访谈问题 |
 | **初始访谈结束，但宿主项目缺少目录骨架** | 优先调用 `bootstrap-host.mjs` 执行物理骨架构建。全局文件遵循“能映射则映射，真缺失才创建” | 否 | 已建骨架 + 暂缓创建项 |
 | **缺全局规则文件，但可从现有文件推断** | 使用内存默认推断，不强行生成物理文件 | 否 | 仅在后台标记 |
+| **已有代码接入，且用户目标是补齐维护知识底座** | 进入 `project-baseline-auditor`，先基于代码生成/更新 `project-profile.md`，再输出关键文件缺口清单 | **是** | `project-profile.md` + `docs/baseline/baseline-audit-<slug>.json` |
+| **已存在 baseline-audit 清单，且仍有关键文件缺口** | 读取清单中的 `recommended_next_skill`，只在 BRD / 页面说明 / foundation / PRD 范围内路由 | **是** | 交由对应补档 skill |
 | **画像存在，但用户意图/入口/阶段判断等有缺口** | 停留主入口澄清并补齐 | 否 | 更新后的项目画像 |
-| **当前轮目标已收敛到页面 / 原型，但“页面任务必补字段包”未补齐** | 停留主入口主动补齐 `项目覆盖对象`、`当前页面主要给谁用`、`当前页面主要用途`，并回写 `页面设计标签` | 否 | 页面任务识别信息补齐结果 |
+| **当前轮目标已收敛到页面 / 原型，但"页面任务必补字段包"未补齐** | 停留主入口主动补齐 `项目覆盖对象`、`当前页面主要给谁用`、`当前页面主要用途`，并回写 `页面定位标签` | 否 | 页面任务识别信息补齐结果 |
 | **当前阶段已明确，且当前轮目标对应正式阶段交付物** | 交由该阶段默认目标 skill 独占执行；主入口只负责交接上下文与回写结果 | **是** | 当前阶段最小交付物 |
 | **本轮结束，不需要子能力承接大单体任务** | 直接统一回写 | 否 | 更新后的全局文件 |
 
@@ -83,20 +85,27 @@
 
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|
+| `project-baseline-auditor` (既有项目画像与关键文件缺口诊断) | S0.5 | `skills/project-baseline-auditor/` |
 | `brd-writer` (业务需求文档 / BRD) | S1 | `skills/brd-writer/` |
 | `page-chief` (S2 页面环节调度：`page-designer` → `page-explainer`，必要时回环) | S2 | `skills/page-chief/` |
 | `prd-chief` (S2 PRD 环节调度：`foundation-builder` → `prd-writer`) | S2 | `skills/prd-chief/` |
 | `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
-| `prd-test-case-generator` (PRD 驱动测试用例生成) | S5 | `skills/prd-test-case-generator/` |
+| `test-case-chief` (S5 验收 + 测试用例调度：`prd-acceptance-reviewer` → `test-case-writer` → `test-case-reviewer`) | S5 | `skills/test-case-chief/` |
 | `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |
-| `security-scan` (上线前固定安全闸门扫描与放行结论) | S7 | `skills/security-scan/` |
+| `security-scan` (完工前固定安全闸门扫描与放行结论) | S7 | `skills/security-scan/` |
 
 | S2 内部执行能力（由调度层接管，不作为主入口默认直连目标） | 所属阶段 | 默认实现路径 |
 |--------------------------------------------------|----------|--------------|
 | `page-designer` (页面代码与页面交付清单编排) | S2 | `skills/page-designer/` |
-| `page-explainer` (页面交互语义、权限矩阵与 gap 收口) | S2 | `skills/page-explainer/` |
+| `page-explainer` (页面交互语义与 gap 收口) | S2 | `skills/page-explainer/` |
 | `foundation-builder` (术语表 / Schema / API 技术地基设计) | S2 | `skills/foundation-builder/` |
 | `prd-writer` (消费页面与 foundation 产物，沉淀 AI 可编码 PRD) | S2 | `skills/prd-writer/` |
+
+| S5 内部执行能力（由 test-case-chief 接管，不作为主入口默认直连目标） | 所属阶段 | 默认实现路径 |
+|------------------------------------------------------------|----------|--------------|
+| `prd-acceptance-reviewer` (验收文档主索引 + 区块子文件) | S5 | `skills/prd-acceptance-reviewer/` |
+| `test-case-writer` (测试用例编写) | S5 | `skills/test-case-writer/` |
+| `test-case-reviewer` (测试用例核查) | S5 | `skills/test-case-reviewer/` |
 
 ---
 

@@ -1,6 +1,6 @@
 # 产品设计与开发计划流水线（project-profile → PRD → 开发计划 → 代码实装）
 
-本文件描述从项目画像到 PRD、开发执行计划到代码实装的完整流水线，包含 8 个执行 Skill + 2 个调度 Skill 的职责、依赖、产物，以及**产物在宿主项目中的物理存放位置**。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
+本文件描述从项目画像到 PRD、开发执行计划到代码实装的完整流水线，同时包含既有代码接入时的基线诊断旁路。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
 
 相关协议：
 - 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/ai-project-manager/references/core/routing.md`](skills/ai-project-manager/references/core/routing.md)
@@ -14,6 +14,11 @@ S0 ─────────────────────────�
        │
        ▼  project-profile
 
+S0.5 ───────────────────────────────────────────
+   project-baseline-auditor
+       │
+       ▼  project-profile + baseline-audit
+
 S1 ─────────────────────────────────────────────
    brd-writer
        │
@@ -25,7 +30,7 @@ S2 ──────── page-chief 调度 ───────────�
        ▼  Vue 3 页面工程 + 页面交付清单
    page-explainer
        │
-       ▼  流程图 / 交互语义 / B 端权限 / 差异(可选) / 交付清单
+       ▼  流程图 / 交互语义 / 差异(可选) / 交付清单
 
 S2 ──────── prd-chief 调度 ─────────────────────
    foundation-builder
@@ -80,6 +85,13 @@ S5 ──────── test-case-chief 调度 ─────────�
 │   ├── brd/                                  # 业务需求层
 │   │   ├── brd-ledger-<slug>.md              # brd-writer 过程台账
 │   │   └── BRD-<slug>-<YYYYMMDD-HHMM>.md     # brd-writer 最终交付 BRD
+│   ├── baseline/                             # 既有项目基线诊断层
+│   │   ├── baseline-audit-<slug>.json        # project-baseline-auditor 给主路由读取的结构化清单
+│   │   └── baseline-audit-<slug>.md          # project-baseline-auditor 给人 review 的诊断清单
+│   ├── index/                                # 文件级引用索引层
+│   │   ├── project-link-graph.json           # project-link-indexer 编译出的机器关系图
+│   │   ├── project-link-graph.md             # project-link-indexer 编译出的人读 wiki 索引
+│   │   └── project-wiki-schema.json          # project-link-indexer 的节点/边/诊断 schema
 │   ├── prd/                                  # 技术地基 + PRD 层
 │   │   ├── foundation-glossary-<slug>.md     # foundation-builder 术语表
 │   │   ├── foundation-schema-<slug>.md       # foundation-builder 数据库 Schema（单文件或索引）
@@ -96,18 +108,13 @@ S5 ──────── test-case-chief 调度 ─────────�
 │   ├── ...                                   # 代码实装层（S4），coding-standards 按 Task 核心文件字段产出的实装代码
 │   └── frontend/
 │       └── page-preview/                     # 页面元数据与页面语义描述层
-│           ├── page-ledger-<slug>.json       # page-designer 台账（phase、路径、回环轮次）
+│           ├── page-ledger-<slug>.json       # page-designer 台账（phase、回环轮次）
 │           ├── page-delivery-<slug>.md       # page-designer 交付清单（页面索引入口）
-│           ├── page-spec-entities-<slug>.md  # page-designer C 端实体中间文件（仅 C+B 项目）
 │           ├── explainer-flow-<slug>.md      # page-explainer 用户流程图
-│           ├── explainer-c-interaction-<slug>.md     # page-explainer C 端交互语义（仅 C+B）
-│           ├── explainer-b-interaction-<slug>.md     # page-explainer B 端交互语义
-│           ├── explainer-b-permission-<slug>.md      # page-explainer B 端权限矩阵
-│           ├── explainer-c-gap-<slug>.md     # page-explainer C 端差异（可选，有差异时产出）
-│           ├── explainer-b-gap-<slug>.md     # page-explainer B 端差异（可选，有差异时产出）
+│           ├── explainer-b-interaction-<slug>.md     # page-explainer 交互语义
+│           ├── explainer-b-gap-<slug>.md     # page-explainer 差异（可选，有差异时产出）
 │           └── explainer-delivery-<slug>.md  # page-explainer 交付清单（入口索引 + 一致性自查）
 ├── <Vue 3 前端工程>/                             # page-designer 产出的可运行代码（src/、package.json 等）
-│   └── ...                                       # C+B 项目有 C 端和 B 端两个独立工程目录
 └── docs/test-case/                            # 测试用例层（S5 产物）
     ├── acceptance-<slug>.md                  # prd-acceptance-reviewer 验收文档主索引
     ├── acceptance-<slug>/                    # 按 PRD 区块拆的子验收文档
@@ -126,9 +133,11 @@ S5 ──────── test-case-chief 调度 ─────────�
 | 目录 | 归属 | 语义 | 谁写 | 谁读 |
 |------|------|------|------|------|
 | `<host>/`（根） | 全局 | 项目身份与全局画像 | ai-project-manager | 所有下游 skill |
+| `<host>/docs/baseline/` | 既有项目接入层 | 关键维护文件缺口清单，只覆盖画像 / BRD / 页面说明 / foundation / PRD | project-baseline-auditor | ai-project-manager |
+| `<host>/docs/index/` | 文件级引用索引层 | 可重建的文件关系图、坏链诊断和 LLM wiki 导航入口 | project-link-indexer | ai-project-manager、所有下游 skill |
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
-| `<host>/<工程名>/` | 代码层 | page-designer 产出的可运行前端工程（C+B 项目有多个工程目录） | page-designer | page-explainer、foundation-builder、prd-writer |
-| `<host>/src/frontend/page-preview/` | 页面元数据层 | 页面台账、交付清单、实体中间文件、交互/权限语义 | page-designer、page-explainer | foundation-builder、prd-writer |
+| `<host>/<工程名>/` | 代码层 | page-designer 产出的可运行前端工程 | page-designer | page-explainer、foundation-builder、prd-writer |
+| `<host>/src/frontend/page-preview/` | 页面元数据层 | 页面台账、交付清单、交互语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
 | `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
 | `<host>/src/`（或项目约定代码根目录） | 实装层（S4） | 按 delivery-plan Phase/Task 产出的实际代码文件 | coding-standards | test-and-acceptance |
@@ -141,9 +150,11 @@ S5 ──────── test-case-chief 调度 ─────────�
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
 | ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
+| project-baseline-auditor | `<host>/` + `<host>/docs/baseline/` | 受控生成或更新 `project-profile.md`；`baseline-audit-<slug>.json`、`baseline-audit-<slug>.md` 写入 `docs/baseline/` |
+| project-link-indexer | `<host>/docs/index/` | `project-link-graph.json`、`project-link-graph.md`、`project-wiki-schema.json`；均为可重建索引，不替代原始业务文件 |
 | brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
-| page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（元数据） | Vue 3 前端工程目录写入 `<host>/<工程名>/`；`page-ledger-<slug>.json`、`page-delivery-<slug>.md`、`page-spec-entities-<slug>.md` 等元数据文件写入 `<host>/src/frontend/page-preview/` |
-| page-explainer | `<host>/src/frontend/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / permission / gap / delivery）及后续新增 |
+| page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（元数据） | Vue 3 前端工程目录写入 `<host>/<工程名>/`；`page-ledger-<slug>.json`、`page-delivery-<slug>.md` 等元数据文件写入 `<host>/src/frontend/page-preview/` |
+| page-explainer | `<host>/src/frontend/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
 | delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
@@ -154,7 +165,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 **不变式（写 skill 时的硬约束）：**
 
-1. 一个 skill 的**所有**产出文件必须落在上表声明的目标文件夹，不允许跨目录分布（如 page-explainer 不允许一部分写 `src/frontend/page-preview/` 另一部分写 `prd/`）。唯一例外：page-designer 的可运行代码写入 `<host>/<工程名>/`，元数据文件写入 `<host>/src/frontend/page-preview/`，因为代码是项目级产物而非环节附属产物。
+1. 一个 skill 的**所有**产出文件必须落在上表声明的目标文件夹，不允许跨目录分布（如 page-explainer 不允许一部分写 `src/frontend/page-preview/` 另一部分写 `prd/`）。例外：page-designer 的可运行代码写入 `<host>/<工程名>/`、元数据文件写入 `<host>/src/frontend/page-preview/`；project-baseline-auditor 需要与主入口共用 `<host>/project-profile.md`，同时把诊断清单写入 `<host>/docs/baseline/`。
 2. 新增 skill 前必须在本表登记目标文件夹；若现有三类目录不能覆盖，需先与 PIPELINE.md 维护者讨论扩表，再实施 skill。
 3. 重命名/拆分产物时，只改文件名，不改落地文件夹（落地文件夹由 skill 决定，与文件名无关）。
 4. 下游 skill 在依赖表中看到某上游文件名，对应查找目录 = 上表中该上游 skill 的"产出目标文件夹"；不需要每个依赖表项单独标注目录。
@@ -212,6 +223,58 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ---
 
+## 0.5. project-baseline-auditor — 既有项目基线诊断
+
+**职责**：S0.5 阶段用于已有代码接入套件时的维护性诊断。它基于真实代码生成或更新同一个 `project-profile.md`，并产出关键文件缺口清单，供主入口继续路由到 BRD / 页面说明 / foundation / PRD 相关 skill。
+
+**边界**：
+- 只诊断维护知识底座，不诊断测试用例
+- 不判断待开发任务，不进入 `delivery-planner`
+- 不直接生成正式 BRD / 页面说明 / foundation / PRD 正文
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| 既有宿主代码、README、配置、docs | 宿主项目 | `<host>/` |
+| `project-profile.md`（如已有） | ai-project-manager 或宿主已有文件 | `<host>/project-profile.md` |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 项目画像 | `project-profile.md` | `<host>/project-profile.md` | 与 ai-project-manager 共用文件名；保留用户确认字段，补充代码推断字段 |
+| 结构化诊断清单 | `baseline-audit-<slug>.json` | `<host>/docs/baseline/` | 主路由读取的机器清单 |
+| 诊断报告 | `baseline-audit-<slug>.md` | `<host>/docs/baseline/` | 人类 review 的关键文件缺口说明 |
+
+---
+
+## 全局伴随. project-link-indexer — 文件级引用索引
+
+**职责**：按需扫描宿主项目已有文件，编译出可重建的文件级引用关系图，用于 LLM wiki 导航、坏链诊断、缺回链诊断和影响范围查询。它是全阶段伴随能力，不改变当前阶段，不给阶段路由建议。
+
+**边界**：
+- 只产出 `docs/index/*` 下的索引文件
+- 不替代 BRD / 页面说明 / foundation / PRD / 计划 / 测试用例 / 代码的权威内容
+- 不要求其他 skill 直接维护同一个索引文件；各 skill 继续维护自己的交付物，索引器从交付物中重新编译关系
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| 宿主项目 Markdown / JSON / 配置 / 代码文件 | 宿主项目与各阶段 skill | `<host>/` |
+| `project-profile.md`、BRD、页面说明、foundation、PRD、计划、验收、TC 等已有产物 | 对应 skill | 对应固定目录 |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 文件关系图 | `project-link-graph.json` | `<host>/docs/index/` | 给工具读取的节点、边、证据和 issue 清单 |
+| 人读 wiki 索引 | `project-link-graph.md` | `<host>/docs/index/` | 给人和 LLM 浏览的双链接索引 |
+| wiki schema | `project-wiki-schema.json` | `<host>/docs/index/` | 节点类型、关系类型、必需回链规则 |
+
+---
+
 ## 1. brd-writer — 业务需求文档
 
 **职责**：通过结构化访谈收敛需求，输出可执行的 BRD（Business Requirements Document）。Phase A 固化 `project_slug`，后续所有下游 skill 共用此 slug 命名产物。
@@ -233,7 +296,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ## 2. page-designer — 页面设计
 
-**职责**：基于 BRD 产出可交互的前端页面（技术栈从 tech-stack.md 读取，内置设计知识库）。C+B 项目先出 C 端再反推控制台，纯 B 项目直接出 B 端。
+**职责**：基于 BRD 产出可交互的前端页面（技术栈从 tech-stack.md 读取，内置设计知识库）。单线 4-Phase 流程。
 
 **依赖文件**：
 
@@ -245,17 +308,15 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 页面台账 | `page-ledger-<slug>.json` | `<host>/src/frontend/page-preview/` | phase 状态、路径判定、回环轮次 |
-| C 端页面代码 | Vue 3 工程 | `<host>/<工程名>/` | 可交互，mock 数据（仅 C+B） |
-| B 端控制台页面代码 | Vue 3 工程 | `<host>/<工程名>/` | 可交互，mock 数据 |
-| 实体中间文件 | `page-spec-entities-<slug>.md` | `<host>/src/frontend/page-preview/` | C 端实体规格（仅 C+B） |
+| 页面台账 | `page-ledger-<slug>.json` | `<host>/src/frontend/page-preview/` | phase 状态、回环轮次 |
+| 页面代码 | Vue 3 工程 | `<host>/<工程名>/` | 可交互，mock 数据 |
 | 交付清单 | `page-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` | 页面路由表、文件路径、下游索引 |
 
 ---
 
 ## 3. page-explainer — 页面交互解释
 
-**职责**：以用户流程为骨架、逐页交互为血肉，产出结构化行为语义规格（含冻结门禁），主动识别交互盲区。B 端额外输出页面级权限矩阵。发现差异时按分类产出修改建议供 page-designer 回环。
+**职责**：以用户流程为骨架、逐页交互为血肉，产出结构化行为语义规格（含冻结门禁），主动识别交互盲区。发现差异时按分类产出修改建议供 page-designer 回环。
 
 **依赖文件**：
 
@@ -270,11 +331,8 @@ S5 ──────── test-case-chief 调度 ─────────�
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 用户流程图 | `explainer-flow-<slug>.md` | `<host>/src/frontend/page-preview/` | 按用户任务组织的流程描述（只含流程语义，不含索引） |
-| C 端交互描述 | `explainer-c-interaction-<slug>.md` | `<host>/src/frontend/page-preview/` | 结构化语义条目，含 locked/open 状态（仅 C+B） |
-| B 端交互描述 | `explainer-b-interaction-<slug>.md` | `<host>/src/frontend/page-preview/` | 结构化语义条目，含 locked/open 状态 |
-| B 端权限矩阵 | `explainer-b-permission-<slug>.md` | `<host>/src/frontend/page-preview/` | 角色 × 页面/菜单可见性 |
-| C 端差异 | `explainer-c-gap-<slug>.md` | `<host>/src/frontend/page-preview/` | 分类差异条目（仅 C+B，有差异时） |
-| B 端差异 | `explainer-b-gap-<slug>.md` | `<host>/src/frontend/page-preview/` | 分类差异条目（有差异时） |
+| 交互描述 | `explainer-b-interaction-<slug>.md` | `<host>/src/frontend/page-preview/` | 结构化语义条目，含 locked/open 状态 |
+| 差异 | `explainer-b-gap-<slug>.md` | `<host>/src/frontend/page-preview/` | 分类差异条目（有差异时） |
 | 交付清单 | `explainer-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` | 产物索引 + 冻结统计 + 差异摘要 + 流程映射 + 一致性自查；本环节收官与下游入口 |
 
 **下游消费规则**：只有 `status: locked` 的语义条目，foundation-builder 和 prd-writer 才能当权威依据。
@@ -293,8 +351,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 | `page-delivery-<slug>.md` | page-designer | `<host>/src/frontend/page-preview/` |
 | 页面代码文件（Vue 3 组件） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
-| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
-| `explainer-b-permission-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
+| `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | 已有数据库/接口文件（可选） | 用户提供 | 用户指定路径 |
 
@@ -321,8 +378,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 | `page-delivery-<slug>.md` | page-designer | `<host>/src/frontend/page-preview/` |
 | 页面代码文件（Vue 3 组件） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
-| `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
-| `explainer-b-permission-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
+| `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
 | `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
@@ -341,7 +397,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ## 6. delivery-planner — 开发执行计划
 
-**职责**：基于上游 PRD 规格和技术地基产物，产出面向 AI 执行、人类 review 的开发计划文档（Phase/Task 拆解、完成标准、发布闸门）。不直接执行代码开发。前置运行 `collect-upstream-context.mjs` 脚本程序化发现上游产物，产出后运行 `validate-plan-structure.mjs` 脚本做结构化校验。
+**职责**：基于上游 PRD 规格和技术地基产物，产出面向 AI 执行、人类 review 的开发计划文档（Phase/Task 拆解、完成标准、完成判定）。不直接执行代码开发。前置运行 `collect-upstream-context.mjs` 脚本程序化发现上游产物，产出后运行 `validate-plan-structure.mjs` 脚本做结构化校验。
 
 **依赖文件**：
 
@@ -361,7 +417,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 包含 Phase/Task 拆解、完成标准、发布闸门、任务看板、风险等的完整执行计划 |
+| 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 包含 Phase/Task 拆解、完成标准、完成判定、任务看板、风险等的完整执行计划 |
 
 ---
 
@@ -476,11 +532,9 @@ S5 ──────── test-case-chief 调度 ─────────�
 | BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | | | ✓ | ✓ | |
 | 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | |
 | page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | |
-| page-spec-entities | | | | 产出 | | | | | | | | | | |
 | explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
-| explainer-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | | | | | |
-| explainer-b-permission | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
-| explainer-gap | | | 👁 | | 产出（可选） | 👁 | | | | | | | | |
+| explainer-b-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | | | | | |
+| explainer-b-gap | | | 👁 | | 产出（可选） | 👁 | | | | | | | | |
 | explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
 | foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
 | foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |

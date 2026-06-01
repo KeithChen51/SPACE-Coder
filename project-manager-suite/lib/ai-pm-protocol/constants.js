@@ -15,11 +15,13 @@ const FILE_ROLE_IDS = {
     RULES: 'global_rules',
     PROFILE: 'project_profile',
     PLAN: 'execution_plan',
-    DEVLOG: 'project_devlog'
+    DEVLOG: 'project_devlog',
+    LINK_INDEX: 'project_link_index'
 };
 
 const STAGE_IDS = {
     S0: 'S0',
+    S0_5: 'S0.5',
     S1: 'S1',
     S2: 'S2',
     S3: 'S3',

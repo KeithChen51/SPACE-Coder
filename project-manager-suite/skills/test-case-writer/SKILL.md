@@ -65,7 +65,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 1. 读 `acceptance-<slug>.md`，列出所有区块子文件
 2. 逐个读取 `acceptance-<slug>/<区块名>.md`
 3. 建立验收条目清单：区块 / §X / 条目 ID / 类型 / 场景 / 触发条件 / 预期结果 / `[待确认]` 标记
-4. 明确每条条目的验证方式候选：API / UI / 管理台配置闭环 / 管理台 CRUD / 回归
+4. 明确每条条目的验证方式候选：API / UI / 配置变更验证 / 数据管理 / 回归
 
 ### Phase 2：规划业务域和文件结构
 
@@ -80,8 +80,8 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 1. 每次只处理一个业务域；开始前重读该域相关的验收子文件
 2. 读 foundation schema / api 和必要的 PRD 正文，理解字段、接口、业务规则
 3. 如需 SQL，读宿主代码或数据链路文档确认源表、查询条件、服务端计算字段禁写清单
-4. 按 `references/type-domain.md` 生成业务域 TC 文件：API / UI / 管理台配置闭环按实际适用性组织
-5. 独立管理台 CRUD 文件按 `references/type-config.md`；输入有缺陷记录时按 `references/type-regression.md` 生成回归文件
+4. 按 `references/type-domain.md` 生成业务域 TC 文件：API / UI 按实际适用性组织
+5. 输入有缺陷记录时按 `references/type-regression.md` 生成回归文件
 6. 生成该域 `sql/` 文件；每个 SQL 同时包含"数据准备"和"数据清理"两段
 7. 更新域内验收矩阵，确保每条验收条目至少有一条 TC 覆盖或明确标记无法生成的原因
 
@@ -100,7 +100,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 4. 确认没有把代码实现当作预期 oracle
 5. 确认没有生成 TC 核查 issues 文件或任何 reviewer 产物
 
-## 5) 权限边界
+## 5) 写入边界
 
 | 能做 | 不能做 |
 |------|------|
@@ -119,8 +119,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | `../test-case-chief/knowledge/methodology.md` | 方法论 + BCDE 覆盖维度 | Phase 1 / 3 设计用例时 |
 | `../test-case-chief/knowledge/templates-shared.md` | 主文档、验收矩阵、文件头模板 | Phase 2-4 生成文档时 |
 | `references/self-check.md` | 生成期自检清单、陷阱速查 | Phase 5 自检时 |
-| `references/type-domain.md` | 业务域 TC：API / UI / 管理台闭环策略 | 生成业务域文件时 |
-| `references/type-config.md` | 管理台 CRUD 测试策略 | 生成独立管理台配置文件时 |
+| `references/type-domain.md` | 业务域 TC：API / UI 验证策略 | 生成业务域文件时 |
 | `references/type-regression.md` | 缺陷回归测试策略 | 输入有已知缺陷记录时 |
 | `references/project-conventions.md` | 宿主项目测试资产目录、命名、编号、SQL 组织和主索引的通用落地参考 | Phase 2 规划文件结构时 |
 

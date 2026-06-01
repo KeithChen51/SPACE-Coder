@@ -1,7 +1,7 @@
 # Vue 3 前端规范
 
 > 来源：通用 Vue 3 工程实践（Vue 3 + Vite + Composition API）+ 团队约定
-> 适用：Vue 3 前端项目，包括 Web 管理台、H5、PC 站点和中后台页面
+> 适用：Vue 3 前端项目，主要面向 Web 管理台和中后台页面
 
 ---
 

@@ -52,13 +52,13 @@ const validationPolicy = {
             contentMarkers: [
                 '# 项目画像',
                 '项目一句话目标：',
-                '目标用户：',
+                '目标使用者：',
                 '当前阶段：'
             ],
             requiredMarkers: [
                 '项目名称：',
                 '项目一句话目标：',
-                '目标用户：',
+                '目标使用者：',
                 '主要问题：',
                 '协作模式：',
                 '当前阶段：',
@@ -89,7 +89,7 @@ const validationPolicy = {
         [FILE_ROLE_IDS.DEVLOG]: {
             filenameMatchers: [],
             pathMatchers: ['logs/'],
-            logFilePattern: '^\\d{8}_.+\\.md$'
+            logFilePattern: '^(?:\\d{8}_.+|\\d{4}-\\d{2}-\\d{2})\\.md$'
         }
     }
 };

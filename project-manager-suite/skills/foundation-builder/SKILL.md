@@ -31,17 +31,16 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 
 | 来源 | 文件 | 必需 | 读取内容 |
 |------|------|------|---------|
-| brd-writer | `BRD-<slug>-*.md` | 是 | 项目类型、是否含 C 端、核心业务模型 |
+| brd-writer | `BRD-<slug>-*.md` | 是 | 项目类型、核心业务模型 |
 | page-designer | `page-delivery-<slug>.md` | 是 | 页面路由表、文件路径、架构信息 |
 | page-designer | 实际页面代码文件（Vue 3 组件） | 是 | 从 delivery 中的文件路径读取，分析页面渲染/提交的数据结构 |
 | page-explainer | `explainer-flow-<slug>.md` | 是 | 用户流程全貌，辅助理解数据流向 |
-| page-explainer | `explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md` | 是 | 结构化交互语义（仅消费 locked 条目），辅助 API 设计 |
-| page-explainer | `explainer-b-permission-<slug>.md` | 是 | 权限模型，影响 Schema 和 API 设计 |
+| page-explainer | `explainer-b-interaction-<slug>.md` | 是 | 结构化交互语义（仅消费 locked 条目），辅助 API 设计 |
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引：按流程 → 产物映射快速定位本次 Schema/API 涉及的语义条目 |
 | 用户提供 | 已有数据库/接口文件（可选） | 否 | 现有表结构、接口定义 |
 | 自身前次产出 | `foundation-*-<slug>.md` | 否 | 增量更新时读取 |
 
-> **注意**：不读取 `page-spec-entities-<slug>.md`。Schema 和 API 直接从前端页面代码反推，确保地基与前端实际消费对齐。
+> **注意**：Schema 和 API 直接从前端页面代码反推，确保地基与前端实际消费对齐。
 > **目录读取口径**：`BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件；实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取（仅旧项目才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`）；自身 `foundation-*.md` 优先从 `docs/prd/` 读取。仅旧项目尚未迁移时，才回退读取根目录同名文件。
 
 ## 4) 产物
@@ -106,17 +105,16 @@ Phase 1 逻辑简单，直接在此定义：
 1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 brd-writer
 2. 优先在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-designer
 3. 优先在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-4. 优先在 `src/frontend/page-preview/` 搜索交互描述文件（`explainer-c-interaction-<slug>.md` / `explainer-b-interaction-<slug>.md`，根据 C+B 或纯 B 判定）；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-5. 优先在 `src/frontend/page-preview/` 搜索 `explainer-b-permission-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-6. 优先在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
-7. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
-8. 从 BRD 读取：项目类型、是否含 C 端、核心业务模型
-9. 优先在 `docs/prd/` 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在；仅旧项目尚未迁移时，才回退检查根目录同名文件
+4. 优先在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
+5. 优先在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+6. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+7. 从 BRD 读取：项目类型、核心业务模型
+8. 优先在 `docs/prd/` 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在；仅旧项目尚未迁移时，才回退检查根目录同名文件
    - 存在 → 增量模式，加载 `references/incremental-update.md`
    - 不存在 → 首次模式
-10. 询问用户是否有已有数据库/接口文件
-    - 有 → 读取，加载 `references/existing-files-evaluation.md`
-    - 无 → 继续
+9. 询问用户是否有已有数据库/接口文件
+   - 有 → 读取，加载 `references/existing-files-evaluation.md`
+   - 无 → 继续
 
 ## 8) 状态标记（强制）
 
@@ -144,15 +142,14 @@ Phase 完成时：
 2. 跳过术语表直接设计 Schema
 3. 跳过 Schema 直接设计 API
 4. 自创规范不引用 coding-standards
-5. 读取 page-spec-entities 而非直接分析页面代码
-6. 跳过一致性自查直接落盘交付清单
-7. 不落盘交付清单就声称完成
+5. 跳过一致性自查直接落盘交付清单
+6. 不落盘交付清单就声称完成
 
 ## 10) 质量红线
 
 1. 术语表中的术语必须在 Schema 表名/字段名和 API 路径/字段名中一致使用
-2. C 端页面渲染的每个字段必须可追溯到 Schema 表.列 + API 响应字段
-3. 运营端页面的每个可编辑字段必须可追溯到 Schema 表.列 + API 请求字段
+2. 页面渲染的每个字段必须可追溯到 Schema 表.列 + API 响应字段
+3. 页面的每个可编辑字段必须可追溯到 Schema 表.列 + API 请求字段
 4. Schema 必须符合 coding-standards/05 规范（表名小写下划线、必备三字段、禁止外键等）
-5. API 必须符合 coding-standards/09 规范（C 端 /api/xxx、管理台 /api/admin/xxx、统一响应格式）
+5. API 必须符合 coding-standards/09 规范（统一前缀、统一响应格式）
 6. 交付清单中的文件路径必须是真实存在的路径

@@ -13,9 +13,8 @@
 | 配置路径 | 用途 |
 |---------|------|
 | `urls.api-base` | API 基础地址 |
-| `urls.toc` | C 端页面地址 |
-| `urls.admin` | 管理台地址 |
-| `cloud.ip` | 云服务器 IP |
+| `urls.app` | 系统页面地址 |
+| `server.host` | 应用服务主机（本地系统可填 `127.0.0.1`） |
 | `database.host` | 数据库主机 |
 | `database.port` | 数据库端口 |
 | `database.name` | 数据库名 |
@@ -24,9 +23,9 @@
 
 | 变量 | 用途 |
 |------|------|
-| `CLOUD_SSH_PASSWORD` | 云服务器 SSH 密码 |
 | `DB_USERNAME` | 数据库用户名 |
 | `DB_PASSWORD` | 数据库密码 |
+| `SERVER_SSH_PASSWORD` | 应用服务 SSH 密码（仅需要远程隧道时配置） |
 
 ## 一、读取配置
 
@@ -63,9 +62,8 @@ with open('.env') as f:
 ```python
 # 地址从 yml
 api_base = config['urls']['api-base']
-admin_url = config['urls']['admin']
-toc_url = config['urls']['toc']
-cloud_ip = config['cloud']['ip']
+app_url = config['urls']['app']
+server_host = config.get('server', {}).get('host', '127.0.0.1')
 db_host = config['database']['host']
 db_port = config['database']['port']
 db_name = config['database']['name']
@@ -73,7 +71,7 @@ db_name = config['database']['name']
 # 密码从 .env
 db_user = env_vars['DB_USERNAME']
 db_pass = env_vars['DB_PASSWORD']
-ssh_pass = env_vars['CLOUD_SSH_PASSWORD']
+ssh_pass = env_vars.get('SERVER_SSH_PASSWORD')
 ```
 
 ## 二、API 验证
@@ -87,7 +85,7 @@ curl -s -o /dev/null -w "%{http_code}" "${API_BASE_URL}/api/vehicles?phone=13800
 
 ## 三、数据库连接
 
-### 策略：先直连，失败则走 SSH 隧道
+### 策略：先直连，需要时再走 SSH 隧道
 
 **尝试 1：pymysql 直连**
 
@@ -105,20 +103,20 @@ conn = pymysql.connect(
 
 如果成功，记住"直连模式"，后续所有 SQL 操作都用直连，跳过隧道。
 
-**尝试 2：直连失败 → SSH 隧道**
+**尝试 2：直连失败且存在远程主机 → SSH 隧道**
 
-直连失败通常是 IP 白名单限制。通过 SSH 隧道让流量经过白名单内的云服务器中转：
+直连失败如果是网络隔离或 IP 白名单限制，可通过 SSH 隧道让流量经过可访问数据库的应用服务主机中转。若系统完全在本机运行，不需要建立隧道：
 
 ```bash
 expect -c "
-spawn ssh -o StrictHostKeyChecking=no -f -N -L 3307:${db_host}:${db_port} root@${cloud_ip}
+spawn ssh -o StrictHostKeyChecking=no -f -N -L 3307:${db_host}:${db_port} root@${server_host}
 expect \"password:\"
 send \"${ssh_pass}\r\"
 expect eof
 "
 ```
 
-其中变量分别来自 `application.yml`（host/port/ip）和 `.env`（password）。
+其中变量分别来自 `application.yml`（host/port/server.host）和 `.env`（password）。
 
 隧道建立后，pymysql 连本地转发端口：
 
@@ -168,5 +166,5 @@ conn.close()
 | pymysql 直连 Access Denied | 数据库有 IP 白名单 | 走 SSH 隧道 |
 | mysql CLI "using password: NO" | MySQL 9.x 移除了 `mysql_native_password` | 用 pymysql 代替 mysql CLI |
 | `source .env` 报错 | 特殊字符导致 shell 解析错误 | 用 Python 读取 |
-| SSH 连接超时 | 网络问题或密码变更 | 检查 `application.yml` 中 cloud.ip 和 `.env` 中 CLOUD_SSH_PASSWORD |
+| SSH 连接超时 | 网络问题或密码变更 | 检查 `application.yml` 中 server.host 和 `.env` 中 SERVER_SSH_PASSWORD |
 | `yaml` 模块未找到 | pyyaml 未安装 | `pip install pyyaml` |

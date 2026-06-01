@@ -11,6 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { fileURLToPath } from 'url';
 import {
     FILE_ROLE_IDS,
     fileRoles,
@@ -19,6 +20,9 @@ import {
     rulesSyncPolicy,
     validationPolicy
 } from '../lib/ai-pm-protocol/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function printUsage() {
     console.log(
@@ -198,7 +202,7 @@ function findLatestDevlog(hostRoot) {
 }
 
 function inspectRulesDirectory(hostRoot) {
-    const sourceDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', rulesSyncPolicy.sourceDir);
+    const sourceDir = path.resolve(__dirname, '..', rulesSyncPolicy.sourceDir);
     const targetDir = path.join(hostRoot, rulesSyncPolicy.targetDir);
 
     const defaultRuleFiles = fs.existsSync(sourceDir)
@@ -432,7 +436,7 @@ function main() {
     }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     try {
         main();
     } catch (error) {

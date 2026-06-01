@@ -32,6 +32,9 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -40,7 +43,7 @@ import process from 'process';
  * Each entry is a regex that matches the expected heading.
  */
 const REQUIRED_SECTIONS = [
-    { id: 'meta',            label: '计划头部元信息',        pattern: /^#+\s.*(?:版本|发布日期|适用范围|元信息)/m },
+    { id: 'meta',            label: '计划头部元信息',        pattern: /^(?:#+\s.*(?:版本|发布日期|适用范围|元信息)|>\s*\*\*(?:版本|发布日期|适用范围)\*\*)/m },
     { id: 'guide',           label: '本计划使用指南',        pattern: /^#+\s.*使用指南/m },
     { id: 'prd-constraint',  label: 'PRD 加载约束',         pattern: /^#+\s.*PRD\s*加载约束/m },
     { id: 'pre-gate',        label: '读前门禁 / AI 自检清单', pattern: /^#+\s.*(?:读前门禁|AI\s*自检)/m },
@@ -290,7 +293,7 @@ function main() {
     }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     try {
         main();
     } catch (err) {

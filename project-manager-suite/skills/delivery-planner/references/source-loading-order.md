@@ -150,10 +150,10 @@ Step 0.5 脚本可以跳过整包读取，但至少读取：
 | API | `docs/prd/foundation-api-<slug>.md`（或 `-part<N>.md`） | 高，必需 | `foundations[type=api]` |
 | 术语表 | `docs/prd/foundation-glossary-<slug>.md` | 中 | `foundations[type=glossary]` |
 | 交付清单 | `docs/prd/foundation-delivery-<slug>.md` | 中 | `foundations[type=delivery]` |
-| 用户流程 | `docs/prd/explainer-flow-<slug>.md` | 中 | `explainers[type=flow]` |
-| 交互描述 | `docs/prd/explainer-{c|b}-interaction-<slug>.md` | 中 | `explainers[type=*-interaction]` |
-| 权限矩阵 | `docs/prd/explainer-{c|b}-permission-<slug>.md` | 中 | `explainers[type=*-permission]` |
-| 交互差异 | `docs/prd/explainer-{c|b}-gap-<slug>.md` | 低 | `explainers[type=*-gap]` |
+| 用户流程 | `src/frontend/page-preview/explainer-flow-<slug>.md` | 中 | `explainers[type=flow]` |
+| 交互描述 | `src/frontend/page-preview/explainer-b-interaction-<slug>.md` | 中 | `explainers[type=b-interaction]` |
+| 交互差异 | `src/frontend/page-preview/explainer-b-gap-<slug>.md` | 低 | `explainers[type=b-gap]` |
+| 页面解释交付清单 | `src/frontend/page-preview/explainer-delivery-<slug>.md` | 中 | `explainers[type=delivery]` |
 
 > **slug** 由 `brd-writer` 在 Phase A 确定（英文短语、全小写、连字符分隔），流水线中所有下游 skill 的产物文件必须使用同一个 slug。
 

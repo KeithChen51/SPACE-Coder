@@ -59,10 +59,8 @@ function cmdStatus(flags) {
     ok({
         exists: true,
         phase: ledger.phase,
-        path: ledger.path,
         loopRound: ledger.loopRound,
         screenshotAsked: ledger.screenshotAsked,
-        entitiesApproved: ledger.entitiesApproved === true,
         ledgerPath
     });
 }

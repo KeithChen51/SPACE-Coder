@@ -18,11 +18,10 @@
 
 ## 2. 路径规范
 
-1. 【强制】C 端接口：`/api/xxx`，如 `/api/items`、`/api/profile`、`/api/orders`。
-2. 【强制】管理台接口：`/api/admin/xxx`，如 `/api/admin/display-config`、`/api/admin/resource-list`。
-3. 【强制】路径全小写，多单词用连字符 `-` 分隔，如 `/api/admin/sync-logs`。
-4. 【强制】资源名优先使用名词，禁止动词式路径，如 `/api/getOrders`。
-5. 【推荐】集合资源使用复数，如 `/api/orders`；固定语义配置接口可按现有项目口径保留，如 `/api/admin/display-config`。
+1. 【强制】默认接口前缀：`/api/admin/xxx`，如 `/api/admin/items`、`/api/admin/display-config`、`/api/admin/resource-list`。宿主项目可按实际约定使用 `/api/`、`/internal-api/` 等其他前缀，但单项目内统一一种。
+2. 【强制】路径全小写，多单词用连字符 `-` 分隔，如 `/api/admin/sync-logs`。
+3. 【强制】资源名优先使用名词，禁止动词式路径，如 `/api/admin/getOrders`。
+4. 【推荐】集合资源使用复数，如 `/api/admin/orders`；固定语义配置接口可按现有项目口径保留，如 `/api/admin/display-config`。
 
 ## 3. HTTP 方法
 
@@ -85,7 +84,7 @@
 }
 ```
 
-4. 【允许】C 端滚动加载接口额外返回 `hasMore`。
+4. 【允许】滚动加载接口额外返回 `hasMore`。
 5. 【强制】无数据时直接返回空列表，不因空数据改变结构。
 
 ## 8. 错误码与异常
@@ -134,14 +133,7 @@
 
 ## 11. 示例接口清单
 
-### 11.1 C 端接口
-
-- `GET /api/items`
-- `GET /api/profile`
-- `GET /api/orders`
-- `GET /api/orders/types`
-
-### 11.2 管理台配置接口
+### 11.1 配置接口
 
 - `GET/PUT /api/admin/display-config`
 - `GET/PUT /api/admin/tag-rules`
@@ -152,7 +144,7 @@
 - `CRUD /api/admin/resource-benefits`
 - `GET/PUT /api/admin/detail-actions`
 
-### 11.3 管理台数据接口
+### 11.2 数据接口
 
 - `GET /api/admin/resource-list`
 - `GET /api/admin/resource-detail`
@@ -263,4 +255,4 @@
 
 9. 【强制】Swagger 注解中的描述文本与接口实际行为必须一致；接口变更时同步更新注解，不要留过期描述。
 10. 【强制】禁止使用已废弃的 Swagger 2.x 注解（如 `@ApiOperation`、`@ApiModel`、`@ApiModelProperty`），统一使用 OpenAPI 3 注解（`@Operation`、`@Schema`、`@Tag`）。如项目仍在 Swagger 2.x，应计划迁移。
-11. 【推荐】内部管理接口和 C 端接口使用不同的 `@Tag` 分组，保持 Swagger UI 页面清晰。
+11. 【推荐】按业务域使用不同的 `@Tag` 分组，保持 Swagger UI 页面清晰。

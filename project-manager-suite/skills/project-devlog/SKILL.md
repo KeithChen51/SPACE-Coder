@@ -11,7 +11,6 @@ description: 用于项目状态回写和开发日志维护。包括每轮推进�
 
 - 每轮推进后沉淀项目状态
 - 每日开发日志的新建、追加和收口
-- 周报自动生成
 - 为下一轮推进提供承接信息
 
 它不负责：
@@ -52,18 +51,16 @@ description: 用于项目状态回写和开发日志维护。包括每轮推进�
 2. **新建日志** — 见 `references/daily-workflow.md`
 3. **追加更新** — 见 `references/daily-workflow.md`
 4. **收口汇总** — 见 `references/daily-workflow.md`
-5. **周报生成** — 见 `references/weekly-workflow.md`
 
 ## 文件命名与位置
 
 宿主项目已有日志目录时，优先沿用宿主项目既有位置；若没有，再使用以下默认约定：
 
 ```
-logs/YYYYMMDD_refactor_log_<git用户名>.md   # 每人每天一个
-logs/weekly/YYYY-WXX_weekly_report.md        # 周报
+logs/YYYYMMDD_refactor_log_<用户名>.md   # 每天一个；<用户名> 默认来自 git user.name，缺失时用 actor
 ```
 
-操作者名称优先从项目画像中的身份识别信息和宿主项目已有记录推断；必要时可使用 `git config user.name` 辅助识别。
+> v2.0.0：移除原"按人按天分目录"假设和周报机制——本套包默认场景为单 / 小团队内部工具，不预设多人协作分目录。如宿主项目确实是多人协作且有强需求，可在文件名中添加自定义后缀。
 
 ## 输出要求
 
@@ -83,9 +80,7 @@ logs/weekly/YYYY-WXX_weekly_report.md        # 周报
 ## 资源入口
 
 - 每日日志模板：`assets/daily.md`
-- 周报模板：`assets/weekly.md`
 - 每日操作工作流：`references/daily-workflow.md`
-- 周报生成流程：`references/weekly-workflow.md`
 
 ## V1 边界
 
@@ -93,7 +88,6 @@ logs/weekly/YYYY-WXX_weekly_report.md        # 周报
 
 - 每轮推进后有最小可追踪状态
 - 每日开发日志新建、追加与收口
-- 基础周报生成
 - 为下一轮继续推进提供承接信息
 
 本 V1 暂不解决：

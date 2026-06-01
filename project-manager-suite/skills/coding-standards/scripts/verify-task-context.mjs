@@ -34,22 +34,34 @@ import fs from 'fs';
 import path from 'path';
 import process from 'process';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
 
 // ─── Arg parsing ─────────────────────────────────────────────────────────────
 
 function printUsage() {
     console.log(
-        'Usage: node verify-task-context.mjs <delivery-plan-path> <task-id> [--json] [--env-check]'
+        'Usage: node verify-task-context.mjs <delivery-plan-path> <task-id> [--json] [--env-check] [--docs-dir <rel-path>]'
     );
 }
 
 function parseArgs(argv) {
     const args = argv.slice(2);
-    const options = { planFile: '', taskId: '', json: false, envCheck: false };
+    // docsDir 默认 docs/prd，与 delivery-planner 的 collect-upstream-context.mjs 保持同一口径。
+    const options = { planFile: '', taskId: '', json: false, envCheck: false, docsDir: 'docs/prd' };
 
-    for (const arg of args) {
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
         if (arg === '--json') { options.json = true; continue; }
         if (arg === '--env-check') { options.envCheck = true; continue; }
+        if (arg === '--docs-dir') {
+            const next = args[i + 1];
+            if (!next) throw new Error('Missing value for --docs-dir');
+            options.docsDir = next;
+            i++;
+            continue;
+        }
         if (!options.planFile) { options.planFile = arg; continue; }
         if (!options.taskId) { options.taskId = arg; continue; }
         throw new Error(`Unknown argument: ${arg}`);
@@ -193,7 +205,7 @@ function hasCoreFilesDeclared(taskContent) {
 
 // ─── Verification ─────────────────────────────────────────────────────────────
 
-function verifyTask(planFile, taskId) {
+function verifyTask(planFile, taskId, docsDir = 'docs/prd') {
     const planPath = path.resolve(planFile);
     if (!fs.existsSync(planPath)) {
         throw new Error(`Delivery plan file does not exist: ${planPath}`);
@@ -201,6 +213,10 @@ function verifyTask(planFile, taskId) {
 
     const content = fs.readFileSync(planPath, 'utf8');
     const planDir = path.dirname(planPath);
+    // 计划落在 <host>/docs/plans/；PRD/foundation 落在 <host>/<docsDir>（默认 docs/prd）。
+    // 与 collect-upstream-context.mjs 同口径：PRD 双链优先按 <host>/<docsDir>/<link> 解析。
+    const hostRoot = path.resolve(planDir, '..', '..');
+    const prdDocsDir = path.resolve(hostRoot, docsDir);
 
     const task = extractTaskBlock(content, taskId);
     if (!task) {
@@ -215,13 +231,16 @@ function verifyTask(planFile, taskId) {
     }
 
     const prdLinks = extractPrdLinks(task.content);
-    const missingFiles = [];
+    const prdLinksDeclared = prdLinks.length > 0;
+    const missingFiles = prdLinksDeclared ? [] : ['PRD 双链·读'];
 
     for (const link of prdLinks) {
         const candidates = [
-            path.resolve(planDir, '..', '..', link),
-            path.resolve(planDir, link),
-            path.resolve(link),
+            path.resolve(prdDocsDir, link),                                  // <host>/<docsDir>/<link>：PRD/foundation 实际所在，裸名与拆分子目录引用都命中
+            path.resolve(hostRoot, 'src', 'frontend', 'page-preview', link), // page-explainer 产物所在；与 collect-upstream-context 的第二上游位置同口径
+            path.resolve(planDir, '..', '..', link),                         // 宿主根相对：兼容 link 写成完整相对路径（docs/prd/... 或 src/frontend/page-preview/...）
+            path.resolve(planDir, link),                                     // 计划目录相对
+            path.resolve(link),                                              // 兜底：cwd / 绝对路径
         ];
         const exists = candidates.some((c) => fs.existsSync(c));
         if (!exists) {
@@ -230,13 +249,14 @@ function verifyTask(planFile, taskId) {
     }
 
     const coreFilesDeclared = hasCoreFilesDeclared(task.content);
-    const canExecute = missingFiles.length === 0 && coreFilesDeclared;
+    const canExecute = prdLinksDeclared && missingFiles.length === 0 && coreFilesDeclared;
 
     return {
         taskId,
         taskTitle: task.title,
         canExecute,
         prdLinksFound: prdLinks,
+        prdLinksDeclared,
         missingFiles,
         coreFilesDeclared,
     };
@@ -281,9 +301,17 @@ function formatReport(result) {
         lines.push(`  • Task ${result.taskId} 在 delivery plan 中不存在`);
     }
 
+    if (result.prdLinksDeclared === false) {
+        lines.push('── 未声明 PRD 双链 ──');
+        lines.push('  • Task 的 **PRD 双链·读** 字段没有可解析的 .md 文件，禁止开始实装');
+    }
+
     if (result.missingFiles.length > 0) {
-        lines.push(`── 缺失 PRD 文件 (${result.missingFiles.length}) ──`);
-        for (const f of result.missingFiles) {
+        const missingRealFiles = result.missingFiles.filter((item) => item !== 'PRD 双链·读');
+        if (missingRealFiles.length > 0) {
+            lines.push(`── 缺失 PRD 文件 (${missingRealFiles.length}) ──`);
+        }
+        for (const f of missingRealFiles) {
             lines.push(`  • ${f}`);
         }
     }
@@ -314,7 +342,7 @@ function main() {
         return;
     }
 
-    const result = verifyTask(options.planFile, options.taskId);
+    const result = verifyTask(options.planFile, options.taskId, options.docsDir);
 
     if (options.json) {
         console.log(JSON.stringify(result, null, 2));
@@ -327,7 +355,7 @@ function main() {
     }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     try {
         main();
     } catch (err) {

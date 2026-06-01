@@ -19,12 +19,10 @@
 
 必须先按 `project-devlog` 的结构与规则执行。
 
-### 2. 日志文件按人按天分离
+### 2. 日志文件按天分离
 
 宿主项目已有日志目录时，优先沿用宿主项目位置。默认建议文件位置：
-- `logs/YYYYMMDD_refactor_log_<git用户名>.md`
-
-避免多人同日同文件冲突。
+- `logs/YYYYMMDD_refactor_log.md`
 
 ### 3. 追加而非覆盖
 

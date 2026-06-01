@@ -2,7 +2,6 @@
 
 > 生成时间: YYYY-MM-DD HH:MM
 > Skill: page-explainer
-> 路径: C+B / 纯B
 
 > 本文件只描述用户流程语义。产物索引、存在性校验、一致性自查统一在 `explainer-delivery-<slug>.md`。
 

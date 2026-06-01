@@ -16,7 +16,7 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 
 **你可以做的事**：读取产物文件内容，基于内容做合格性判断（如检查语义条目是否全部 locked、gap 文件是否有未解决条目）。
 
-**你不做的事**：不画页面、不写交互语义、不定义权限矩阵、不产出任何文件、不修改任何子 skill 的产物、不做任何子 skill 的具体工作。子 skill 不感知你的存在——你不向子 skill 传递指令或参数。子 skill 依然直接和用户交互。
+**你不做的事**：不画页面、不写交互语义、不产出任何文件、不修改任何子 skill 的产物、不做任何子 skill 的具体工作。子 skill 不感知你的存在——你不向子 skill 传递指令或参数。子 skill 依然直接和用户交互。
 
 ## 2) 硬性规则
 
@@ -46,24 +46,15 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 
 page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在且状态合格：
 
-**通用检查**：
-
 | 来源 | 检查文件 | 合格条件 |
 |------|---------|---------|
-| page-designer | `page-ledger-<slug>.json` | phase 达到已交付（C+B: 6，纯B: 4） |
+| page-designer | `page-ledger-<slug>.json` | phase 达到已交付（4） |
 | page-designer | `page-delivery-<slug>.md` | 存在 |
 | page-designer | delivery 中列出的页面代码文件（位于项目根级工程目录） | 全部存在 |
 | page-explainer | `explainer-flow-<slug>.md` | 存在 |
 | page-explainer | `explainer-b-interaction-<slug>.md` | 存在，所有语义条目 status = locked |
-| page-explainer | `explainer-b-permission-<slug>.md` | 存在 |
-| page-explainer | `explainer-*-gap-<slug>.md`（若存在） | 无 design_gap / logic_conflict 未解决条目 |
-| page-explainer | `explainer-delivery-<slug>.md` | 存在，一致性自查 6 项全部 ✓ |
-
-**包含 C 端页面时额外检查**：
-
-| 来源 | 检查文件 | 合格条件 |
-|------|---------|---------|
-| page-explainer | `explainer-c-interaction-<slug>.md` | 存在，所有语义条目 status = locked |
+| page-explainer | `explainer-b-gap-<slug>.md`（若存在） | 无 design_gap / logic_conflict 未解决条目 |
+| page-explainer | `explainer-delivery-<slug>.md` | 存在，一致性自查全部 ✓ |
 
 ## 5) 状态机
 
@@ -119,7 +110,7 @@ START
 
 1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件
 2. 不存在 → **中止**，输出：`请先完成 brd-writer 产出 BRD 文件`
-3. 存在 → 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`，进入 Stage 2
+3. 存在 → 进入 Stage 2
 
 ### Stage 2: page-designer
 
@@ -130,38 +121,27 @@ START
      node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
      ```
    - 若返回 `{ exists: false }`：说明 page-designer 尚未启动，继续指示用户执行 page-designer
-   - 若返回 `{ exists: true }`：读取 `phase`、`path`、`loopRound`
+   - 若返回 `{ exists: true }`：读取 `phase`、`loopRound`
    - `src/frontend/page-preview/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查根级 `page-preview/`、`可操作页面/` 或根目录同名文件）
    - delivery 中列出的页面代码文件是否均存在
 3. 判定规则：
    - 台账不存在 → page-designer 尚未启动，不进入下一步
-   - 台账存在但 phase 未到已交付（C+B: 6，纯B: 4）→ page-designer 尚未完成，不进入下一步
+   - 台账存在但 phase 未到已交付（4）→ page-designer 尚未完成，不进入下一步
    - 台账 phase 已交付，但 delivery 或页面代码文件缺失 → 产物不完整，不进入下一步
    - 台账 phase 已交付，且 delivery 和页面代码文件齐全 → 进入 Stage 3
 
 ### Stage 3: page-explainer
 
 1. 指示：`下一步请执行 page-explainer`
-2. 按 `has_c_end` 检查完整产物集是否全部存在：
-
-   **包含 C 端页面时必须存在**：
-   - `src/frontend/page-preview/` 中的 `explainer-flow-<slug>.md`
-   - `src/frontend/page-preview/` 中的 `explainer-c-interaction-<slug>.md`
-   - `src/frontend/page-preview/` 中的 `explainer-b-interaction-<slug>.md`
-   - `src/frontend/page-preview/` 中的 `explainer-b-permission-<slug>.md`
-   - `src/frontend/page-preview/` 中的 `explainer-delivery-<slug>.md`
-
-   **不包含 C 端页面时必须存在**：
+2. 检查完整产物集是否全部存在：
    - `src/frontend/page-preview/` 中的 `explainer-flow-<slug>.md`
    - `src/frontend/page-preview/` 中的 `explainer-b-interaction-<slug>.md`
-   - `src/frontend/page-preview/` 中的 `explainer-b-permission-<slug>.md`
    - `src/frontend/page-preview/` 中的 `explainer-delivery-<slug>.md`
-
 3. 任一必需文件缺失 → page-explainer 尚未完成，继续等待
 4. 全部存在后，逐文件检查：
-   - 所有 interaction 文件中的语义条目 status 是否全部为 `locked`
-   - 是否存在 gap 文件（`explainer-*-gap-<slug>.md`）
-   - `explainer-delivery-<slug>.md` 一致性自查 6 项是否全部 ✓
+   - interaction 文件中的语义条目 status 是否全部为 `locked`
+   - 是否存在 gap 文件（`explainer-b-gap-<slug>.md`）
+   - `explainer-delivery-<slug>.md` 一致性自查是否全部 ✓
 5. 判断结果：
    - 全部 locked + 无 gap 文件（或 gap 中无 `design_gap` / `logic_conflict`）→ 进入 Stage 4
    - 有未解决的 `design_gap` / `logic_conflict` → 进入 Stage 3a
@@ -217,8 +197,8 @@ START
 
 ## 8) 禁止事项
 
-1. 自己执行 page-designer 或 page-explainer 的具体工作（画页面、写语义、定权限）
+1. 自己执行 page-designer 或 page-explainer 的具体工作（画页面、写语义）
 2. 跳过 page-designer 直接启动 page-explainer
 3. page-explainer 有未解决的 design_gap / logic_conflict 时直接标记 DONE
 4. 向子 skill 传递指令、参数或干预其内部 Phase 执行顺序
-6. 替子 skill 修改它们的产物文件
+5. 替子 skill 修改它们的产物文件

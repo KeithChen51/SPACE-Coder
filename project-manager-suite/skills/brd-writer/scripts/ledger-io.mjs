@@ -11,7 +11,12 @@ import path from 'path';
 // Schema version
 // ─────────────────────────────────────────────
 
-export const SCHEMA_VERSION = '1.0.0';
+export const SCHEMA_VERSION = '2.0.0';
+// v2.0.0 (2026-05-22): breaking — removed legacy public-product and commercial universal P0 fields,
+// removed commercial type-specific fields,
+// removed chapters 5 (market & competitor) and 7 (commercial model) from CHAPTER_MATRIX,
+// removed old public-product and commercial rule conflicts.
+// Old ledger files (1.0.0) need migration: drop the removed fields/values, re-render markdown.
 
 // ─────────────────────────────────────────────
 // Universal P0 fields
@@ -30,24 +35,6 @@ export const UNIVERSAL_P0 = [
   },
   // ref: p0-fields.md #2
   {
-    id: 'has_c_page',
-    display_name: '是否包含C端页面',
-    field_type: 'fact',
-    value_type: 'text',
-    section: 'universal',
-    condition: null,
-  },
-  // ref: p0-fields.md #3
-  {
-    id: 'is_commercial',
-    display_name: '是否涉及直接商业化',
-    field_type: 'decision',
-    value_type: 'text',
-    section: 'universal',
-    condition: null,
-  },
-  // ref: p0-fields.md #4
-  {
     id: 'project_background',
     display_name: '项目背景',
     field_type: 'fact',
@@ -55,7 +42,7 @@ export const UNIVERSAL_P0 = [
     section: 'universal',
     condition: null,
   },
-  // ref: p0-fields.md #5
+  // ref: p0-fields.md #3
   {
     id: 'stakeholder_roles',
     display_name: '利益相关角色',
@@ -64,7 +51,7 @@ export const UNIVERSAL_P0 = [
     section: 'universal',
     condition: null,
   },
-  // ref: p0-fields.md #6
+  // ref: p0-fields.md #4
   {
     id: 'core_pain_points',
     display_name: '核心痛点',
@@ -73,7 +60,7 @@ export const UNIVERSAL_P0 = [
     section: 'universal',
     condition: null,
   },
-  // ref: p0-fields.md #7
+  // ref: p0-fields.md #5
   {
     id: 'core_value_model',
     display_name: '核心价值模型',
@@ -82,7 +69,7 @@ export const UNIVERSAL_P0 = [
     section: 'universal',
     condition: null,
   },
-  // ref: p0-fields.md #8
+  // ref: p0-fields.md #6
   {
     id: 'scope_definition',
     display_name: '范围定义',
@@ -91,7 +78,7 @@ export const UNIVERSAL_P0 = [
     section: 'universal',
     condition: null,
   },
-  // ref: p0-fields.md #9
+  // ref: p0-fields.md #7
   {
     id: 'key_risks',
     display_name: '关键风险与兜底策略',
@@ -100,7 +87,7 @@ export const UNIVERSAL_P0 = [
     section: 'universal',
     condition: null,
   },
-  // ref: p0-fields.md #10
+  // ref: p0-fields.md #8
   {
     id: 'project_timeline',
     display_name: '项目周期',
@@ -155,29 +142,20 @@ export const TYPE_SPECIFIC_P0 = {
       section: 'innovation',
       condition: null,
     },
-    // ref: p0-fields.md 创新#15
-    {
-      id: 'innovation_monetization',
-      display_name: '变现模式与付费触发点',
-      field_type: 'decision',
-      value_type: 'text',
-      section: 'innovation',
-      condition: 'commercial',
-    },
-    // ref: p0-fields.md 创新#16 — structured: single-record metric
+    // ref: p0-fields.md 创新#15 — structured: single-record metric
     {
       id: 'innovation_north_star',
-      display_name: '北极星指标',
+      display_name: '核心衡量指标',
       field_type: 'decision',
       value_type: 'structured',
       schema: ['metric_name', 'formula', 'target', 'period'],
       section: 'innovation',
       condition: null,
     },
-    // ref: p0-fields.md 创新#17
+    // ref: p0-fields.md 创新#16
     {
       id: 'innovation_auxiliary_metrics',
-      display_name: '辅助指标体系',
+      display_name: '辅助业务指标体系',
       field_type: 'decision',
       value_type: 'text',
       section: 'innovation',
@@ -246,15 +224,6 @@ export const TYPE_SPECIFIC_P0 = {
       schema: ['metric_name', 'formula', 'target', 'period'],
       section: 'extension',
       condition: null,
-    },
-    // ref: p0-fields.md 扩展#15
-    {
-      id: 'extension_monetization',
-      display_name: '变现模式与付费触发点',
-      field_type: 'decision',
-      value_type: 'text',
-      section: 'extension',
-      condition: 'commercial',
     },
   ],
 
@@ -407,20 +376,20 @@ export const PAGE_FIELDS = [
 ];
 
 // ─────────────────────────────────────────────
-// Helper: derive hasPages from project type and hasCPage flag
-// ref: p0-fields.md §集成型（纯B）/ §运营型（必有后台页面）
+// Helper: derive hasPages from project type
+// ref: p0-fields.md §集成型（默认无独立页面）/ §运营型（必有后台页面）/ 其他类型默认含页面
 // ─────────────────────────────────────────────
 
 /**
  * Derive whether the project has pages.
+ * Internal-tool defaults: integration → no pages; operational → always pages; others → pages by default.
  * @param {string} projectType - one of: innovation|transformation|extension|integration|operational|compliance
- * @param {boolean} hasCPage - whether the project has C-side pages (from universal field has_c_page)
  * @returns {boolean}
  */
-export function deriveHasPages(projectType, hasCPage) {
-  if (projectType === 'integration') return false;   // pure B2B, never has pages
+export function deriveHasPages(projectType) {
+  if (projectType === 'integration') return false;   // pure backend integration, no independent pages
   if (projectType === 'operational') return true;    // always has backend pages
-  return Boolean(hasCPage);
+  return true;                                       // innovation/transformation/extension/compliance default to having pages
 }
 
 // ─────────────────────────────────────────────
@@ -432,15 +401,12 @@ export function deriveHasPages(projectType, hasCPage) {
  * Returns field definitions only — no value/status (those are added by init).
  *
  * @param {string} projectType - one of: innovation|transformation|extension|integration|operational|compliance
- * @param {boolean} hasCPage - raw value of has_c_page universal field
- * @param {boolean} isCommercial - raw value of is_commercial universal field
  * @returns {Array<Object>} ordered array of field definition objects
  */
-export function buildFieldSet(projectType, hasCPage, isCommercial) {
-  const hasPages = deriveHasPages(projectType, hasCPage);
+export function buildFieldSet(projectType) {
+  const hasPages = deriveHasPages(projectType);
 
   const typeFields = (TYPE_SPECIFIC_P0[projectType] ?? []).filter((field) => {
-    if (field.condition === 'commercial' && !isCommercial) return false;
     if (field.condition === 'has_pages' && !hasPages) return false;
     return true;
   });
@@ -487,17 +453,18 @@ export function isValidTransition(from, to) {
 // ─────────────────────────────────────────────
 
 /**
- * CHAPTER_MATRIX — keyed by template chapter number (1–13).
+ * CHAPTER_MATRIX — keyed by template chapter number.
+ * Chapter 5 (市场与竞品差异化) and Chapter 7 (商业化路径) are intentionally absent —
+ * removed in v2.0.0 since this suite now focuses on internal efficiency tools.
+ * Final BRD chapter numbering keeps the original gaps (§1-§4, §6, §8-§13) for downstream-reference stability.
  * Each entry:
- *   title            : default Chinese chapter title
- *   commercial_only  : true → skip unless isCommercial
- *   page_dependent   : true → skip unless hasPages
- *   types            : per-type config { status: 'required'|'skip'|'conditional', title_override? }
+ *   title           : default Chinese chapter title
+ *   page_dependent  : true → skip unless hasPages
+ *   types           : per-type config { status: 'required'|'skip'|'conditional', title_override? }
  */
 export const CHAPTER_MATRIX = {
   1: {
     title: '项目背景与机会判断',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -509,8 +476,7 @@ export const CHAPTER_MATRIX = {
     },
   },
   2: {
-    title: '商业目标与成功标准',
-    commercial_only: false,
+    title: '目标与成功标准',
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -523,7 +489,6 @@ export const CHAPTER_MATRIX = {
   },
   3: {
     title: '利益相关角色与核心场景',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -536,7 +501,6 @@ export const CHAPTER_MATRIX = {
   },
   4: {
     title: '核心价值主张',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -547,22 +511,9 @@ export const CHAPTER_MATRIX = {
       compliance:     { status: 'skip' },
     },
   },
-  5: {
-    title: '市场与竞品差异化',
-    commercial_only: false,
-    page_dependent: false,
-    types: {
-      innovation:     { status: 'required' },
-      transformation: { status: 'skip' },
-      extension:      { status: 'conditional' },
-      integration:    { status: 'skip' },
-      operational:    { status: 'skip' },
-      compliance:     { status: 'skip' },
-    },
-  },
+  // Chapter 5 (市场与竞品差异化) removed in v2.0.0.
   6: {
     title: '核心价值模型',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -573,22 +524,9 @@ export const CHAPTER_MATRIX = {
       compliance:     { status: 'required', title_override: '合规达标模型' },
     },
   },
-  7: {
-    title: '商业化路径与收入模型',
-    commercial_only: true,
-    page_dependent: false,
-    types: {
-      innovation:     { status: 'conditional' },  // only when commercial
-      transformation: { status: 'skip' },
-      extension:      { status: 'conditional' },  // only when commercial
-      integration:    { status: 'skip' },
-      operational:    { status: 'skip' },
-      compliance:     { status: 'skip' },
-    },
-  },
+  // Chapter 7 (商业化路径与收入模型) removed in v2.0.0.
   8: {
     title: 'MVP 范围',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -601,7 +539,6 @@ export const CHAPTER_MATRIX = {
   },
   9: {
     title: '备选方案对比',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -614,7 +551,6 @@ export const CHAPTER_MATRIX = {
   },
   10: {
     title: '关键前提假设',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -627,7 +563,6 @@ export const CHAPTER_MATRIX = {
   },
   11: {
     title: '关键风险与兜底策略',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -640,7 +575,6 @@ export const CHAPTER_MATRIX = {
   },
   12: {
     title: '项目周期',
-    commercial_only: false,
     page_dependent: false,
     types: {
       innovation:     { status: 'required' },
@@ -652,14 +586,13 @@ export const CHAPTER_MATRIX = {
     },
   },
   13: {
-    title: '页面定位与架构约束',
-    commercial_only: false,
+    title: '页面定位',
     page_dependent: true,
     types: {
       innovation:     { status: 'conditional' },
       transformation: { status: 'conditional' },
       extension:      { status: 'conditional' },
-      integration:    { status: 'skip' },          // pure B2B, no C-side
+      integration:    { status: 'skip' },          // integration projects have no independent pages
       operational:    { status: 'required' },      // always has backend pages
       compliance:     { status: 'conditional' },
     },
@@ -670,11 +603,10 @@ export const CHAPTER_MATRIX = {
  * Compute the chapter plan for a given project context.
  *
  * @param {string}  projectType  - one of: innovation|transformation|extension|integration|operational|compliance
- * @param {boolean} isCommercial - whether the project involves direct monetization
  * @param {boolean} hasPages     - derived via deriveHasPages()
  * @returns {Array<{ template_number: number, title: string, status: string, reason?: string }>}
  */
-export function getChapterPlan(projectType, isCommercial, hasPages) {
+export function getChapterPlan(projectType, hasPages) {
   const plan = [];
 
   for (const [numStr, chapter] of Object.entries(CHAPTER_MATRIX)) {
@@ -684,12 +616,6 @@ export function getChapterPlan(projectType, isCommercial, hasPages) {
     // Unknown project type — mark skip
     if (!typeConfig) {
       plan.push({ template_number: num, title: chapter.title, status: 'skip', reason: 'unknown project type' });
-      continue;
-    }
-
-    // commercial_only filter
-    if (chapter.commercial_only && !isCommercial) {
-      plan.push({ template_number: num, title: chapter.title, status: 'skip', reason: 'non-commercial project' });
       continue;
     }
 
@@ -721,36 +647,33 @@ export const APPENDIX_DEPENDENCIES = [
   {
     downstream_skill: 'page-designer',
     fields: [
-      { semantic_name: '利益相关角色',       template_chapters: [3],  optional: false },
-      { semantic_name: '各角色痛点与场景',   template_chapters: [3],  optional: false },
-      { semantic_name: '核心价值模型',       template_chapters: [6],  optional: false },
-      { semantic_name: '付费触发点',         template_chapters: [7],  optional: true  },
-      { semantic_name: '页面定位与架构约束', template_chapters: [13], optional: false },
+      { semantic_name: '利益相关角色',     template_chapters: [3],  optional: false },
+      { semantic_name: '各角色痛点与场景', template_chapters: [3],  optional: false },
+      { semantic_name: '核心价值模型',     template_chapters: [6],  optional: false },
+      { semantic_name: '页面定位',         template_chapters: [13], optional: false },
     ],
   },
   {
     downstream_skill: 'page-explainer',
     fields: [
-      { semantic_name: '核心价值主张',       template_chapters: [4],  optional: true  },
-      { semantic_name: '利益相关角色诉求',   template_chapters: [3],  optional: false },
-      { semantic_name: '各端定位',           template_chapters: [13], optional: false },
+      { semantic_name: '核心价值主张',     template_chapters: [4],  optional: true  },
+      { semantic_name: '利益相关角色诉求', template_chapters: [3],  optional: false },
+      { semantic_name: '各端定位',         template_chapters: [13], optional: false },
     ],
   },
   {
     downstream_skill: 'foundation-builder',
     fields: [
-      { semantic_name: '指标体系',             template_chapters: [2],  optional: true  },
-      { semantic_name: '核心价值模型',         template_chapters: [6],  optional: false },
-      { semantic_name: '关键风险与兜底策略',   template_chapters: [11], optional: false },
-      { semantic_name: '是否包含C端页面',      template_chapters: [],   optional: false }, // header field
+      { semantic_name: '指标体系',           template_chapters: [2],  optional: true  },
+      { semantic_name: '核心价值模型',       template_chapters: [6],  optional: false },
+      { semantic_name: '关键风险与兜底策略', template_chapters: [11], optional: false },
     ],
   },
   {
     downstream_skill: 'prd-writer',
     fields: [
-      { semantic_name: '目标与成功标准',       template_chapters: [2],  optional: false },
-      { semantic_name: '竞品差异化',           template_chapters: [5],  optional: true  },
-      { semantic_name: 'MVP范围',              template_chapters: [8],  optional: false },
+      { semantic_name: '目标与成功标准', template_chapters: [2], optional: false },
+      { semantic_name: 'MVP范围',        template_chapters: [8], optional: false },
     ],
   },
 ];
@@ -760,16 +683,6 @@ export const APPENDIX_DEPENDENCIES = [
 // ─────────────────────────────────────────────
 
 export const RULE_CONFLICTS = [
-  {
-    id: 'integration_no_c_page',
-    check: (header, fieldId) => header.project_type === 'integration' && fieldId === 'has_c_page',
-    description: '集成型不允许 C 端页面',
-  },
-  {
-    id: 'no_commercial_monetization',
-    check: (header, fieldId) => !header.is_commercial && fieldId.includes('monetization'),
-    description: '非直接商业化项目不能锁定变现字段',
-  },
   {
     id: 'no_pages_page_field',
     check: (header, fieldId) => !header.has_pages && fieldId.startsWith('page_'),
@@ -854,22 +767,18 @@ export function writeLedger(jsonPath, data, slug) {
 /**
  * Create and return an initial (empty) ledger JSON object.
  *
- * @param {string}  projectName  - human-readable project name
- * @param {string}  slug         - URL-safe project identifier
- * @param {string}  projectType  - one of: innovation|transformation|extension|integration|operational|compliance
- * @param {boolean} hasCPage     - whether project has C-side pages
- * @param {boolean} isCommercial - whether project involves direct monetization
+ * @param {string} projectName  - human-readable project name
+ * @param {string} slug         - URL-safe project identifier
+ * @param {string} projectType  - one of: innovation|transformation|extension|integration|operational|compliance
  * @returns {Object} ledger data object
  */
-export function createEmptyLedger(projectName, slug, projectType, hasCPage, isCommercial) {
-  const hasPages = deriveHasPages(projectType, hasCPage);
-  const fieldDefs = buildFieldSet(projectType, hasCPage, isCommercial);
+export function createEmptyLedger(projectName, slug, projectType) {
+  const hasPages = deriveHasPages(projectType);
+  const fieldDefs = buildFieldSet(projectType);
 
-  const META_IDS = new Set(['project_type', 'has_c_page', 'is_commercial']);
+  const META_IDS = new Set(['project_type']);
   const metaValues = {
-    project_type:  projectType,
-    has_c_page:    String(hasCPage),
-    is_commercial: String(isCommercial),
+    project_type: projectType,
   };
 
   const fields = fieldDefs.map((def) => {
@@ -912,8 +821,6 @@ export function createEmptyLedger(projectName, slug, projectType, hasCPage, isCo
       project_name:          projectName,
       slug,
       project_type:          projectType,
-      has_c_page:            hasCPage,
-      is_commercial:         isCommercial,
       has_pages:             hasPages,
       current_phase:         'B',
       current_round:         0,

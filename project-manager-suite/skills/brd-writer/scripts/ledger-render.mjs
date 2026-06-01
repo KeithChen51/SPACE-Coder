@@ -82,9 +82,9 @@ function cmdChaptersPlan(opts) {
   if (!ledgerPath) throw new Error('--ledger is required');
 
   const data = readLedger(path.resolve(ledgerPath));
-  const { project_type, is_commercial, has_pages } = data.header;
+  const { project_type, has_pages } = data.header;
 
-  const chapters = getChapterPlan(project_type, is_commercial, has_pages);
+  const chapters = getChapterPlan(project_type, has_pages);
   console.log(JSON.stringify({ chapters }, null, 2));
 }
 
@@ -101,7 +101,7 @@ function cmdChaptersFinalize(opts) {
 
   const absLedgerPath = path.resolve(ledgerPath);
   const data = readLedger(absLedgerPath);
-  const { project_type, is_commercial, has_pages, slug } = data.header;
+  const { project_type, has_pages, slug } = data.header;
 
   // Parse included template numbers
   const includedTemplateNums = new Set(
@@ -109,7 +109,7 @@ function cmdChaptersFinalize(opts) {
   );
 
   // Get chapter plan from ledger context
-  const plan = getChapterPlan(project_type, is_commercial, has_pages);
+  const plan = getChapterPlan(project_type, has_pages);
 
   // Build final_chapters: only chapters in the included set
   let finalNumber = 0;
@@ -319,38 +319,7 @@ function cmdSaveBrd(opts) {
     errors.push('Missing appendix (no heading containing "附录")');
   }
 
-  // Header BFF check
-  if (header.has_c_page) {
-    // Check header section for BFF
-    // Header section = everything before the first ## N. heading
-    const firstNumberedIdx = brdContent.search(/^## \d+\./m);
-    const headerSection = firstNumberedIdx > -1
-      ? brdContent.slice(0, firstNumberedIdx)
-      : brdContent;
-
-    if (!headerSection.includes('BFF')) {
-      errors.push('Header section must mention "BFF" when project has C-side pages (has_c_page=true)');
-    }
-
-    // Chapter 13 BFF check
-    const ch13 = finalChapters.find((ch) => ch.template_number === 13);
-    if (ch13) {
-      const ch13Heading = `## ${ch13.final_number}.`;
-      const ch13Start = brdContent.indexOf(ch13Heading);
-      if (ch13Start !== -1) {
-        // Find start of next heading
-        const afterCh13 = brdContent.slice(ch13Start + ch13Heading.length);
-        const nextHeadingIdx = afterCh13.search(/^## /m);
-        const ch13Section = nextHeadingIdx !== -1
-          ? afterCh13.slice(0, nextHeadingIdx)
-          : afterCh13;
-
-        if (!ch13Section.includes('BFF')) {
-          errors.push(`Chapter ${ch13.final_number} (template 13, 页面定位) must mention "BFF"`);
-        }
-      }
-    }
-  }
+  // (v2.0.0: legacy architecture check removed with old public-product fields.)
 
   if (errors.length > 0) {
     console.log(JSON.stringify({ success: false, error: 'structure_validation', errors }));

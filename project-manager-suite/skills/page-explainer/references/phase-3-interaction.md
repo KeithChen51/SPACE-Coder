@@ -1,6 +1,6 @@
-# Phase 3/4: 交互描述
+# Phase 3: 交互描述
 
-> 本文件在进入 Phase 3（C 端或 B 端交互描述）时由 SKILL.md 指令加载。Phase 4（C+B 项目的 B 端）复用本文件。
+> 本文件在进入 Phase 3 时由 SKILL.md 指令加载。
 
 ## 目标
 
@@ -20,13 +20,13 @@
 
 ## 产物结构
 
-文件名：`explainer-c-interaction-<slug>.md` 或 `explainer-b-interaction-<slug>.md`
+文件名：`explainer-b-interaction-<slug>.md`
 
 模板：读取 `templates/interaction.md`
 
 ## 差异文件结构
 
-文件名：`explainer-c-gap-<slug>.md` 或 `explainer-b-gap-<slug>.md`
+文件名：`explainer-b-gap-<slug>.md`
 
 仅在发现差异时产出。模板：读取 `templates/gap.md`
 

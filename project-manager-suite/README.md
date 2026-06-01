@@ -31,14 +31,15 @@
 - 给宿主项目提供可持续回写和滚动推进机制
 - 给不同 AI IDE 和不同宿主项目提供可迁移的协作协议
 
-从产品能力抽象来看，`project-manager-suite` 可以概括为 4 个相互配合的层：
+从产品能力抽象来看，`project-manager-suite` 可以概括为 5 个相互配合的层：
 
 - **需求接入层**：由 `ai-project-manager` 接住模糊需求，完成最小访谈、项目画像建立和骨架补齐
+- **既有项目接入层**：由 `project-baseline-auditor` 基于已有代码补齐项目画像线索，并诊断 BRD / 页面说明 / foundation / PRD 缺口
 - **持续记忆底座**：由项目画像、全局规则、执行计划和状态回写共同构成，让 AI 能跨轮恢复上下文
 - **工程化流程编排层**：按阶段判断、最小交付物控制、能力路由和人工确认节点推进开发落地，避免 AI 失控扩写
 - **专业执行层**：由需求、UI/UX、PRD、计划、研发、测试、验收等子能力承接具体交付
 
-这 4 层叠加后的产品价值，不是多几个 prompt 或多几份文档模板，而是把项目从启动到交付收口的过程做成可持续运行的 AI 开发助手系统。
+这 5 层叠加后的产品价值，不是多几个 prompt 或多几份文档模板，而是把项目从启动到交付收口的过程做成可持续运行的 AI 开发助手系统。
 
 ## 安装与使用
 
@@ -120,12 +121,13 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 
 ```text
 项目画像
+→（已有代码接入时）project-baseline-auditor 生成画像草稿与关键文件缺口清单
 → 需求清单
 → 业务需求文档
 → page-chief
 → 页面代码 / 页面交付清单
 → 人工确认页面
-→ page-explainer 冻结交互语义 / 权限 / gap 收口
+→ page-explainer 冻结流程与交互语义 / gap 收口
 → prd-chief
 → 术语表 / Schema / API / foundation 交付清单
 → 功能列表 / 主 PRD / 子 PRD
@@ -140,7 +142,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 其中 **S2 页面设计、技术地基与完整版 PRD** 阶段有一条硬约束：
 
 - 先进入 `page-chief`，由其调度 `page-designer` 产出页面代码与页面交付清单
-- 用户确认页面方向后，仍留在 `page-chief` 链路内，继续调用 `page-explainer` 冻结交互语义、权限矩阵并收口 gap
+- 用户确认页面方向后，仍留在 `page-chief` 链路内，继续调用 `page-explainer` 冻结流程与交互语义并收口 gap
 - 只有页面环节被 `page-chief` 判定 DONE 后，才允许切换到 `prd-chief`
 - 进入 `prd-chief` 后，必须先调用 `foundation-builder` 产出术语表 / Schema / API
 - 只有在 foundation 完成后，才允许调用 `prd-writer` 反推并沉淀完整 PRD
@@ -159,29 +161,35 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 
 从 skill 角色来看，当前主链路中的能力可以先分成 3 类：
 
-- **流程调度型**：`ai-project-manager`、`page-chief`、`prd-chief`，负责识别上下文、判断阶段、控制页面环节与 PRD 环节的正式接管顺序
-- **阶段交付型**：`brd-writer`、`page-designer`、`page-explainer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-test-case-generator`、`test-case-runner`、`security-scan`，负责承接某一阶段的正式交付物，例如 BRD、页面代码、交互语义、技术地基、PRD、开发计划、测试用例、测试结果和上线前安全闸门报告
-- **专项执行型**：`coding-standards`、`project-devlog`，负责研发执行规范、状态回写等专项工作，不承担主流程调度
+- **流程调度型**：`ai-project-manager`、`page-chief`、`prd-chief`、`test-case-chief`，负责识别上下文、判断阶段、控制页面环节、PRD 环节与测试用例环节的正式接管顺序
+- **阶段交付型**：`project-baseline-auditor`、`brd-writer`、`page-designer`、`page-explainer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-acceptance-reviewer`、`test-case-writer`、`test-case-reviewer`、`test-case-runner`、`security-scan`，负责承接某一阶段或接入旁路的正式交付物
+- **专项执行型**：`coding-standards`、`project-devlog`、`project-link-indexer`、`doc-governance`、`test-and-acceptance`，负责研发执行规范、状态回写、文件级索引等专项工作，不承担主流程调度
 
 当前主链路中的能力职责如下：
 
 | 能力 | 主要职责 | 默认介入阶段 |
 |------|----------|--------------|
 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
+| `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单 | S0.5 |
 | `brd-writer` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
 | `page-chief` | 观察页面环节文件状态，调度 `page-designer -> page-explainer` 并控制是否回环 | S2 页面环节 |
-| `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单和中间文件 | S2 首轮 |
-| `page-explainer` | 基于页面代码沉淀流程、交互语义、权限矩阵与 gap 文件，并完成页面环节收口 | S2 页面确认后 |
+| `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单 | S2 首轮 |
+| `page-explainer` | 基于页面代码沉淀流程、交互语义与 gap 文件，并完成页面环节收口 | S2 页面确认后 |
 | `prd-chief` | 在页面环节收口后调度 `foundation-builder -> prd-writer`，控制 PRD 环节推进 | S2 PRD 环节 |
 | `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面环节收口后 |
 | `prd-writer` | 基于页面与 foundation 产物沉淀 AI 可编码 PRD | S2 foundation 完成后 |
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
-| `prd-test-case-generator` | 根据 PRD 生成结构化测试用例 | S5 |
-| `test-case-runner` | 按测试用例文档执行 API / UI / 管理台测试并生成报告 | S6 |
-| `security-scan` | 在生产放行前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
+| `test-case-chief` | 调度 `prd-acceptance-reviewer -> test-case-writer -> test-case-reviewer`，控制验收 + 测试用例环节推进 | S5 |
+| `prd-acceptance-reviewer` | 把子 PRD §X.6 验收条目拉齐为独立验收文档 | S5 验收文档 |
+| `test-case-writer` | 基于验收文档产出按业务域组织的测试用例 + SQL 数据准备 | S5 测试用例 |
+| `test-case-reviewer` | 核查 TC 质量，原地修正或写入待裁定问题清单 | S5 TC 核查 |
+| `test-case-runner` | 按测试用例文档执行 API / UI 测试并生成报告 | S6 |
+| `security-scan` | 在完工前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
 | `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | 验收阶段 |
+| `doc-governance` | 文档治理 advisory（不强制载入流水线） | 按需 |
 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
+| `project-link-indexer` | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物 | 全阶段伴随 |
 
 ## 套件目录结构
 
@@ -203,23 +211,28 @@ project-manager-suite/
 │   │   ├── references/
 │   │   │   ├── core/              # 运行协议、全局文件协议、路由与骨架规则
 │   │   │   ├── rules/             # 前端/后端/数据库/调试等专项规则
-│   │   │   ├── defaults/          # 默认技术栈与其他默认参数
-│   │   │   └── _archive/          # 历史版本与废弃草案，不参与当前运行
+│   │   │   └── defaults/          # 默认技术栈与其他默认参数
 │   │   └── assets/global-files/   # 全局文件默认骨架（画像、计划等）
+│   ├── project-baseline-auditor/  # [子能力] 既有项目画像与关键文件缺口诊断
 │   ├── coding-standards/          # [子能力] 编码规范与研发执行
 │   ├── brd-writer/                # [子能力] 业务需求文档 / BRD 收敛
 │   ├── page-chief/                # [子能力] S2 页面环节调度
 │   ├── page-designer/             # [子能力] 页面设计（内置设计知识库 + BM25 搜索）
-│   ├── page-explainer/            # [子能力] 页面交互语义、权限与 gap 收口
+│   ├── page-explainer/            # [子能力] 页面交互语义与 gap 收口
 │   ├── prd-chief/                 # [子能力] S2 PRD 环节调度
 │   ├── foundation-builder/        # [子能力] 术语表 / Schema / API 技术地基设计
 │   ├── prd-writer/                # [子能力] 基于页面与 foundation 的 PRD 反推
 │   ├── delivery-planner/          # [子能力] 任务拆解与交付规划
-│   ├── prd-test-case-generator/   # [子能力] PRD 驱动测试用例生成
+│   ├── test-case-chief/           # [子能力] S5 验收 + 测试用例环节调度
+│   ├── prd-acceptance-reviewer/   # [子能力] 验收文档拉齐
+│   ├── test-case-writer/          # [子能力] 测试用例编写
+│   ├── test-case-reviewer/        # [子能力] 测试用例核查
 │   ├── test-case-runner/          # [子能力] 测试用例执行
-│   ├── security-scan/             # [子能力] 上线前固定安全闸门扫描
+│   ├── security-scan/             # [子能力] 完工前固定安全闸门扫描
 │   ├── test-and-acceptance/       # [子能力] 验收收口
-│   └── project-devlog/            # [子能力] 日志与状态回写
+│   ├── doc-governance/            # [子能力] 文档治理 advisory
+│   ├── project-devlog/            # [子能力] 日志与状态回写
+│   └── project-link-indexer/      # [子能力] 文件级引用索引与 LLM wiki 导航
 ├── tests/                         # 工具链与协议对齐测试
 └── tools/                         # 宿主初始化、校验、规则同步、日志回写、安装套件等脚本
 ```
@@ -286,10 +299,6 @@ project-manager-suite/
 - `references/core/routing.md`：定义阶段路由与项目骨架补齐规则
 - `references/rules/*.md`：定义前端、后端、数据库、调试、文档等专项规则
 - `references/defaults/tech-stack.md`：定义默认技术栈参数，供主入口和子能力在未有宿主项目明确技术栈时按需引用
-
-补充说明：
-
-- `references/_archive/` 只用于保留历史版本、迁移草案和旧设计，不应作为当前运行时的读取入口
 
 </details>
 

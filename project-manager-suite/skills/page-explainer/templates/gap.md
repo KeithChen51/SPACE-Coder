@@ -1,4 +1,4 @@
-# <C端/B端> 交互差异 - <项目名称>
+# 页面交互差异 - <项目名称>
 
 > 生成时间: YYYY-MM-DD HH:MM
 > Skill: page-explainer

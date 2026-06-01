@@ -102,7 +102,7 @@ reviewer 的职责到"用固定结论值写清楚本轮终态"为止。下游（
 **Phase 5：产出 issues + 自检**
 按 `references/phase-verification.md` §4 的规范写 `tc-reviews/<日期>-issues.md`；对照 `references/verification-check.md` §2 / §3 做问题记录 / 结论字段 / 命名规范自检；写入明确的本轮终态结论；向用户展示 issues 文件路径——后续由用户或调度层决定下一步动作，不在本 skill 职责范围。
 
-## 5. 权限边界
+## 5. 写入边界
 
 | 能做 | 不能做 |
 |---|---|

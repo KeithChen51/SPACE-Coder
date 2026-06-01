@@ -132,8 +132,8 @@ function cmdProgress(ledger) {
   //   2. open_fields === 0
   //   3. unresolved_conflicts === 0
   //   4. EITHER: d5_state.last_result === null (never triggered)
-  //      OR: d5_state.last_result === 'failed' AND d5_state.fields_changed_since_last_d5 === true
-  // NOT triggered when last_result === 'passed' (regardless of field changes).
+  //      OR: d5_state.fields_changed_since_last_d5 === true
+  // A previous pass stays valid only while no locked fields changed after that D.5 run.
   let shouldTriggerD5 = false;
   if (
     currentPhase === 'C' &&
@@ -143,10 +143,9 @@ function cmdProgress(ledger) {
     const { last_result, fields_changed_since_last_d5 } = d5State;
     if (last_result === null) {
       shouldTriggerD5 = true;
-    } else if (last_result === 'failed' && fields_changed_since_last_d5 === true) {
+    } else if (fields_changed_since_last_d5 === true) {
       shouldTriggerD5 = true;
     }
-    // last_result === 'passed' → never trigger, even with changes
   }
 
   return {

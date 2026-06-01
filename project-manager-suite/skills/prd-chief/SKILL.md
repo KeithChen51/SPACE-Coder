@@ -37,8 +37,7 @@ prd-chief 检查前置文件是否存在。Stage 2 以后会读取产物内容�
 | page-designer | `page-delivery-<slug>.md` | 是 | 确认页面环节已完成 |
 | page-designer | delivery 中列出的页面代码文件 | 是 | 确认页面代码存在 |
 | page-explainer | `explainer-flow-<slug>.md` | 是 | 确认交互语义已产出 |
-| page-explainer | `explainer-*-interaction-<slug>.md` | 是 | 确认交互描述存在（按项目类型） |
-| page-explainer | `explainer-b-permission-<slug>.md` | 是 | 确认权限矩阵存在 |
+| page-explainer | `explainer-b-interaction-<slug>.md` | 是 | 确认交互描述存在 |
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引，作为 page-explainer 环节完工标志 |
 
 目录读取口径：
@@ -107,19 +106,18 @@ START
 
 重建 page-chief 的出口条件，确认页面环节已真正收口：
 
-1. 从 BRD 头部读取 `是否包含 C 端页面`（是/否），记录为 `has_c_end`
-2. 检查文件存在性：
+1. 检查文件存在性：
    - `docs/brd/` 中的 `BRD-<slug>-*.md`
    - `src/frontend/page-preview/` 中的 `page-delivery-<slug>.md` + delivery 中列出的页面代码文件（位于项目根级工程目录）
    - `src/frontend/page-preview/` 中的 `explainer-flow-<slug>.md`
-   - `src/frontend/page-preview/` 中的 `explainer-b-interaction-<slug>.md` + `explainer-b-permission-<slug>.md`
-   - 包含 C 端页面时额外：`src/frontend/page-preview/` 中的 `explainer-c-interaction-<slug>.md`
-3. 检查内容合格性：
-   - 所有 interaction 文件中的语义条目 status 是否全部为 `locked`
-   - 若存在 gap 文件（`explainer-*-gap-<slug>.md`），是否无 `design_gap` / `logic_conflict` 未解决条目
-4. 任一文件缺失 → **中止**，输出：`请先完成 <缺失文件对应的上游 skill>`
-5. 存在 `open` 语义条目或未解决 gap → **中止**，输出：`页面环节尚未收口，请先完成 page-explainer`
-6. 全部通过 → 进入 Stage 2
+   - `src/frontend/page-preview/` 中的 `explainer-b-interaction-<slug>.md`
+   - `src/frontend/page-preview/` 中的 `explainer-delivery-<slug>.md`
+2. 检查内容合格性：
+   - interaction 文件中的语义条目 status 是否全部为 `locked`
+   - 若存在 gap 文件（`explainer-b-gap-<slug>.md`），是否无 `design_gap` / `logic_conflict` 未解决条目
+3. 任一文件缺失 → **中止**，输出：`请先完成 <缺失文件对应的上游 skill>`
+4. 存在 `open` 语义条目或未解决 gap → **中止**，输出：`页面环节尚未收口，请先完成 page-explainer`
+5. 全部通过 → 进入 Stage 2
 
 ### Stage 2: foundation-builder
 

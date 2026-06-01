@@ -15,9 +15,9 @@
  *   （delivery-planner 专属前置脚本，不属于全局 tools/）
  *
  * Purpose:
- *   Scan the host project's docs/prd/ directory and discover upstream PRD +
- *   foundation documents that delivery-planner must ingest before drafting
- *   a development plan.
+ *   Scan the host project's docs/prd/ directory plus src/frontend/page-preview/
+ *   and discover upstream PRD + foundation + page explainer documents that
+ *   delivery-planner must ingest before drafting a development plan.
  *
  *   Supports two modes:
  *     - pipeline mode: precise matching based on PIPELINE.md naming conventions
@@ -28,7 +28,7 @@
  *     - prdFeatureList – prd-feature-list-<slug>.md
  *     - prdChildren  – all other prd-<slug>-<block>.md sub-documents
  *     - foundations  – foundation-{glossary,schema,api,delivery}-<slug>.md
- *     - explainers   – explainer-{flow,*-interaction,*-permission,*-gap}-<slug>.md
+ *     - explainers   – explainer-{flow,*-interaction,*-gap,delivery}-<slug>.md
  *     - missingExpected – files that SHOULD exist per PIPELINE.md but don't
  *     - warnings     – soft issues (naming irregularities, large files, etc.)
  *
@@ -43,11 +43,15 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 /** File size threshold (bytes) above which we add a warning. */
 const LARGE_FILE_THRESHOLD = 40_000;
+const PAGE_PREVIEW_DIR = path.join('src', 'frontend', 'page-preview');
 
 /**
  * Precise patterns – compiled from PIPELINE.md naming conventions.
@@ -56,15 +60,15 @@ const LARGE_FILE_THRESHOLD = 40_000;
 const PATTERNS = {
     prdMain:            /^prd-main-(?<slug>[a-z0-9-]+)\.md$/,
     prdFeatureList:     /^prd-feature-list-(?<slug>[a-z0-9-]+)\.md$/,
-    prdChild:           /^prd-(?!main-|feature-list-)(?<slug>[a-z0-9-]+)-(?<block>[a-z0-9-]+)\.md$/,
+    prdChild:           /^prd-(?!main-|feature-list-)(?<slug>[a-z0-9-]+)-(?<block>[^/.]+)\.md$/u,
     foundationGlossary: /^foundation-glossary-(?<slug>[a-z0-9-]+)\.md$/,
     foundationSchema:   /^foundation-schema-(?<slug>[a-z0-9-]+)(?:-part\d+)?\.md$/,
     foundationApi:      /^foundation-api-(?<slug>[a-z0-9-]+)(?:-part\d+)?\.md$/,
     foundationDelivery: /^foundation-delivery-(?<slug>[a-z0-9-]+)\.md$/,
     explainerFlow:       /^explainer-flow-(?<slug>[a-z0-9-]+)\.md$/,
     explainerInteraction:/^explainer-(?<side>[a-z]+)-interaction-(?<slug>[a-z0-9-]+)\.md$/,
-    explainerPermission: /^explainer-(?<side>[a-z]+)-permission-(?<slug>[a-z0-9-]+)\.md$/,
     explainerGap:        /^explainer-(?<side>[a-z]+)-gap-(?<slug>[a-z0-9-]+)\.md$/,
+    explainerDelivery:   /^explainer-delivery-(?<slug>[a-z0-9-]+)\.md$/,
 };
 
 /**
@@ -81,8 +85,8 @@ const FALLBACK_KEYWORDS = {
         titlePatterns: [/数据库/i, /Schema/i, /API/i, /接口设计/i, /术语表/i, /Glossary/i, /数据模型/i],
     },
     explainer: {
-        filePatterns: [/flow/i, /流程/i, /interaction/i, /交互/i, /permission/i, /权限/i, /explainer/i],
-        titlePatterns: [/用户流程/i, /交互/i, /权限/i, /User Flow/i, /Interaction/i, /Permission/i],
+        filePatterns: [/flow/i, /流程/i, /interaction/i, /交互/i, /gap/i, /差异/i, /delivery/i, /交付/i, /explainer/i],
+        titlePatterns: [/用户流程/i, /交互/i, /差异/i, /交付/i, /User Flow/i, /Interaction/i, /Gap/i, /Delivery/i],
     },
 };
 
@@ -137,6 +141,54 @@ function parseArgs(argv) {
 function readDocsDir(docsPath) {
     if (!fs.existsSync(docsPath)) return [];
     return fs.readdirSync(docsPath).filter((name) => name.endsWith('.md'));
+}
+
+/**
+ * 拆分产物（PIPELINE.md「产物拆分约定」）：主文件 `<name>.md` 旁存在同名子目录 `<name>/`，
+ * 权威内容在子目录下的 *.md。枚举这些子文件，使下游读取清单完整。
+ * 与 coding-standards/verify-task-context.mjs 同口径：拆分子文件按 <docsDir>/<name>/<sub>.md 定位。
+ */
+function enumerateSplitSubfiles(docsPath, indexFilename) {
+    const subdir = indexFilename.replace(/\.md$/, '');
+    const subdirPath = path.join(docsPath, subdir);
+    try {
+        if (!fs.statSync(subdirPath).isDirectory()) return [];
+    } catch {
+        return []; // 无同名子目录 → 单文件模式
+    }
+    return fs.readdirSync(subdirPath)
+        .filter((name) => name.endsWith('.md'))
+        .map((name) => {
+            const abs = path.join(subdirPath, name);
+            let stat;
+            try {
+                stat = fs.statSync(abs);
+            } catch {
+                return null; // 损坏的符号链接等无法 stat 的条目 → 跳过，不让整次发现崩溃
+            }
+            if (!stat.isFile()) return null; // 名字像 *.md 的目录/符号链接不是权威子文件
+            return {
+                filename: path.join(subdir, name),
+                path: abs,
+                sizeBytes: stat.size,
+                isLarge: stat.size > LARGE_FILE_THRESHOLD,
+            };
+        })
+        .filter(Boolean);
+}
+
+function mergePagePreviewExplainers(classified, pagePreviewClassified) {
+    if (!classified.explainerFlow && pagePreviewClassified.explainerFlow) {
+        classified.explainerFlow = pagePreviewClassified.explainerFlow;
+    }
+    if (!classified.explainerDelivery && pagePreviewClassified.explainerDelivery) {
+        classified.explainerDelivery = pagePreviewClassified.explainerDelivery;
+    }
+
+    classified.explainerInteraction.push(...pagePreviewClassified.explainerInteraction);
+    classified.explainerGap.push(...pagePreviewClassified.explainerGap);
+
+    return classified;
 }
 
 function fileMeta(docsPath, filename) {
@@ -194,8 +246,8 @@ function classifyFiles(files, docsPath) {
         foundationDelivery: null,
         explainerFlow: null,
         explainerInteraction: [],
-        explainerPermission: [],
         explainerGap: [],
+        explainerDelivery: null,
         unrecognized: [],
     };
 
@@ -228,13 +280,13 @@ function classifyFiles(files, docsPath) {
 
         if (PATTERNS.foundationSchema.test(filename)) {
             const slug = filename.match(PATTERNS.foundationSchema).groups.slug;
-            result.foundationSchema.push({ ...meta, slug, title: extractTitle(meta.path) });
+            result.foundationSchema.push({ ...meta, slug, title: extractTitle(meta.path), subfiles: enumerateSplitSubfiles(docsPath, filename) });
             continue;
         }
 
         if (PATTERNS.foundationApi.test(filename)) {
             const slug = filename.match(PATTERNS.foundationApi).groups.slug;
-            result.foundationApi.push({ ...meta, slug, title: extractTitle(meta.path) });
+            result.foundationApi.push({ ...meta, slug, title: extractTitle(meta.path), subfiles: enumerateSplitSubfiles(docsPath, filename) });
             continue;
         }
 
@@ -256,15 +308,15 @@ function classifyFiles(files, docsPath) {
             continue;
         }
 
-        if (PATTERNS.explainerPermission.test(filename)) {
-            const m = filename.match(PATTERNS.explainerPermission);
-            result.explainerPermission.push({ ...meta, slug: m.groups.slug, side: m.groups.side, title: extractTitle(meta.path) });
-            continue;
-        }
-
         if (PATTERNS.explainerGap.test(filename)) {
             const m = filename.match(PATTERNS.explainerGap);
             result.explainerGap.push({ ...meta, slug: m.groups.slug, side: m.groups.side, title: extractTitle(meta.path) });
+            continue;
+        }
+
+        if (PATTERNS.explainerDelivery.test(filename)) {
+            const slug = filename.match(PATTERNS.explainerDelivery).groups.slug;
+            result.explainerDelivery = { ...meta, slug, title: extractTitle(meta.path) };
             continue;
         }
 
@@ -418,11 +470,11 @@ function collectWarnings(classified) {
         classified.foundationGlossary,
         classified.foundationDelivery,
         classified.explainerFlow,
+        classified.explainerDelivery,
         ...classified.foundationSchema,
         ...classified.foundationApi,
         ...classified.prdChildren,
         ...classified.explainerInteraction,
-        ...classified.explainerPermission,
         ...classified.explainerGap,
     ]
         .filter(Boolean)
@@ -442,6 +494,21 @@ function collectWarnings(classified) {
             code: 'unrecognized_docs',
             message: '以下 .md 文件不符合 PIPELINE.md 命名约定，无法自动分类，请手动确认是否需要纳入读取范围',
             files: classified.unrecognized,
+        });
+    }
+
+    const splitSubfiles = [
+        ...classified.foundationSchema,
+        ...classified.foundationApi,
+    ]
+        .flatMap((f) => f.subfiles || [])
+        .map((s) => s.filename);
+
+    if (splitSubfiles.length > 0) {
+        warnings.push({
+            code: 'split_subfiles_detected',
+            message: '检测到拆分产物同名子目录：主文件仅为索引，下游必须读入以下全部子文件作为权威来源（PIPELINE.md 产物拆分约定）',
+            files: splitSubfiles,
         });
     }
 
@@ -483,8 +550,8 @@ function buildPipelineOutput({ hostRoot, docsPath, classified, missingExpected, 
     const explainers = [
         classified.explainerFlow,
         ...classified.explainerInteraction,
-        ...classified.explainerPermission,
         ...classified.explainerGap,
+        classified.explainerDelivery,
     ].filter(Boolean);
 
     const slug =
@@ -532,14 +599,16 @@ function buildPipelineOutput({ hostRoot, docsPath, classified, missingExpected, 
             title: f.title,
             sizeBytes: f.sizeBytes,
             isLarge: f.isLarge,
+            // 拆分模式：主文件仅为索引，子文件才是权威来源，必须纳入读取清单。
+            subfiles: (f.subfiles || []).map((s) => ({ path: s.path, sizeBytes: s.sizeBytes, isLarge: s.isLarge })),
         })),
         explainers: explainers.map((f) => ({
             path: f.path,
             type: (() => {
                 if (PATTERNS.explainerFlow.test(f.filename)) return 'flow';
                 if (PATTERNS.explainerInteraction.test(f.filename)) return `${f.side}-interaction`;
-                if (PATTERNS.explainerPermission.test(f.filename)) return `${f.side}-permission`;
                 if (PATTERNS.explainerGap.test(f.filename)) return `${f.side}-gap`;
+                if (PATTERNS.explainerDelivery.test(f.filename)) return 'delivery';
                 return 'unknown';
             })(),
             title: f.title,
@@ -625,6 +694,10 @@ function formatPipelineReport(output, verbose) {
         for (const f of output.foundations) {
             const sizeTag = f.isLarge ? ` ⚠️(${(f.sizeBytes / 1024).toFixed(1)} KB)` : '';
             lines.push(`  ✅ [${f.type}] ${f.path}${sizeTag}`);
+            for (const s of f.subfiles ?? []) {
+                const subTag = s.isLarge ? ` ⚠️(${(s.sizeBytes / 1024).toFixed(1)} KB)` : '';
+                lines.push(`       └─ 拆分子文件（必读）: ${s.path}${subTag}`);
+            }
         }
     }
     lines.push('');
@@ -746,9 +819,17 @@ function main() {
     }
 
     const files = readDocsDir(docsPath);
+    const pagePreviewPath = path.join(hostRoot, PAGE_PREVIEW_DIR);
+    const pagePreviewFiles =
+        path.resolve(pagePreviewPath) === path.resolve(docsPath)
+            ? []
+            : readDocsDir(pagePreviewPath);
 
     // Step 1: try pipeline mode (precise matching)
     const classified = classifyFiles(files, docsPath);
+    if (pagePreviewFiles.length > 0) {
+        mergePagePreviewExplainers(classified, classifyFiles(pagePreviewFiles, pagePreviewPath));
+    }
 
     // Step 2: check if pipeline mode found any PRD hits
     if (hasPipelineHits(classified)) {
@@ -776,7 +857,7 @@ function main() {
     }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     try {
         main();
     } catch (err) {

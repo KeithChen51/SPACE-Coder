@@ -8,6 +8,10 @@
  * - tools/bootstrap-host.mjs
  */
 const routeTargets = {
+    'S0.5': {
+        skill: 'project-baseline-auditor',
+        exclusiveDeliverable: true
+    },
     S1: {
         skill: 'brd-writer',
         exclusiveDeliverable: true
@@ -29,7 +33,8 @@ const routeTargets = {
         exclusiveDeliverable: true
     },
     S5: {
-        skill: 'prd-test-case-generator',
+        skill: 'test-case-chief',
+        internalSkills: ['prd-acceptance-reviewer', 'test-case-writer', 'test-case-reviewer'],
         exclusiveDeliverable: true
     },
     S6: {
@@ -50,7 +55,12 @@ const gatingRules = {
     },
     pageTaskRequired: {
         description: '页面任务进入 S2 前必须补齐页面任务必补字段包',
-        fields: ['coverage_scope', 'page_primary_user', 'page_primary_purpose', 'page_design_tag'],
+        fields: ['coverage_scope', 'page_primary_user', 'page_primary_purpose', 'page_positioning_tag'],
+        blockOnMissing: true
+    },
+    brdReadyForPage: {
+        description: '进入 S2 页面工作前，BRD 权威文档必须已经存在',
+        evidence: ['brd_exists'],
         blockOnMissing: true
     },
     pageStageClosedForPrd: {
@@ -69,9 +79,14 @@ const gatingRules = {
         evidence: ['full_prd_exists'],
         blockOnMissing: true
     },
+    foundationReadyForDevelopmentPlan: {
+        description: '进入 S3 前，foundation-builder 的交付清单与其声明文件必须已准备好',
+        evidence: ['foundation_delivery_exists', 'foundation_artifact_files_exist'],
+        blockOnMissing: true
+    },
     developmentPlanReady: {
-        description: '进入 S4 前，开发计划必须明确',
-        evidence: ['development_plan_exists'],
+        description: '进入 S4 前，开发计划必须存在且通过结构校验',
+        evidence: ['development_plan_exists', 'development_plan_structure_valid'],
         blockOnMissing: true
     },
     buildAvailableForValidation: {
@@ -85,7 +100,7 @@ const gatingRules = {
         blockOnMissing: true
     },
     securityScanReady: {
-        description: '进入 S7 前，应至少具备测试执行证据，并已进入发布前安全闸门语境',
+        description: '进入 S7 前，应至少具备测试执行证据，并已进入完工前安全闸门语境',
         evidence: ['test_execution_reports_exist', 'release_gate_signal_present'],
         blockOnMissing: true
     },
@@ -93,30 +108,33 @@ const gatingRules = {
         description: '当前阶段变化时，必须先完成阶段切换日志回写，再进入子能力',
         evidence: ['stage_transition_logged'],
         blockOnMissing: true
+    },
+    projectBaselineAuditReady: {
+        description: '既有项目接入时，必须先读取 baseline-audit 清单再路由到补档 skill',
+        evidence: ['baseline_audit_json_exists'],
+        blockOnMissing: true
     }
 };
 
-const pageDesignTagRules = [
+const pagePositioningTagRules = [
     {
         when: {
-            page_primary_user: ['车主', '客户', '终端用户', '会员', '消费者']
+            page_primary_purpose: ['业务处理']
         },
-        result: 'C端'
+        result: '操作'
     },
     {
         when: {
-            audience: 'internal',
-            page_primary_purpose: ['业务处理', '内容展示']
-        },
-        result: 'B端'
-    },
-    {
-        when: {
-            audience: 'internal',
             page_primary_purpose: ['系统管理']
         },
-        result: '后台'
+        result: '配置'
+    },
+    {
+        when: {
+            page_primary_purpose: ['内容展示']
+        },
+        result: '查看'
     }
 ];
 
-export { routeTargets, gatingRules, pageDesignTagRules };
+export { routeTargets, gatingRules, pagePositioningTagRules };

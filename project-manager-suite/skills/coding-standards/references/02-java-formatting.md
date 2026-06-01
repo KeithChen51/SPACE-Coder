@@ -61,7 +61,7 @@
      * @return
      */
     ```
-20. 【强制】TODO / FIXME 注释必须使用统一格式：`// TODO [负责人 YYYY-MM-DD] 具体内容`。上线前必须清零所有 TODO，FIXME 必须在当前迭代内解决。
+20. 【强制】TODO / FIXME 注释必须使用统一格式：`// TODO [负责人 YYYY-MM-DD] 具体内容`。完工前必须清零所有 TODO，FIXME 必须在当前迭代内解决。
     ```java
     // TODO [张三 2026-04-01] 当前为硬编码阈值，后续从配置中心读取
     // FIXME [李四 2026-03-30] 并发场景下存在重复扣减问题，需加分布式锁
@@ -76,12 +76,12 @@
     // 判断金额是否小于 500
     if (amount.compareTo(new BigDecimal("500")) < 0) { ... }
     ```
-22. 【推荐】Controller 方法的 Javadoc 至少包含：功能摘要、对应前端页面或按钮（如有）、特殊权限要求（如有）。
+22. 【推荐】Controller 方法的 Javadoc 至少包含：功能摘要、对应前端页面或按钮（如有）、关键业务前置条件（如有）。
     ```java
     /**
      * 导出设备巡检报表（Excel）。
      * <p>前端入口：设备管理 → 巡检记录 → 导出按钮</p>
-     * <p>权限：需要 ROLE_INSPECTOR 或 ROLE_ADMIN</p>
+     * <p>前置条件：当前用户已选择巡检批次</p>
      *
      * @param query 查询条件
      * @param response HttpServletResponse，用于写出文件流

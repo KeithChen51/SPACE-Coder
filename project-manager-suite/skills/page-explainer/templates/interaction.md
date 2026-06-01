@@ -1,4 +1,4 @@
-# <C端/B端> 交互描述 - <项目名称>
+# 交互描述 - <项目名称>
 
 > 生成时间: YYYY-MM-DD HH:MM
 > Skill: page-explainer
@@ -50,7 +50,7 @@
 > **`order-list.filter.status-dropdown.1`** `open`
 >
 > - **元素**: 筛选栏 → 状态下拉框
-> - **角色**: 运营人员 | **权限**: all
+> - **角色**: 运营人员
 > - **前置条件**: none
 > - **触发**: 选择
 > - **系统行为**: 按所选状态筛选列表
@@ -61,9 +61,9 @@
 <details>
 <summary>机读表（下游消费）</summary>
 
-| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | permission | fallback | status |
-|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|------------|----------|--------|
-| order-list.filter.status-dropdown.1 | 运营人员 | /admin/orders | 筛选栏 | 状态下拉框 | none | 选择 | 按所选状态筛选列表 | 列表刷新，仅显示该状态的订单 | none | all | 空数据态: 显示「暂无该状态的订单」 | open |
+| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | fallback | status |
+|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|----------|--------|
+| order-list.filter.status-dropdown.1 | 运营人员 | /admin/orders | 筛选栏 | 状态下拉框 | none | 选择 | 按所选状态筛选列表 | 列表刷新，仅显示该状态的订单 | none | 空数据态: 显示「暂无该状态的订单」 | open |
 
 </details>
 
@@ -82,9 +82,9 @@
 <details>
 <summary>机读表（下游消费）</summary>
 
-| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | permission | fallback | status |
-|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|------------|----------|--------|
-| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | fallback | status |
+|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|----------|--------|
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
 
 </details>
 

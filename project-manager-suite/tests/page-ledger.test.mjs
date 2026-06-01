@@ -57,30 +57,15 @@ function runCliExpectFailure(scriptName, ...args) {
     }
 }
 
-function createHostWithBrd({
-    slug = 'demo-project',
-    timestamp = '20260416-0900',
-    includeRootFallback = false
-} = {}) {
-    const hostRoot = makeTempDir('page-ledger-host-');
-    const brdFilename = `BRD-${slug}-${timestamp}.md`;
-    const brdPath = includeRootFallback
-        ? path.join(hostRoot, brdFilename)
-        : path.join(hostRoot, 'docs', 'brd', brdFilename);
-
-    writeFile(
-        brdPath,
-        `# BRD\n\n- 项目名称：演示项目\n- 是否包含 C 端页面：是\n- slug：${slug}\n`
-    );
-
+function createHostWithBrd({ withDocsBrd = true } = {}) {
+    const hostRoot = makeTempDir('page-ledger-');
+    const slug = 'demo';
+    const brdFilename = `BRD-${slug}-20260408-1000.md`;
+    const brdPath = withDocsBrd
+        ? path.join(hostRoot, 'docs', 'brd', brdFilename)
+        : path.join(hostRoot, brdFilename);
+    writeFile(brdPath, `# BRD: demo\n`);
     return { hostRoot, brdPath, slug };
-}
-
-function writeEntities(hostRoot, slug) {
-    writeFile(
-        path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-spec-entities-${slug}.md`),
-        '# Entities\n'
-    );
 }
 
 function writeDelivery(hostRoot, slug) {
@@ -93,233 +78,119 @@ function writeDelivery(hostRoot, slug) {
 test('status returns exists false when ledger is absent', () => {
     const hostRoot = makeTempDir('page-ledger-empty-');
     const result = runCli('page-ledger-query.mjs', 'status', '--host-dir', hostRoot);
-
-    assert.deepEqual(result, { exists: false });
+    assert.equal(result.exists, false);
 });
 
-test('boot creates a new ledger and screenshot directory from docs/brd input', () => {
-    const { hostRoot, brdPath, slug } = createHostWithBrd();
+test('boot creates ledger when BRD exists in docs/brd', () => {
+    const { hostRoot, slug } = createHostWithBrd();
 
     const result = runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-
+    assert.equal(result.success, true);
     assert.equal(result.action, 'created');
     assert.equal(result.phase, 0);
-    assert.equal(result.path, null);
     assert.equal(result.loopRound, 0);
     assert.equal(result.screenshotAsked, false);
-    assert.equal(result.brdFile, brdPath);
 
     const ledgerPath = path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-ledger-${slug}.json`);
     const screenshotDir = path.join(hostRoot, 'src', 'frontend', 'page-preview', 'screenshots');
+    assert.ok(fs.existsSync(ledgerPath));
+    assert.ok(fs.existsSync(screenshotDir));
+
     const ledger = readJson(ledgerPath);
-
-    assert.equal(result.ledgerPath, ledgerPath);
     assert.equal(ledger.slug, slug);
+    assert.equal(ledger.schemaVersion, '2.0.0');
     assert.equal(ledger.phase, 0);
-    assert.equal(ledger.path, null);
-    assert.equal(ledger.screenshotDir, screenshotDir);
-    assert.equal(fs.existsSync(screenshotDir), true);
+    assert.deepEqual(ledger.gapFilesConsumed, []);
 });
 
-test('boot resumes an existing ledger instead of creating a new one', () => {
+test('boot resumes existing ledger without creating new', () => {
     const { hostRoot } = createHostWithBrd();
-
-    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    const resumed = runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-
-    assert.equal(resumed.action, 'resumed');
-    assert.equal(resumed.phase, 0);
+    const first = runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    const second = runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    assert.equal(first.action, 'created');
+    assert.equal(second.action, 'resumed');
+    assert.equal(second.ledgerPath, first.ledgerPath);
 });
 
-test('set-path is idempotent but rejects changing to a different path', () => {
+test('advance to phase 1 requires screenshotAsked first', () => {
     const { hostRoot } = createHostWithBrd();
-
     runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', 'C+B');
-    const second = runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', 'C+B');
-    const failure = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'set-path',
-        '--host-dir',
-        hostRoot,
-        '--path',
-        '纯B'
-    );
 
-    assert.equal(second.path, 'C+B');
-    assert.equal(failure.error, 'path_locked');
-});
-
-test('advance to phase 1 requires path and screenshotAsked first', () => {
-    const { hostRoot } = createHostWithBrd();
-
-    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    const failure = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'advance',
-        '--host-dir',
-        hostRoot,
-        '--to',
-        '1'
-    );
-
+    const failure = runCliExpectFailure('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '1');
+    assert.equal(failure.success, false);
     assert.equal(failure.error, 'precondition_failed');
+    assert.match(failure.message, /screenshot/i);
+
+    runCli('page-ledger-mutate.mjs', 'mark-asked', '--host-dir', hostRoot, '--field', 'screenshot');
+    const result = runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '1');
+    assert.equal(result.success, true);
+    assert.equal(result.phase, 1);
 });
 
-test('can-advance explains why phase 1 cannot be entered yet', () => {
-    const { hostRoot } = createHostWithBrd();
-
-    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    const result = runCli('page-ledger-query.mjs', 'can-advance', '--host-dir', hostRoot, '--to', '1');
-
-    assert.equal(result.canAdvance, false);
-    assert.match(result.reason, /path/i);
-});
-
-test('C+B flow can advance through delivery and then start a loop', () => {
+test('advance follows linear phase graph 0 -> 1 -> 3 -> 4', () => {
     const { hostRoot, slug } = createHostWithBrd();
-
     runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', 'C+B');
     runCli('page-ledger-mutate.mjs', 'mark-asked', '--host-dir', hostRoot, '--field', 'screenshot');
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '1');
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '3');
 
-    const phase4MissingFile = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'advance',
-        '--host-dir',
-        hostRoot,
-        '--to',
-        '4'
-    );
-    assert.equal(phase4MissingFile.error, 'precondition_failed');
-    assert.match(phase4MissingFile.message, /entities file is missing/);
+    // advance to 4 requires delivery file
+    const missingDelivery = runCliExpectFailure('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '4');
+    assert.equal(missingDelivery.error, 'precondition_failed');
+    assert.match(missingDelivery.message, /delivery/i);
 
-    writeEntities(hostRoot, slug);
+    writeDelivery(hostRoot, slug);
+    const result = runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '4');
+    assert.equal(result.phase, 4);
+});
 
-    const phase4MissingApproval = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'advance',
-        '--host-dir',
-        hostRoot,
-        '--to',
-        '4'
-    );
-    assert.equal(phase4MissingApproval.error, 'precondition_failed');
-    assert.match(phase4MissingApproval.message, /entities file has not been approved/);
+test('advance rejects invalid transitions like 0 -> 3', () => {
+    const { hostRoot } = createHostWithBrd();
+    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    runCli('page-ledger-mutate.mjs', 'mark-asked', '--host-dir', hostRoot, '--field', 'screenshot');
 
-    runCli('page-ledger-mutate.mjs', 'mark-approved', '--host-dir', hostRoot, '--field', 'entities');
+    const failure = runCliExpectFailure('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '3');
+    assert.equal(failure.error, 'invalid_transition');
+});
+
+test('start-loop resets to phase 1 from delivered phase 4', () => {
+    const { hostRoot, slug } = createHostWithBrd();
+    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    runCli('page-ledger-mutate.mjs', 'mark-asked', '--host-dir', hostRoot, '--field', 'screenshot');
+    runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '1');
+    runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '3');
+    writeDelivery(hostRoot, slug);
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '4');
-    runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '5');
 
-    const phase6Failure = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'advance',
-        '--host-dir',
-        hostRoot,
-        '--to',
-        '6'
-    );
-    assert.equal(phase6Failure.error, 'precondition_failed');
+    const gapFile = path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-b-gap-${slug}.md`);
+    writeFile(gapFile, '# gap\n');
 
-    writeDelivery(hostRoot, slug);
-    runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '6');
-
-    const loop = runCli(
+    const result = runCli(
         'page-ledger-mutate.mjs',
         'start-loop',
         '--host-dir',
         hostRoot,
         '--gap-files',
-        `${path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-c-gap-${slug}.md`)},${path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-b-gap-${slug}.md`)}`
+        gapFile
     );
-
-    assert.equal(loop.phase, 1);
-    assert.equal(loop.loopRound, 1);
-    assert.equal(loop.entitiesApproved, false);
-
-    const ledger = readJson(path.join(hostRoot, 'src', 'frontend', 'page-preview', `page-ledger-${slug}.json`));
-    assert.equal(ledger.phase, 1);
-    assert.equal(ledger.loopRound, 1);
-    assert.equal(ledger.path, 'C+B');
-    assert.equal(ledger.gapFilesConsumed.length, 2);
-    assert.equal(ledger.entitiesApproved, false);
+    assert.equal(result.success, true);
+    assert.equal(result.phase, 1);
+    assert.equal(result.loopRound, 1);
+    assert.equal(result.gapFilesConsumed.length, 1);
 });
 
-test('mark-approved rejects pure B path because entities file is C+B only', () => {
-    const { hostRoot } = createHostWithBrd({ slug: 'pure-b-approval' });
-
+test('start-loop rejects when phase is not the delivery phase', () => {
+    const { hostRoot } = createHostWithBrd();
     runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', '纯B');
-
-    const failure = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'mark-approved',
-        '--host-dir',
-        hostRoot,
-        '--field',
-        'entities'
-    );
-
-    assert.equal(failure.error, 'invalid_approval');
-});
-
-test('mark-approved refuses when entities file does not exist yet', () => {
-    const { hostRoot } = createHostWithBrd({ slug: 'missing-entities' });
-
-    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', 'C+B');
-
-    const failure = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'mark-approved',
-        '--host-dir',
-        hostRoot,
-        '--field',
-        'entities'
-    );
-
-    assert.equal(failure.error, 'precondition_failed');
-});
-
-test('pure B flow delivers at phase 4 and rejects premature loop start', () => {
-    const { hostRoot, slug } = createHostWithBrd({ slug: 'ops-console' });
-
-    runCli('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
-    runCli('page-ledger-mutate.mjs', 'set-path', '--host-dir', hostRoot, '--path', '纯B');
     runCli('page-ledger-mutate.mjs', 'mark-asked', '--host-dir', hostRoot, '--field', 'screenshot');
     runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '1');
-    runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '3');
 
-    const loopFailure = runCliExpectFailure(
-        'page-ledger-mutate.mjs',
-        'start-loop',
-        '--host-dir',
-        hostRoot,
-        '--gap-files',
-        path.join(hostRoot, 'src', 'frontend', 'page-preview', `explainer-b-gap-${slug}.md`)
-    );
-    assert.equal(loopFailure.error, 'invalid_loop_start');
-
-    writeDelivery(hostRoot, slug);
-    const delivered = runCli('page-ledger-mutate.mjs', 'advance', '--host-dir', hostRoot, '--to', '4');
-
-    assert.equal(delivered.phase, 4);
+    const failure = runCliExpectFailure('page-ledger-mutate.mjs', 'start-loop', '--host-dir', hostRoot);
+    assert.equal(failure.error, 'invalid_loop_start');
 });
 
-test('page-designer and page-chief docs reference the ledger protocol', () => {
-    const pageDesignerSkill = fs.readFileSync(path.join(SUITE_ROOT, 'skills', 'page-designer', 'SKILL.md'), 'utf8');
-    const pageChiefSkill = fs.readFileSync(path.join(SUITE_ROOT, 'skills', 'page-chief', 'SKILL.md'), 'utf8');
-    const pipeline = fs.readFileSync(path.join(SUITE_ROOT, 'PIPELINE.md'), 'utf8');
-
-    assert.match(pageDesignerSkill, /page-ledger-mutate\.mjs boot/);
-    assert.match(pageDesignerSkill, /page-ledger-query\.mjs status/);
-    assert.match(pageDesignerSkill, /loopRound/);
-
-    assert.match(pageChiefSkill, /page-ledger-query\.mjs status/);
-    assert.match(pageChiefSkill, /loopRound/);
-    assert.match(pageChiefSkill, /page-ledger-<slug>\.json/);
-
-    assert.match(pipeline, /page-ledger-<slug>\.json/);
+test('boot fails when BRD is missing entirely', () => {
+    const hostRoot = makeTempDir('page-ledger-no-brd-');
+    const failure = runCliExpectFailure('page-ledger-mutate.mjs', 'boot', '--host-dir', hostRoot);
+    assert.equal(failure.error, 'brd_not_found');
 });

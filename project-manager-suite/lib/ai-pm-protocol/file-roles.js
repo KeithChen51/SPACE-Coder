@@ -33,13 +33,23 @@ const fileRoles = [
     },
     {
         id: FILE_ROLE_IDS.DEVLOG,
-        defaultFileName: 'logs/YYYYMMDD_refactor_log_<actor>.md',
+        defaultFileName: 'logs/YYYYMMDD_refactor_log_<actor>.md 或 logs/YYYY-MM-DD.md',
         defaultPath: 'logs/',
         authorityType: 'ability',
         responsibility: '沉淀本轮动作、产出、结论、风险和下一步建议',
         forbiddenContent: ['rewrite_profile_baseline', 'restate_full_history'],
         readBy: ['ai-project-manager', 'all-child-skills'],
         writtenBy: ['project-devlog', 'execution-unit']
+    },
+    {
+        id: FILE_ROLE_IDS.LINK_INDEX,
+        defaultFileName: 'project-link-graph.json',
+        defaultPath: 'docs/index/project-link-graph.json',
+        authorityType: 'compiled-index',
+        responsibility: '文件级引用关系、坏链诊断、缺回链诊断和 LLM wiki 导航入口',
+        forbiddenContent: ['business_rule_source_of_truth', 'stage_routing_decision', 'task_breakdown_or_test_execution'],
+        readBy: ['ai-project-manager', 'all-child-skills'],
+        writtenBy: ['project-link-indexer']
     }
 ];
 

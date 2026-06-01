@@ -3,9 +3,9 @@ name: test-case-runner
 description: >
   测试用例执行引擎。当用户提到"跑测试""执行测试用例""运行 TC""跑区块""验证用例"
   "测试报告""PASS/FAIL""开始测试""逐条跑"时触发。
-  标准化四段式闭环执行（数据准备→测试→验证→清理），覆盖 API / UI / 管理台闭环三种方式。
+  标准化四段式闭环执行（数据准备→测试→验证→清理），覆盖 API / UI 两种方式。
   只要涉及执行已有测试用例文档、生成测试报告、追踪测试进度，都应使用本 skill。
-  注意：本 skill 负责"执行"，不负责"设计"（设计用 prd-test-case-generator）。
+  注意：本 skill 负责"执行"，不负责"设计"（设计由 test-case-writer 承接，调度由 test-case-chief 负责）。
 ---
 
 # 测试用例执行引擎
@@ -13,7 +13,7 @@ description: >
 本 skill 标准化执行 `docs/test-case/` 下已有的测试用例文档，确保每条用例按完整闭环跑完，结果有据可查。
 
 **权威文档源**：
-- 测试主文档：`docs/test-case/tc-主文档.md`
+- 测试主文档：`docs/test-case/tc-main-<slug>.md`
 - 环境配置：`application.yml`（地址/端口/目录）+ `.env`（仅密码凭证）
 - 项目规则：宿主项目规则文件（如 `project-rules.md`）
 
@@ -23,7 +23,7 @@ description: >
 |------|------|---------|
 | pymysql | 数据准备/清理（执行 SQL） | `pip install pymysql` |
 | expect | SSH 隧道（仅 DB 直连失败时需要） | macOS 自带；Linux: `apt install expect` |
-| Playwright MCP | UI / 管理台用例（浏览器操作） | 在 Claude Code 设置中添加 `@anthropic/mcp-playwright` |
+| Playwright MCP | UI 用例（浏览器操作） | 在 Claude Code 设置中添加 `@anthropic/mcp-playwright` |
 
 ---
 
@@ -33,11 +33,11 @@ description: >
 
 1. **检查必需依赖**：`python3 -c "import pymysql"`
 2. **读取配置**：从 `application.yml` 读地址/端口/目录，从 `.env` 读密码凭证（详见 [references/env-setup.md](references/env-setup.md)）
-3. **验证连通性**：API 返回 200 + DB 可连接 + C 端/管理台可访问
-4. **确认报告目录**：确保 `docs/test-case/reports/{git用户名}/screenshots/` 存在
+3. **验证连通性**：API 返回 200 + DB 可连接 + 前端页面可访问
+4. **确认报告目录**：确保 `docs/test-case/reports/screenshots/` 存在
 
 按需依赖（到用时再检查）：
-- Playwright MCP：第一条 UI/管理台用例开始前检查，阻塞 UI 但不影响 API
+- Playwright MCP：第一条 UI 用例开始前检查，阻塞 UI 但不影响 API
 - `expect`：仅当 pymysql 直连 DB 失败时
 
 初始化通过后宣布："环境初始化完成，依赖/API/DB 均就绪，开始执行用例。"
@@ -46,16 +46,12 @@ description: >
 
 ## 二、用例加载：读取测试文档
 
-| 域 | 路径模式 | 编号前缀 |
-|----|---------|---------|
-| C 端 | `docs/test-case/client/{区块名}/tc-{区块名}.md` | `CTC-` |
-| 管理台 | `docs/test-case/admin/{功能名}/tc-{功能名}.md` | `ATC-` |
+业务域 TC 文件位于 `docs/test-case/{业务域}/tc-{业务域}.md`，编号前缀按域简称生成（如 `TC-<DOMAIN>-`），由 test-case-writer 的 project-conventions 决定。
 
-1. 根据前缀判断域（`CTC-` → client，`ATC-` → admin）
-2. 读取索引文件 + 用例详情文件
-3. 构建执行清单，向用户展示确认
+1. 读取索引文件 + 用例详情文件
+2. 构建执行清单，向用户展示确认
 
-**执行顺序**：先 API（01~09），再 UI（11~19），最后管理台闭环（21~29）。API 先跑是因为接口不对就别验页面。
+**执行顺序**：先 API（01~09），再 UI（11~19）。API 先跑是因为接口不对就别验页面。
 
 ---
 
@@ -84,7 +80,6 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 |---------|---------|---------|
 | API 用例（01~09） | **[references/exec-api.md](references/exec-api.md)** | curl + 逐字段比对 |
 | UI 用例（11~19） | **[references/exec-ui.md](references/exec-ui.md)** | 视口设置 + 截图 + Read 截图验证 |
-| 管理台闭环（21~29） | **[references/exec-admin.md](references/exec-admin.md)** | 桌面视口 + UI 操作 + 严禁绕过界面 + 双截图 |
 
 **⚠️ 这是强制门禁：未读取对应 reference 文件就开始执行 = 流程违规。**
 
@@ -96,7 +91,7 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 |------|--------|
 | 引用 SQL 文件清理段 | 读 SQL 文件，找到清理段执行 |
 | 复用其他用例 | 读被引用的 SQL 清理段执行 |
-| 管理台 UI 操作 | **用浏览器在管理台操作还原**（不能用 SQL） |
+| UI 操作还原 | **用浏览器在配置页面操作还原**（不能用 SQL） |
 | 无需清理 | 跳过（仅当文档明确说无需清理时） |
 
 **清理不可跳过** — 脏数据会导致后续用例产生虚假的 PASS 或 FAIL。
@@ -124,10 +119,10 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 
 | 文件 | 路径 | 模板 |
 |------|------|------|
-| 索引报告 | `reports/{git用户名}/index.md` | [references/report-template.md](references/report-template.md) |
-| 区块报告 | `reports/{git用户名}/测试验收-{区块名}.md` | 同上 |
+| 索引报告 | `reports/index.md` | [references/report-template.md](references/report-template.md) |
+| 区块报告 | `reports/测试验收-{区块名}.md` | 同上 |
 | 缺陷跟踪 | `reports/defects.md`（全项目唯一） | [references/defect-template.md](references/defect-template.md) |
-| 截图 | `reports/{git用户名}/screenshots/测试验收-{区块名}/` | — |
+| 截图 | `reports/screenshots/测试验收-{区块名}/` | — |
 
 > 路径前缀均为 `docs/test-case/`
 
@@ -144,11 +139,11 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 4. **一次一条** — 不合并多条用例的数据准备，隔离性比效率重要
 5. **FAIL 不跳过** — 记录后继续跑下一条，不要停下来修代码
 6. **结果即时写** — 每条跑完立即写入报告，不攒到最后批量写
-7. **测试用户路径，不是接口能力** — 界面操作失败就是 BUG，严禁用 curl/SQL 绕过界面。详见 [references/exec-admin.md](references/exec-admin.md)
+7. **测试用户路径，不是接口能力** — 界面操作失败就是 BUG，严禁用 curl/SQL 绕过界面
 8. **BLOCKED 必须有真依赖** — 多条用例操作同一页面的不同字段不构成依赖，必须独立测试
-9. **切换用例类型时必须读 reference** — 从 API 切到 UI、从 UI 切到管理台，都必须先读对应的 exec-*.md
-10. **测试资产必须原样执行** — 数据准备、步骤、SQL、输入参数必须按用例文档原样执行；若文档/SQL 本身失败或与真实环境不一致，直接记 `FAIL`/缺陷，不得为了“跑通用例”擅自修改 SQL、步骤或测试输入
-11. **UI 执行必须人类可见** — 所有 C 端 UI / 管理台浏览器测试都必须以人类可见的浏览器窗口执行，并让协作中的人类可以同步看到当前页面；不得仅用无头浏览器、后台截图、隐藏窗口或仅 AI 可见的方式直接完成 UI 判定
+9. **切换用例类型时必须读 reference** — 从 API 切到 UI 必须先读对应的 exec-*.md
+10. **测试资产必须原样执行** — 数据准备、步骤、SQL、输入参数必须按用例文档原样执行；若文档/SQL 本身失败或与真实环境不一致，直接记 `FAIL`/缺陷，不得为了"跑通用例"擅自修改 SQL、步骤或测试输入
+11. **UI 执行必须人类可见** — 所有 UI 浏览器测试都必须以人类可见的浏览器窗口执行，并让协作中的人类可以同步看到当前页面；不得仅用无头浏览器、后台截图、隐藏窗口或仅 AI 可见的方式直接完成 UI 判定
 12. **服务器默认不支持批量跑多条** — 除非用例文档或用户明确授权“可批量执行”，否则一律按服务器只支持串行理解；禁止为了提速把 `3` 条或更多用例打包到一次脚本执行中
 13. **单条闭环内也禁止并行** — 即使只跑 1 条用例，也不能把“准备 / 验证 / 清理”拆成并行子任务；串行是证据可信度要求，不只是节奏要求
 
@@ -168,18 +163,17 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 
 ### 测试文档路径
 ```
-docs/test-case/client/{区块名}/tc-{区块名}.md                # 索引
-docs/test-case/client/{区块名}/tc-{区块名}-用例详情.md        # 详情
-docs/test-case/client/{区块名}/sql/CTC-{块缩写}-{NN}.sql     # 用例 SQL
-docs/test-case/client/{区块名}/sql/CTC-{块缩写}-SEED.sql     # 种子数据
-docs/test-case/admin/{功能名}/tc-{功能名}.md                  # 管理台索引
+docs/test-case/{业务域}/tc-{业务域}.md                # 索引
+docs/test-case/{业务域}/tc-{业务域}-用例详情.md       # 详情（超约 200 行时拆出）
+docs/test-case/{业务域}/sql/TC-{域缩写}-{NN}.sql     # 用例 SQL
+docs/test-case/{业务域}/sql/TC-{域缩写}-SEED.sql     # 种子数据
 ```
 
 ### 报告输出路径
 ```
-docs/test-case/reports/{git用户名}/index.md
-docs/test-case/reports/{git用户名}/测试验收-{区块名}.md
-docs/test-case/reports/{git用户名}/screenshots/测试验收-{区块名}/
+docs/test-case/reports/index.md
+docs/test-case/reports/测试验收-{区块名}.md
+docs/test-case/reports/screenshots/测试验收-{区块名}/
 docs/test-case/reports/defects.md
 ```
 
@@ -187,7 +181,6 @@ docs/test-case/reports/defects.md
 ```
 references/exec-api.md          ← API 用例执行规则
 references/exec-ui.md           ← UI 用例执行规则
-references/exec-admin.md        ← 管理台闭环执行规则
 references/env-setup.md         ← 环境配置与连接
 references/visual-check.md      ← 截图视觉审查标准
 references/per-case-checklist.md ← 单条用例完成检查清单

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { validateGlobalFiles } from '../tools/validate-global-files.mjs';
@@ -12,7 +12,13 @@ import { generateHostRules } from '../tools/generate-host-rules.mjs';
 import { bootstrapHost } from '../tools/bootstrap-host.mjs';
 import { installSuiteIntoHost } from '../tools/install-suite-into-host.mjs';
 import { devlogSync } from '../tools/devlog-sync.mjs';
+import { collectBaselineGaps } from '../skills/project-baseline-auditor/scripts/collect-baseline-gaps.mjs';
+import { collectProjectLinks } from '../skills/project-link-indexer/scripts/collect-project-links.mjs';
+import { validateProjectLinks } from '../skills/project-link-indexer/scripts/validate-project-links.mjs';
 import { buildClaudeHookBootstrap, buildOpenCodeBootstrap } from '../lib/bootstrap/index.js';
+import { verifyTask } from '../skills/coding-standards/scripts/verify-task-context.mjs';
+import { createEmptyLedger, writeLedger } from '../skills/brd-writer/scripts/ledger-io.mjs';
+import { fileRoles, globalCompanionAbilities } from '../lib/ai-pm-protocol/index.js';
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const CURRENT_SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
@@ -81,7 +87,7 @@ function buildProfileContent(overrides = {}) {
         coverage_scope: '内部人员',
         page_primary_user: '运营人员',
         page_primary_purpose: '业务处理',
-        page_design_tag: 'B端',
+        page_positioning_tag: '操作',
         recommended_stage: 'S1',
         current_round_deliverable: '业务需求文档 / BRD',
         largest_uncertainty: '验收口径待确认',
@@ -96,10 +102,10 @@ function buildProfileContent(overrides = {}) {
 
 - 项目名称：${values.project_name}
 - 项目一句话目标：${values.project_one_liner}
-- 目标用户：${values.target_users}
+- 目标使用者：${values.target_users}
 - 主要问题：${values.main_problem}
 
-## 2. 协作与身份识别
+## 2. 身份识别
 
 - 协作模式：${values.collaboration_mode}
 
@@ -112,7 +118,7 @@ function buildProfileContent(overrides = {}) {
 - 项目覆盖对象：${values.coverage_scope}
 - 当前页面主要给谁用：${values.page_primary_user}
 - 当前页面主要用途：${values.page_primary_purpose}
-- 页面设计标签：${values.page_design_tag}
+- 页面定位标签：${values.page_positioning_tag}
 
 ## 5. 当前资产
 
@@ -180,6 +186,68 @@ function buildPlanContent(overrides = {}) {
 `;
 }
 
+function buildValidDeliveryPlanContent() {
+    return `# Demo Delivery Plan
+
+> **版本**：v1
+> **发布日期**：2026-06-01
+> **适用范围**：demo
+
+## 0. 本计划使用指南
+### 0.2 PRD 加载约束
+按任务读取 PRD。
+### 0.3 读前门禁
+动手前确认 PRD、核心逻辑和核心文件。
+### 0.4 完成前验证门禁
+完成后执行真实验证。
+
+## 1. 差距基线
+- G1: demo gap
+
+## 2. 分工与边界
+- AI 执行，人审核。
+
+## 3. 执行阶段
+### Phase 0：Demo
+#### T0.1 实现演示任务
+
+**PRD 双链·读**：
+- \`prd-main-demo.md\` §1
+
+**核心逻辑**：
+- 根据 PRD 处理演示任务。
+
+**核心文件**：
+- \`src/demo.js\`
+
+**完成标准**：
+- 运行 \`node src/demo.js\` 输出 demo-ok。
+
+**Owner**：AI 执行 -> 人审核
+**前置**：无
+**状态**：待开发
+
+## 4. 任务看板
+| 任务 | Owner | 前置 | 状态 |
+|---|---|---|---|
+| T0.1 | AI | 无 | 待开发 |
+
+## 5. 发布闸门
+- [ ] 真实验证完成
+
+## 6. 风险与应对
+- 无
+
+## 7. AI 执行示例
+- 读取 T0.1 后执行。
+
+## 8. PRD → 任务反向索引
+| PRD | Task |
+|---|---|
+| prd-main-demo.md §1 | T0.1 |
+`;
+}
+
 function createHostFixture({ withRules = true, withProfile = true, withPlan = true, withDevlog = true, profileOverrides = {}, planOverrides = {}, logContent = '记录 S1 阶段推进' } = {}) {
     const hostRoot = makeTempDir('pm-suite-host-');
 
@@ -239,6 +307,60 @@ test('route-check blocks S2 routing when stage transition writeback is missing',
     assert.equal(result.gateChecks.pageTaskRequired.pass, true);
 });
 
+test('route-check accepts date-style daily logs as stage transition evidence', () => {
+    const hostRoot = createHostFixture({
+        withDevlog: false,
+        profileOverrides: {
+            current_stage: 'S1',
+            recommended_stage: 'S1',
+            current_round_deliverable: '页面代码 / 页面交付清单'
+        },
+        planOverrides: {
+            current_stage: 'S1',
+            current_goal: '进入页面设计阶段',
+            next_tasks: '调用 page-designer'
+        }
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'logs', '2026-05-22.md'), '# 2026-05-22\n\n记录 S2 阶段切换。\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.gateChecks.stageWritebackBeforeRouting.pass, true);
+    assert.equal(result.gateChecks.stageWritebackBeforeRouting.evidence, 'logs/2026-05-22.md');
+    assert.ok(!result.blockingReasons.some((item) => item.code === 'stage_transition_writeback_missing'));
+});
+
+test('route-check treats page task option lists as unresolved placeholders', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S1',
+            recommended_stage: 'S1',
+            current_round_deliverable: '页面代码 / 页面交付清单',
+            coverage_scope: '本地工具 / 内网工具 / 待确认',
+            page_primary_user: '例如自己、同岗位、操作员、管理员',
+            page_primary_purpose: '业务处理 / 系统管理 / 内容展示 / 待确认',
+            page_positioning_tag: '操作 / 配置 / 查看 / 待确认'
+        },
+        planOverrides: {
+            current_stage: 'S1',
+            current_goal: '进入页面设计阶段',
+            next_tasks: '调用 page-designer'
+        },
+        logContent: '记录 S2 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.pageTaskRequired.pass, false);
+    assert.deepEqual(
+        result.gateChecks.pageTaskRequired.missingFields.sort(),
+        ['coverage_scope', 'page_positioning_tag', 'page_primary_purpose', 'page_primary_user']
+    );
+});
+
 test('route-check stays in startup/bootstrap mode when page signal appears before authority files exist', () => {
     const hostRoot = makeTempDir('pm-suite-host-startup-page-signal-');
 
@@ -255,6 +377,253 @@ test('route-check stays in startup/bootstrap mode when page signal appears befor
     assert.equal(result.routeTarget, null);
     assert.equal(result.nextAction, '停留主入口，发起首轮极简访谈并补齐项目画像');
     assert.ok(result.blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
+});
+
+test('route-check sends code-only existing host to baseline auditor before startup interview', () => {
+    const hostRoot = makeTempDir('pm-suite-existing-code-no-profile-');
+    writeJsonFile(path.join(hostRoot, 'package.json'), {
+        name: 'half-built-console',
+        description: '已经开发一半的业务控制台'
+    });
+    writeFile(path.join(hostRoot, 'src', 'pages', 'Home.vue'), '<template>home</template>\n');
+
+    const result = routeCheck({ hostRoot });
+
+    assert.equal(result.recommendedStage, 'S0.5');
+    assert.equal(result.targetStage, 'S0.5');
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'project-baseline-auditor');
+    assert.equal(result.blockingReasons.some((item) => item.code === 'startup_minimum_missing'), false);
+    assert.match(result.nextAction, /project-baseline-auditor/);
+});
+
+test('collect-baseline-gaps creates project profile draft and maintenance document gap list from existing code', () => {
+    const hostRoot = makeTempDir('pm-suite-baseline-code-only-');
+    writeJsonFile(path.join(hostRoot, 'package.json'), {
+        name: 'maintenance-console',
+        description: '维护现有业务控制台'
+    });
+    writeFile(path.join(hostRoot, 'src', 'pages', 'Dashboard.vue'), '<template><button>保存</button></template>\n');
+    writeFile(path.join(hostRoot, 'src', 'api', 'orders.js'), 'export function listOrders() { return fetch("/api/orders"); }\n');
+    writeFile(path.join(hostRoot, 'src', 'models', 'order.js'), 'export const order = { id: "string" };\n');
+
+    const result = collectBaselineGaps({ hostRoot, write: true });
+    const profileContent = readFile(path.join(hostRoot, 'project-profile.md'));
+    const artifactTypes = result.artifacts.map((item) => item.type);
+
+    assert.equal(result.mode, 'existing-project-baseline');
+    assert.equal(result.scope, 'maintenance-docs-only');
+    assert.equal(fs.existsSync(path.join(hostRoot, 'docs', 'baseline', `baseline-audit-${result.slug}.json`)), true);
+    assert.match(profileContent, /项目名称：`【系统推断】 maintenance-console`/);
+    assert.match(profileContent, /当前最大不确定项：`【主入口回写】 目标使用者待确认`/);
+    assert.equal(result.profile.next_questions.length, 1);
+    assert.equal(result.profile.next_questions[0].field, 'target_users');
+    assert.deepEqual(artifactTypes, ['PROJECT_PROFILE', 'BRD', 'PAGE_EXPLAINER', 'FOUNDATION', 'PRD']);
+    assert.equal(result.artifacts.some((item) => /delivery-planner|test-case/.test(item.recommended_skill || '')), false);
+});
+
+test('collect-baseline-gaps preserves user-confirmed profile fields while adding inferred evidence', () => {
+    const hostRoot = makeTempDir('pm-suite-baseline-existing-profile-');
+    writeFile(
+        path.join(hostRoot, 'project-profile.md'),
+        '# 项目画像\n\n## 1. 基本信息\n\n- 项目名称：`【用户确认】 老系统`\n- 项目一句话目标：`【用户确认】 稳定维护老系统`\n- 当前阶段：`【主入口回写】 S0`\n- 协作模式：`【系统推断】 业务单人 + AI执行`\n\n## 3. 业务目标\n\n- 目标使用者：`【用户确认】 运营人员`\n- 主要问题：`【用户确认】 文档缺失导致维护困难`\n\n## 4. 页面与任务定位\n\n- 项目覆盖对象：`【用户确认】 内网工具`\n- 当前页面主要给谁用：`【用户确认】 值班主管`\n- 当前页面主要用途：`【用户确认】 业务处理`\n\n## 5. 第一版范围\n\n- 核心功能 1：`【用户确认】 工单流转`\n- 核心功能 2：`【用户确认】 权限配置`\n- 核心功能 3：`【用户确认】 数据看板`\n\n## 8. 当前判断\n\n- 当前最适合进入的阶段：`【主入口回写】 S0`\n- 当前轮应输出的交付物：`【主入口回写】 既有项目关键文件诊断清单`\n- 当前最大不确定项：`【主入口回写】 待确认`\n- 当前任务执行主体：`【主入口回写】 ai-project-manager`\n'
+    );
+    writeJsonFile(path.join(hostRoot, 'package.json'), {
+        name: 'new-package-name',
+        description: '代码中的描述'
+    });
+    writeFile(path.join(hostRoot, 'src', 'pages', 'Home.vue'), '<template>home</template>\n');
+
+    const result = collectBaselineGaps({ hostRoot, write: true });
+    const profileContent = readFile(path.join(hostRoot, 'project-profile.md'));
+
+    assert.match(profileContent, /项目名称：`【用户确认】 老系统`/);
+    assert.match(profileContent, /目标使用者：`【用户确认】 运营人员`/);
+    assert.match(profileContent, /项目覆盖对象：`【用户确认】 内网工具`/);
+    assert.match(profileContent, /当前页面主要给谁用：`【用户确认】 值班主管`/);
+    assert.match(profileContent, /核心功能 1：`【用户确认】 工单流转`/);
+    assert.match(profileContent, /核心功能 2：`【用户确认】 权限配置`/);
+    assert.match(profileContent, /核心功能 3：`【用户确认】 数据看板`/);
+    assert.match(profileContent, /已有文档：`【系统推断】/);
+    assert.doesNotMatch(profileContent, /项目名称：`【系统推断】 new-package-name`/);
+    assert.equal(result.profile.next_questions.length, 1);
+    assert.equal(result.profile.next_questions[0].field, 'project_name');
+    assert.deepEqual(
+        result.profile.conflicts.map((item) => item.field),
+        ['project_name', 'project_one_liner', 'page_primary_purpose']
+    );
+});
+
+test('route-check uses baseline audit JSON to route maintenance-doc gaps only to document skills', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            current_round_deliverable: '既有项目关键文件诊断清单',
+            largest_uncertainty: 'BRD 缺失'
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: '补齐既有项目维护知识底座',
+            next_tasks: '读取 baseline-audit 后补 BRD'
+        },
+        logContent: '记录 S0.5 既有项目基线诊断'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeJsonFile(path.join(hostRoot, 'docs', 'baseline', 'baseline-audit-demo.json'), {
+        mode: 'existing-project-baseline',
+        scope: 'maintenance-docs-only',
+        slug: 'demo',
+        summary: {
+            status: 'missing_required_artifacts',
+            recommended_next_skill: 'brd-writer'
+        },
+        artifacts: [
+            {
+                type: 'BRD',
+                status: 'missing',
+                recommended_skill: 'brd-writer'
+            },
+            {
+                type: 'FOUNDATION',
+                status: 'missing',
+                recommended_skill: 'foundation-builder'
+            }
+        ]
+    });
+
+    const result = routeCheck({ hostRoot });
+
+    assert.equal(result.routeTarget.skill, 'brd-writer');
+    assert.equal(result.context.baselineAudit.recommendedNextSkill, 'brd-writer');
+    assert.equal(result.context.baselineAudit.scope, 'maintenance-docs-only');
+    assert.equal(JSON.stringify(result.context.baselineAudit).includes('delivery-planner'), false);
+    assert.equal(JSON.stringify(result.context.baselineAudit).includes('test-case'), false);
+    assert.match(result.nextAction, /baseline-audit/);
+});
+
+test('collect-project-links compiles host artifacts into a rebuildable file-level graph', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S3',
+            current_round_deliverable: '开发执行计划',
+            largest_uncertainty: '文件引用关系待建立'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '建立文件级引用关系',
+            next_tasks: '运行 project-link-indexer'
+        }
+    });
+
+    writeFile(
+        path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'),
+        '# BRD Demo\n\n- 下游 PRD：[主 PRD](../prd/prd-main-demo.md)\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-delivery-demo.md'),
+        '# 页面交付清单\n\n- 上游 BRD：[BRD](../../../docs/brd/BRD-demo-20260601-1000.md)\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'foundation-delivery-demo.md'),
+        '# Foundation 交付清单\n\n- 页面说明：[[src/frontend/page-preview/explainer-delivery-demo.md|页面交付清单]]\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'),
+        '# 主 PRD\n\n| 子 PRD | 链接 |\n|---|---|\n| 订单 | [订单](prd-demo-order.md) |\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'prd-demo-order.md'),
+        '# 订单子 PRD\n\n- 主文档回链：[prd-main-demo.md](prd-main-demo.md)\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'),
+        '# Demo Delivery Plan\n\n## 3. 执行阶段\n\n### T0.1 订单任务\n\n**PRD 双链·读**：\n- `prd-main-demo.md` §1\n\n## 8. PRD → 任务反向索引\n| PRD | Task |\n|---|---|\n| prd-main-demo.md §1 | T0.1 |\n'
+    );
+
+    const result = collectProjectLinks({ hostRoot, write: true });
+    const nodeByPath = new Map(result.nodes.map((item) => [item.path, item]));
+
+    assert.equal(result.mode, 'project-link-index');
+    assert.equal(result.outputs.graphJson, 'docs/index/project-link-graph.json');
+    assert.equal(result.outputs.graphMarkdown, 'docs/index/project-link-graph.md');
+    assert.equal(result.outputs.wikiSchemaJson, 'docs/index/project-wiki-schema.json');
+    assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.graphJson)), true);
+    assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.graphMarkdown)), true);
+    assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.wikiSchemaJson)), true);
+    assert.equal(nodeByPath.get('docs/prd/prd-main-demo.md').kind, 'prd_main');
+    assert.equal(nodeByPath.get('docs/plans/delivery-plan-demo.md').kind, 'delivery_plan');
+    assert.ok(
+        result.edges.some(
+            (edge) =>
+                edge.relation === 'indexes' &&
+                edge.from === 'docs/prd/prd-main-demo.md' &&
+                edge.to === 'docs/prd/prd-demo-order.md'
+        )
+    );
+    assert.ok(
+        result.edges.some(
+            (edge) =>
+                edge.relation === 'depends_on' &&
+                edge.from === 'docs/plans/delivery-plan-demo.md' &&
+                edge.to === 'docs/prd/prd-main-demo.md' &&
+                edge.evidence.some((item) => item.syntax === 'prd_double_link')
+        )
+    );
+    assert.equal(result.issues.some((item) => item.code === 'missing_reverse_link'), false);
+});
+
+test('validate-project-links reports broken links and missing reverse links without stage routing advice', () => {
+    const hostRoot = createHostFixture();
+
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'),
+        '# 主 PRD\n\n| 子 PRD | 链接 |\n|---|---|\n| 订单 | [订单](prd-demo-order.md) |\n| 缺失 | [缺失](missing-doc.md) |\n'
+    );
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-order.md'), '# 订单子 PRD\n\n- 暂无主文档回链\n');
+
+    const result = validateProjectLinks({ hostRoot });
+    const codes = result.issues.map((item) => item.code);
+    const serializedIssues = JSON.stringify(result.issues);
+
+    assert.equal(result.valid, false);
+    assert.ok(codes.includes('broken_link'));
+    assert.ok(codes.includes('missing_reverse_link'));
+    assert.equal(serializedIssues.includes('delivery-planner'), false);
+    assert.equal(serializedIssues.includes('test-case'), false);
+});
+
+test('project-link-indexer ignores source-code string fixtures and unresolved placeholder backticks', () => {
+    const hostRoot = createHostFixture();
+
+    writeFile(
+        path.join(hostRoot, 'README.md'),
+        '# Demo\n\n- 模板路径：`prd-<slug>-<区块名>.md`\n- 通配路径：`docs/prd/*.md`\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'src', 'fixture.js'),
+        'const sample = "# Doc\\n\\n[missing](missing-from-code.md)\\n";\n'
+    );
+
+    const result = validateProjectLinks({ hostRoot });
+    const targets = result.issues.map((item) => item.target || '');
+
+    assert.equal(targets.some((item) => item.includes('missing-from-code.md')), false);
+    assert.equal(targets.some((item) => item.includes('prd-<slug>-<区块名>.md')), false);
+    assert.equal(targets.some((item) => item.includes('docs/prd/*.md')), false);
+});
+
+test('project-link-indexer is registered as a global companion ability and file role', () => {
+    assert.ok(globalCompanionAbilities.some((item) => item.skill === 'project-link-indexer'));
+    assert.ok(
+        fileRoles.some(
+            (item) =>
+                item.id === 'project_link_index' &&
+                item.defaultPath === 'docs/index/project-link-graph.json' &&
+                item.writtenBy.includes('project-link-indexer')
+        )
+    );
 });
 
 test('route-check prefers docs/brd and src/frontend/page-preview over legacy page directories and root-level artifacts', () => {
@@ -276,7 +645,7 @@ test('route-check prefers docs/brd and src/frontend/page-preview over legacy pag
 
     writeFile(
         path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260408-1000.md'),
-        '# BRD\n\n- 是否包含 C 端页面：否\n'
+        '# BRD\n\n- 页面方向已确认：是\n'
     );
     writeFile(
         path.join(hostRoot, 'src', 'frontend', 'page-preview', 'page-delivery-demo.md'),
@@ -288,13 +657,12 @@ test('route-check prefers docs/brd and src/frontend/page-preview over legacy pag
         path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-interaction-demo.md'),
         '| id | status |\n|---|---|\n| demo.home.button.1 | locked |\n'
     );
-    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-permission-demo.md'), '# permission\n');
     writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-delivery-demo.md'), '# delivery\n');
     writeFile(path.join(hostRoot, '可操作页面', 'page-delivery-demo.md'), '# 旧目录页面交付清单\n');
 
     writeFile(
         path.join(hostRoot, 'BRD-legacy-20260409-1200.md'),
-        '# Legacy BRD\n\n- 是否包含 C 端页面：是\n'
+        '# Legacy BRD\n'
     );
     writeFile(
         path.join(hostRoot, 'page-delivery-legacy.md'),
@@ -310,30 +678,300 @@ test('route-check prefers docs/brd and src/frontend/page-preview over legacy pag
     assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageDeliveryPath, 'src/frontend/page-preview/page-delivery-demo.md');
 });
 
+test('route-check blocks S2 page work when BRD authority is missing', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S1',
+            recommended_stage: 'S2',
+            current_round_deliverable: '页面代码 / 页面交付清单'
+        },
+        planOverrides: {
+            current_stage: 'S1',
+            current_goal: '进入页面设计阶段',
+            next_tasks: '调用 page-chief'
+        },
+        logContent: '记录 S2 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.brdReadyForPage.pass, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'brd_missing'));
+});
+
 test('route-check enters S7 when release signal and test execution reports are ready', () => {
     const hostRoot = createHostFixture({
         profileOverrides: {
             current_stage: 'S6',
             recommended_stage: 'S7',
             current_round_deliverable: '安全扫描报告 + PASS / BLOCK / WAIVER 结论',
-            largest_uncertainty: '上线前安全闸门待执行'
+            largest_uncertainty: '完工前安全闸门待执行'
         },
         planOverrides: {
             current_stage: 'S6',
-            current_goal: '完成最终安全检查并准备上线',
+            current_goal: '完成最终安全检查并准备完工',
             next_tasks: '触发 security-scan'
         },
-        logContent: '记录 S7 阶段切换与发布前安全扫描准备'
+        logContent: '记录 S7 阶段切换与完工前安全扫描准备'
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });
-    writeFile(path.join(hostRoot, 'docs', 'test-case', 'reports', 'tester-a', 'index.md'), '# 测试执行报告');
-    writeFile(path.join(hostRoot, 'docs', 'test-case', 'reports', 'tester-a', '测试验收-核心流程.md'), '# 核心流程测试报告');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'reports', 'index.md'), '# 测试执行报告');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'reports', '测试验收-核心流程.md'), '# 核心流程测试报告');
 
     const result = routeCheck({ hostRoot, targetStage: 'S7' });
 
     assert.equal(result.canEnter, true);
     assert.equal(result.routeTarget.skill, 'security-scan');
     assert.equal(result.gateChecks.securityScanReady.pass, true);
+});
+
+test('route-check blocks S5 when PRD or verifiable build evidence is missing', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S4',
+            recommended_stage: 'S5',
+            current_round_deliverable: '验收文档 + 测试用例'
+        },
+        planOverrides: {
+            current_stage: 'S4',
+            current_goal: '准备生成测试用例'
+        },
+        logContent: '记录 S5 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S5' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.fullPrdReady.pass, false);
+    assert.equal(result.gateChecks.buildAvailableForValidation.pass, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'full_prd_missing'));
+    assert.ok(result.blockingReasons.some((item) => item.code === 'build_available_for_validation_missing'));
+});
+
+test('route-check enters S5 when full PRD and verifiable build evidence exist', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S4',
+            recommended_stage: 'S5',
+            current_round_deliverable: '验收文档 + 测试用例'
+        },
+        planOverrides: {
+            current_stage: 'S4',
+            current_goal: '开发完成，当前版本已具备可验证基础',
+            next_tasks: '调用 test-case-chief'
+        },
+        logContent: '记录 S5 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-feature-list-demo.md'), '# 功能列表\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'), '# 主 PRD\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-core.md'), '# 子 PRD\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S5' });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'test-case-chief');
+    assert.equal(result.gateChecks.fullPrdReady.pass, true);
+    assert.equal(result.gateChecks.buildAvailableForValidation.pass, true);
+});
+
+test('route-check blocks S3 when foundation artifacts are missing', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S2',
+            recommended_stage: 'S3',
+            current_round_deliverable: '开发执行计划'
+        },
+        planOverrides: {
+            current_stage: 'S2',
+            current_goal: '准备进入开发计划阶段',
+            next_tasks: '调用 delivery-planner'
+        },
+        logContent: '记录 S3 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-feature-list-demo.md'), '# 功能列表\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'), '# 主 PRD\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-core.md'), '# 子 PRD\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S3' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.foundationReadyForDevelopmentPlan.pass, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'foundation_missing'));
+});
+
+test('route-check blocks S4 until delivery plan exists', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S4',
+            current_round_deliverable: '当前任务的执行结果 + 任务状态更新'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '准备进入开发执行',
+            in_progress: '整理核心需求'
+        },
+        logContent: '记录 S4 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.developmentPlanReady.pass, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'development_plan_missing'));
+});
+
+test('route-check enters S4 when delivery plan exists', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S4',
+            current_round_deliverable: '当前任务的执行结果 + 任务状态更新'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '准备进入开发执行'
+        },
+        logContent: '记录 S4 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'), buildValidDeliveryPlanContent());
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'coding-standards');
+    assert.equal(result.gateChecks.developmentPlanReady.pass, true);
+});
+
+test('route-check blocks S4 when delivery plan structure is invalid', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S4',
+            current_round_deliverable: '当前任务的执行结果 + 任务状态更新'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '准备进入开发执行'
+        },
+        logContent: '记录 S4 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'), '# 开发执行计划\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.developmentPlanReady.pass, false);
+    assert.equal(result.gateChecks.developmentPlanReady.evidence.structureValid, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'development_plan_invalid'));
+});
+
+test('route-check blocks S6 until reviewed test cases are ready', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S5',
+            recommended_stage: 'S6',
+            current_round_deliverable: '测试执行报告'
+        },
+        planOverrides: {
+            current_stage: 'S5',
+            current_goal: '准备执行测试'
+        },
+        logContent: '记录 S6 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-main-demo.md'), '# TC 主索引\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'core', 'tc-core.md'), '# 核心域 TC\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S6' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.testCasesReady.pass, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'test_cases_missing'));
+});
+
+test('route-check enters S6 when reviewed test cases are ready', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S5',
+            recommended_stage: 'S6',
+            current_round_deliverable: '测试执行报告'
+        },
+        planOverrides: {
+            current_stage: 'S5',
+            current_goal: '准备执行测试'
+        },
+        logContent: '记录 S6 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-main-demo.md'), '# TC 主索引\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'core', 'tc-core.md'), '# 核心域 TC\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-reviews', '20260522-issues.md'), '# TC 核查\n\n结论 = 已完工\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S6' });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'test-case-runner');
+    assert.equal(result.gateChecks.testCasesReady.pass, true);
+});
+
+test('route-check rejects unfinished review conclusions that contain the word pass', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S5',
+            recommended_stage: 'S6',
+            current_round_deliverable: '测试执行报告'
+        },
+        planOverrides: {
+            current_stage: 'S5',
+            current_goal: '准备执行测试'
+        },
+        logContent: '记录 S6 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-main-demo.md'), '# TC 主索引\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'core', 'tc-core.md'), '# 核心域 TC\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-reviews', '20260601-issues.md'), '# TC 核查\n\n结论：未通过，需 writer 续改\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S6' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.testCasesReady.evidence.latestReviewDone, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'test_cases_missing'));
+});
+
+test('route-check chooses suffixed same-day review issue files as the latest review', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S5',
+            recommended_stage: 'S6',
+            current_round_deliverable: '测试执行报告'
+        },
+        planOverrides: {
+            current_stage: 'S5',
+            current_goal: '准备执行测试'
+        },
+        logContent: '记录 S6 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-main-demo.md'), '# TC 主索引\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'core', 'tc-core.md'), '# 核心域 TC\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-reviews', '20260601-issues.md'), '# TC 核查\n\n结论 = 已完工\n');
+    writeFile(path.join(hostRoot, 'docs', 'test-case', 'tc-reviews', '20260601-issues-2.md'), '# TC 核查\n\n结论：需 writer 续改\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S6' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.testCasesReady.evidence.latestReviewPath, 'docs/test-case/tc-reviews/20260601-issues-2.md');
+    assert.equal(result.gateChecks.testCasesReady.evidence.latestReviewDone, false);
 });
 
 test('route-check blocks S7 when release gate evidence is missing', () => {
@@ -345,9 +983,9 @@ test('route-check blocks S7 when release gate evidence is missing', () => {
         },
         planOverrides: {
             current_stage: 'S6',
-            current_goal: '准备上线'
+            current_goal: '准备完工'
         },
-        logContent: '记录 S7 阶段切换与发布前安全扫描准备'
+        logContent: '记录 S7 阶段切换与完工前安全扫描准备'
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });
 
@@ -604,6 +1242,48 @@ test('bootstrap-host creates project-profile.md only after receiving complete in
     assert.ok(profileContent.includes('`【用户确认】` `运营人员`'));
 });
 
+test('validate-global-files accepts bootstrap-generated target user label', () => {
+    const workspaceRoot = makeTempDir('pm-suite-bootstrap-validate-profile-');
+    const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
+
+    writeJsonFile(interviewJsonPath, buildStartupInterview());
+
+    bootstrapHost({
+        hostRoot: workspaceRoot,
+        projectName: '演示项目',
+        targetStage: '',
+        containerRoot: true,
+        dryRun: false,
+        json: false,
+        forceRules: false,
+        interviewComplete: true,
+        interviewJsonPath,
+        createProfileFile: true,
+        createRulesFile: false,
+        createPlanFile: false
+    });
+
+    const effectiveRoot = path.join(workspaceRoot, '演示项目');
+    const result = validateGlobalFiles({ hostRoot: effectiveRoot });
+
+    assert.ok(
+        !result.issues.some(
+            (issue) =>
+                issue.roleId === 'project_profile' &&
+                issue.code === 'missing_required_markers' &&
+                issue.missingMarkers?.includes('目标使用者：')
+        )
+    );
+    assert.ok(
+        !result.issues.some(
+            (issue) =>
+                issue.roleId === 'project_profile' &&
+                issue.code === 'missing_required_markers' &&
+                issue.missingMarkers?.includes('目标用户：')
+        )
+    );
+});
+
 test('bootstrap-host rejects mismatched --project-name and interview project_name in container mode', () => {
     const workspaceRoot = makeTempDir('pm-suite-bootstrap-mismatch-name-');
     const interviewJsonPath = path.join(workspaceRoot, 'interview.json');
@@ -683,6 +1363,175 @@ test('route-check recognizes startup minimum fields from bootstrap-generated pro
 
     assert.equal(result.gateChecks.startupMinimum.pass, true);
     assert.ok(!result.blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
+});
+
+test('route-check CLI prints JSON when executed from the current suite path', () => {
+    const hostRoot = createHostFixture();
+    const routeCheckPath = path.join(CURRENT_SUITE_ROOT, 'tools', 'route-check.mjs');
+
+    const output = execFileSync(process.execPath, [routeCheckPath, hostRoot, '--json'], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.hostRoot, hostRoot);
+    assert.equal(result.gateChecks.startupMinimum.pass, true);
+});
+
+test('route-check CLI exits non-zero for blocked JSON checks', () => {
+    const hostRoot = createHostFixture({ withProfile: false });
+    const routeCheckPath = path.join(CURRENT_SUITE_ROOT, 'tools', 'route-check.mjs');
+
+    const result = spawnSync(process.execPath, [routeCheckPath, hostRoot, '--json'], { encoding: 'utf8' });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.notEqual(result.status, 0);
+    assert.equal(parsed.canEnter, false);
+    assert.ok(parsed.blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
+});
+
+test('collect-upstream-context includes page-preview explainer outputs in slim flow', () => {
+    const hostRoot = makeTempDir('pm-suite-collect-upstream-');
+    const collectPath = path.join(
+        CURRENT_SUITE_ROOT,
+        'skills',
+        'delivery-planner',
+        'scripts',
+        'collect-upstream-context.mjs'
+    );
+
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-ops-tool.md'), '# 主 PRD\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-ops-tool-report.md'), '# 报表区块\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-schema-ops-tool.md'), '# Schema\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-api-ops-tool.md'), '# API\n');
+    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-flow-ops-tool.md'), '# 用户流程\n');
+    writeFile(
+        path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-interaction-ops-tool.md'),
+        '# 交互语义\n'
+    );
+    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-delivery-ops-tool.md'), '# 解释交付清单\n');
+
+    const output = execFileSync(process.execPath, [collectPath, hostRoot, '--json'], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.canProceed, true);
+    assert.deepEqual(
+        result.explainers.map((item) => item.type).sort(),
+        ['b-interaction', 'delivery', 'flow']
+    );
+    assert.ok(
+        result.explainers.every((item) => item.path.includes(path.join('src', 'frontend', 'page-preview')))
+    );
+});
+
+test('collect-upstream-context recognizes Chinese PRD child block names', () => {
+    const hostRoot = makeTempDir('pm-suite-collect-chinese-prd-');
+    const collectPath = path.join(
+        CURRENT_SUITE_ROOT,
+        'skills',
+        'delivery-planner',
+        'scripts',
+        'collect-upstream-context.mjs'
+    );
+
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'), '# 主 PRD\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-用户管理.md'), '# 用户管理\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-schema-demo.md'), '# Schema\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-api-demo.md'), '# API\n');
+
+    const output = execFileSync(process.execPath, [collectPath, hostRoot, '--json'], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.canProceed, true);
+    assert.equal(result.prdChildren.length, 1);
+    assert.equal(result.prdChildren[0].block, '用户管理');
+});
+
+test('delivery plan template satisfies its own structure validator', () => {
+    const templatePath = path.join(
+        CURRENT_SUITE_ROOT,
+        'skills',
+        'delivery-planner',
+        'templates',
+        'delivery-plan-template.md'
+    );
+    const validatorPath = path.join(
+        CURRENT_SUITE_ROOT,
+        'skills',
+        'delivery-planner',
+        'scripts',
+        'validate-plan-structure.mjs'
+    );
+
+    const output = execFileSync(process.execPath, [validatorPath, templatePath, '--json'], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.passed, true);
+});
+
+test('verify-task-context blocks tasks that declare no real PRD links', () => {
+    const hostRoot = makeTempDir('pm-suite-task-context-empty-prd-');
+    const planPath = path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md');
+
+    writeFile(
+        planPath,
+        `# Demo Plan
+
+### T0.1 实现演示任务
+
+**PRD 双链·读**：
+- 待补
+
+**核心文件**：
+- \`src/demo.js\`
+`
+    );
+
+    const result = verifyTask(planPath, 'T0.1');
+
+    assert.equal(result.canExecute, false);
+    assert.deepEqual(result.prdLinksFound, []);
+    assert.ok(result.missingFiles.includes('PRD 双链·读'));
+});
+
+test('BRD D.5 is retriggered when locked fields change after a previous pass', () => {
+    const hostRoot = makeTempDir('pm-suite-brd-d5-');
+    const ledgerPath = path.join(hostRoot, 'ledger-state-demo.json');
+    const queryPath = path.join(CURRENT_SUITE_ROOT, 'skills', 'brd-writer', 'scripts', 'ledger-query.mjs');
+    const ledger = createEmptyLedger('演示项目', 'demo', 'operational');
+
+    ledger.header.current_phase = 'C';
+    ledger.header.current_round = 6;
+    ledger.header.d5_state = {
+        last_result: 'passed',
+        last_triggered_at_round: 3,
+        fields_changed_since_last_d5: true
+    };
+    for (const field of ledger.fields) {
+        field.status = 'locked';
+        field.value = field.value ?? `value-${field.id}`;
+        field.lock_round = field.lock_round ?? 6;
+    }
+
+    writeLedger(ledgerPath, ledger, 'demo');
+
+    const output = execFileSync(process.execPath, [queryPath, 'progress', '--ledger', ledgerPath], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.open_fields, 0);
+    assert.equal(result.should_trigger_d5, true);
+});
+
+test('skill docs avoid stale lifecycle filenames and unreachable stage names', () => {
+    const runnerSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'test-case-runner', 'SKILL.md'));
+    const acceptanceSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'test-and-acceptance', 'SKILL.md'));
+    const devlogSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'project-devlog', 'SKILL.md'));
+    const pageDesignerSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'page-designer', 'SKILL.md'));
+
+    assert.ok(runnerSkill.includes('docs/test-case/tc-main-<slug>.md'));
+    assert.ok(!runnerSkill.includes('tc-主文档.md'));
+    assert.ok(!acceptanceSkill.includes('S9 / S10'));
+    assert.match(acceptanceSkill, /S6\s*\/\s*S7/);
+    assert.ok(devlogSkill.includes('logs/YYYYMMDD_refactor_log_<用户名>.md'));
+    assert.match(pageDesignerSkill, /--persist[^\n]*--output-dir\s+<宿主项目>/);
 });
 
 test('devlog-sync creates daily log, appends updates, and updates candidate pool', () => {
