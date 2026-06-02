@@ -143,6 +143,8 @@ Phase 是逻辑阶段，轮次（round）是一次用户交互。一个 Phase �
 
 1. **项目类型**（六选一）：创新型 / 改造型 / 扩展型 / 集成型 / 运营型 / 合规型
 
+   **判定类型前，必须先读 `references/project-types.md`**，按其中"两步判定法"选型：先按项目驱动性质初选，再用该类型的追加字段集反向校验；不得仅凭"是不是新建工具"拍板。
+
 项目类型确认后，读取 `references/p0-fields.md` 确定本次 P0 必填字段集。页面是否存在由项目类型派生（运营型恒含页面、集成型恒无独立页面、其他类型默认含页面）。
 
 **slug 确定**：元字段锁定的同时，基于 project-profile.md 的项目名称和当前对话中对项目的理解，确定 `project_slug`。slug 规则：
@@ -342,7 +344,7 @@ node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件�
 2. 默认优先级：需求真实性 > 价值可衡量（效率/体验/服务能力） > 功能数量。
 3. 默认收敛机制：每轮 1 题，2-4 选项，推荐项必选可解释。
 4. 默认结束规则：当前项目类型对应的 P0 字段未全确认即禁止终稿。
-5. 默认项目类型：若需求方描述模糊无法判断，优先推断为创新型（字段最全，宁多勿少）。
+5. 默认项目类型：优先按 `references/project-types.md` 的两步判定法确定；仅当三类驱动前提都判不清时，才临时按创新型展开（字段最全），并在台账与对话中显式标注"类型为兜底假设，待信息补充后复核"。
 
 ## 附：资源文件索引
 
@@ -351,6 +353,7 @@ node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件�
 | `templates/brd-ledger.md` | BRD 决策台账模板 | Phase A 定性完成后创建台账时 |
 | `references/methodology.md` | 5 种方法论详解（第一性原理、JTBD、RICE、Pre-mortem、Kano）+ 输出格式 | 需要体现方法论依据时 |
 | `references/interrogation-patterns.md` | 反奉承规则、需求真伪鉴别、追问范式库、前提挑战 | Phase B/C/D.5 执行时 |
+| `references/project-types.md` | 六类项目类型的定义、判定标准与易混边界 | Phase A 定性、选类型前 |
 | `references/p0-fields.md` | 通用 P0 + 6 种类型追加 P0 + 页面全套字段 | Phase A 定性后 |
 | `references/brd-template.md` | BRD 终稿模板 + 章节裁剪矩阵 | Phase F 输出终稿时 |
 | `references/test-scenarios.md` | 测试与验收场景 | 开发/调试时 |
