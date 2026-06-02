@@ -319,7 +319,7 @@ function cmdSaveBrd(opts) {
     errors.push('Missing appendix (no heading containing "附录")');
   }
 
-  // (v2.0.0: legacy architecture check removed with old public-product fields.)
+  // (v2.0.0: legacy architecture check removed.)
 
   if (errors.length > 0) {
     console.log(JSON.stringify({ success: false, error: 'structure_validation', errors }));

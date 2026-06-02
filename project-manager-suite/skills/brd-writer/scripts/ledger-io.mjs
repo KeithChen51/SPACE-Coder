@@ -12,11 +12,9 @@ import path from 'path';
 // ─────────────────────────────────────────────
 
 export const SCHEMA_VERSION = '2.0.0';
-// v2.0.0 (2026-05-22): breaking — removed legacy public-product and commercial universal P0 fields,
-// removed commercial type-specific fields,
-// removed chapters 5 (market & competitor) and 7 (commercial model) from CHAPTER_MATRIX,
-// removed old public-product and commercial rule conflicts.
-// Old ledger files (1.0.0) need migration: drop the removed fields/values, re-render markdown.
+// v2.0.0 (2026-05-22): breaking — BRD universal/type-specific fields and CHAPTER_MATRIX
+// were simplified; old ledger files (1.0.0) need migration before rendering.
+// Migration action: drop unsupported fields/values and re-render markdown.
 
 // ─────────────────────────────────────────────
 // Universal P0 fields
@@ -454,8 +452,7 @@ export function isValidTransition(from, to) {
 
 /**
  * CHAPTER_MATRIX — keyed by template chapter number.
- * Chapter 5 (市场与竞品差异化) and Chapter 7 (商业化路径) are intentionally absent —
- * removed in v2.0.0 since this suite now focuses on internal efficiency tools.
+ * Chapter 5 (市场与竞品差异化) and Chapter 7 (商业化路径) are intentionally absent.
  * Final BRD chapter numbering keeps the original gaps (§1-§4, §6, §8-§13) for downstream-reference stability.
  * Each entry:
  *   title           : default Chinese chapter title
