@@ -26,6 +26,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | H6 | 每个 Phase 产出后必须等用户确认再进入下一 Phase | 防止错误传播 |
 | H7 | 用户提供的外部已有文件，融合后必须标注废弃 | 防止下游误用 |
 | H8 | 引用 explainer 交互语义时，仅消费 status=locked 的条目；若引用了 open 项，必须在产物中标注「依据未冻结，待上游确认」 | 防止未冻结描述下沉为权威设计 |
+| H9 | `foundation-delivery-<slug>.md` 的交付产物表必须使用 `产物 / 文件路径 / 行数 / 拆分子文件` 表头 | 主入口按 `文件路径` 列抽取并校验声明文件，表头不匹配会导致 foundationReadyForPrd 无法通过 |
 
 ## 3) 上游输入
 
@@ -82,6 +83,7 @@ Phase 5: 一致性自查
 Phase 6: 交付清单落盘
   → 加载 references/delivery-template.md
   → 产出 foundation-delivery
+  → 用 route-check 校验 foundationReadyForPrd.pass=true
 ```
 
 ## 6) Reference 加载协议
@@ -144,6 +146,7 @@ Phase 完成时：
 4. 自创规范不引用 coding-standards
 5. 跳过一致性自查直接落盘交付清单
 6. 不落盘交付清单就声称完成
+7. 使用 `主文件`、`路径`、`文件` 等替代表头生成交付产物表；必须使用 `文件路径`
 
 ## 10) 质量红线
 
@@ -153,3 +156,4 @@ Phase 完成时：
 4. Schema 必须符合 coding-standards/05 规范（表名小写下划线、必备三字段、禁止外键等）
 5. API 必须符合 coding-standards/09 规范（统一前缀、统一响应格式）
 6. 交付清单中的文件路径必须是真实存在的路径
+7. 交付清单落盘后，主入口路由检查必须能识别全部声明文件，`foundationReadyForPrd.pass` 必须为 `true`

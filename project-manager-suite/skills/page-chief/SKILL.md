@@ -170,6 +170,7 @@ START
 2. 验证 page-explainer 所有语义条目均为 locked
 3. 验证无未解决的 `design_gap` / `logic_conflict`
 4. 全部通过 → 输出完成状态
+5. page-chief 只判定页面环节 DONE，不直接改全局文件；DONE 是给 `ai-project-manager` 的回写触发信号。主入口接棒后必须更新项目画像、执行计划和必要日志，把下一步从页面环节切到 `prd-chief` / `foundation-builder`
 
 ## 7) 状态标记（强制）
 

@@ -2,18 +2,21 @@
 
 > 生成时间: YYYY-MM-DD HH:MM
 > Skill: page-explainer
-> 依据: page-delivery + 页面代码
+> 依据: page-delivery + 运行页面验证 + 页面代码
 
 ## <页面名称>
 
 > 路由: <路由>
 > 文件: <文件路径>
+> 运行页面证据: <本地预览地址 + Playwright / Browser / 可控 Chrome 的截图、可见元素检查、必要点击结果；若用户批准降级，写明批准来源和替代方案边界>
+> 代码证据: <用于佐证交互状态的组件或逻辑文件>
 > 页面目的: <一句话>
 > 覆盖角色: <角色列表>
+> 原型 / mock 边界: <例如“当前展示为已选择样例文件状态，代表真实系统上传或选择后的展示区”>
 
 ### 页面布局
 
-> 用 ASCII 简图表示页面整体的模块分布，让读者一眼看懂页面结构。
+> 基于运行页面观察，用 ASCII 简图表示页面整体的模块分布，让读者一眼看懂页面结构。不要只根据源码结构画布局。
 
 ```
 ┌─────────────────────────────────┐
@@ -36,6 +39,8 @@
 #### <模块1名称>
 
 **描述**: <用大白话描述这个模块长什么样、包含什么内容>
+**证据来源**: <Playwright / Browser / 可控 Chrome 的运行页面观察 / 页面代码佐证 / 用户确认 / page-delivery>
+**原型态说明**: <若该模块使用 mock 数据或样例状态，说明它代表的真实业务语义；无则填 none>
 
 **模块布局**:
 ```
@@ -57,19 +62,23 @@
 > - **用户可见结果**: 列表刷新，仅显示该状态的订单
 > - **校验**: none
 > - **业务态兜底**: 空数据态: 显示「暂无该状态的订单」
+> - **证据来源**: Playwright / Browser / 可控 Chrome 运行页面可见 + 页面代码佐证
+> - **原型态说明**: none
 
 <details>
 <summary>机读表（下游消费）</summary>
 
-| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | fallback | status |
-|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|----------|--------|
-| order-list.filter.status-dropdown.1 | 运营人员 | /admin/orders | 筛选栏 | 状态下拉框 | none | 选择 | 按所选状态筛选列表 | 列表刷新，仅显示该状态的订单 | none | 空数据态: 显示「暂无该状态的订单」 | open |
+| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | fallback | evidence_source | prototype_note | status |
+|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|----------|-----------------|----------------|--------|
+| order-list.filter.status-dropdown.1 | 运营人员 | /admin/orders | 筛选栏 | 状态下拉框 | none | 选择 | 按所选状态筛选列表 | 列表刷新，仅显示该状态的订单 | none | 空数据态: 显示「暂无该状态的订单」 | Playwright / Browser / 可控 Chrome 运行页面可见 + 页面代码佐证 | none | open |
 
 </details>
 
 #### <模块2名称>
 
 **描述**: <同上>
+**证据来源**: <Playwright / Browser / 可控 Chrome 的运行页面观察 / 页面代码佐证 / 用户确认 / page-delivery>
+**原型态说明**: <若该模块使用 mock 数据或样例状态，说明它代表的真实业务语义；无则填 none>
 
 **模块布局**:
 ```
@@ -82,9 +91,9 @@
 <details>
 <summary>机读表（下游消费）</summary>
 
-| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | fallback | status |
-|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|----------|--------|
-| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| id | actor | source_page | source_module | source_element | precondition | trigger | system_behavior | user_visible_result | validation | fallback | evidence_source | prototype_note | status |
+|----|-------|-------------|---------------|----------------|-------------|---------|-----------------|---------------------|------------|----------|-----------------|----------------|--------|
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
 
 </details>
 

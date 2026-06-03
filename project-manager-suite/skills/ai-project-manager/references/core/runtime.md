@@ -73,6 +73,14 @@
 3. 仅在确有骨架缺口时调用 `tools/bootstrap-host.mjs`
 4. 一轮有效推进结束后，按需调用 `tools/devlog-sync.mjs`
 
+`route-check.mjs` 的命令口径固定为位置参数，不使用 `--host-dir`：
+
+```bash
+node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S0.5|S1|S2|S3|S4|S5|S6|S7] [--json]
+```
+
+注意：`--host-dir` 是 `page-designer/scripts/page-ledger-query.mjs` 的参数口径，不能套用到 `route-check.mjs`。
+
 脚本优先的目的：
 
 - 把结构识别、门禁判断、骨架补齐、日志回写这类稳定动作收进执行层
@@ -232,6 +240,12 @@ skill 优先级（**先后顺序不可混淆**）：
 | 当前正式计划入口、当前活跃任务、下一步任务、完成标准摘要 | 执行计划文件 |
 | 本轮做了什么、产出了什么、遇到的问题、下一轮建议 | 仅在阶段切换、正式交付、会话收口或需要交接时，合并调用 `project-devlog` 或 `tools/devlog-sync.mjs` 写入日志文件 |
 | 稳定的长期规则（极少更新） | 全局规则文件 |
+
+S2 页面环节收口后的回写口径：
+
+- 当 `page-chief` 判定页面环节 DONE 后，主入口必须把项目画像中的 `当前轮应输出的交付物` 更新为 `技术地基 / PRD 环节输入`，把 `当前最大不确定项` 从页面布局/交互确认切换为 Word 解析、修复规则、文件生成等技术地基问题，并将页面相关待确认项标记为已确认或移出待确认列表。
+- 同一轮必须把执行计划中的 `当前目标`、`进行中任务`、`下一步任务`、`完成标准` 从 page-designer / page-explainer 页面环节更新为 `prd-chief` 调度 `foundation-builder`；不得让“页面环节需确认”这类旧措辞继续留在驾驶舱里。
+- 若本轮已产出 `page-delivery`、`explainer-delivery` 或 route-check 明确显示 `pageStageClosedForPrd.pass = true`，应作为一次阶段内交接点写入 `project-devlog`，方便下一轮直接进入 PRD 环节。
 
 禁止：把 3 类全局文件职责混写到同一个文件；把详细任务明细、完整过程日志写入画像。
 禁止：宿主已有对应全局文件时，再额外创建一份同职责模板文件。

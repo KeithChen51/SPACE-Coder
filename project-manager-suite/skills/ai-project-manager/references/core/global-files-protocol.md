@@ -195,7 +195,8 @@
 9. **S3 正式开发计划形成或更新后** → `delivery-planner` 负责维护 `delivery-plan-<slug>.md` 正文；`ai-project-manager` 负责把“正式计划入口 + 当前活跃摘要”同步回 `execution-plan.md`
 
 执行计划驾驶舱同步规则：
-- 仅在以下事件发生时同步 `execution-plan.md` 摘要：首次生成正式开发计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越
+- 仅在以下事件发生时同步 `execution-plan.md` 摘要：首次生成正式开发计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越、S2 内部链路从页面环节切换到 PRD 环节
+- `page-chief` 判定页面环节 DONE 时，属于 S2 内部链路切换；主入口必须同步 `execution-plan.md`，把当前目标、进行中任务、下一步任务、完成标准和待确认项从 page-designer / page-explainer 页面语境更新为 `prd-chief` / `foundation-builder` 语境
 - 同步来源必须是正式计划正文中的固定“驾驶舱摘要”区块，不从整份正文自由提炼
 - 若只是风险补充、说明文字修订、反向索引调整等不影响“今天怎么继续做”的变更，不同步驾驶舱
 
