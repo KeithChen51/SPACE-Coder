@@ -127,15 +127,15 @@ const fileKindDefinitions = {
         authority: true,
         description: 'PRD 功能列表'
     },
-    prd_main: {
+    mainprd: {
         owner_skill: 'prd-writer',
         authority: true,
-        description: '主 PRD 索引'
+        description: 'mainprd 索引'
     },
-    prd_sub: {
+    subprd: {
         owner_skill: 'prd-writer',
         authority: true,
-        description: '按功能区块拆分的子 PRD'
+        description: '按功能区块拆分的 subprd'
     },
     delivery_plan: {
         owner_skill: 'delivery-planner',
@@ -313,7 +313,7 @@ function extractSlug(kind, relativePath) {
         /^explainer-(?:flow|b-interaction|b-gap|delivery)-(.+)$/,
         /^foundation-(?:glossary|schema|api|delivery)-(.+)$/,
         /^prd-feature-list-(.+)$/,
-        /^prd-main-(.+)$/,
+        /^mainprd-(.+)$/,
         /^delivery-plan-(.+)$/,
         /^acceptance-(.+)$/,
         /^tc-main-(.+)$/
@@ -324,8 +324,8 @@ function extractSlug(kind, relativePath) {
         if (match) return match[1];
     }
 
-    if (kind === 'prd_sub') {
-        const match = baseName.match(/^prd-(.+?)-[^/]+$/);
+    if (kind === 'subprd') {
+        const match = baseName.match(/^\d{2}-subprd-(.+)$/);
         if (match) return match[1];
     }
 
@@ -347,8 +347,8 @@ function classifyFile(relativePath) {
     if (/^src\/frontend\/page-preview\/explainer-.+\.md$/.test(relativePath)) return 'page_explainer';
     if (/^docs\/prd\/foundation-.+\.md$/.test(relativePath)) return 'foundation';
     if (/^docs\/prd\/prd-feature-list-.+\.md$/.test(relativePath)) return 'prd_feature_list';
-    if (/^docs\/prd\/prd-main-.+\.md$/.test(relativePath)) return 'prd_main';
-    if (/^docs\/prd\/prd-.+\.md$/.test(relativePath)) return 'prd_sub';
+    if (/^docs\/prd\/mainprd-.+\.md$/.test(relativePath)) return 'mainprd';
+    if (/^docs\/prd\/subprd\/\d{2}-subprd-.+\.md$/.test(relativePath)) return 'subprd';
     if (/^docs\/plans\/delivery-plan-.+\.md$/.test(relativePath)) return 'delivery_plan';
     if (/^docs\/test-case\/acceptance-.+\.md$/.test(relativePath)) return 'acceptance';
     if (/^docs\/test-case\/acceptance-.+\/.+\.md$/.test(relativePath)) return 'acceptance';
@@ -524,17 +524,17 @@ function inferRelation(sourceNode, targetNode, reference) {
     if (reference.syntax === 'prd_double_link') return 'depends_on';
     if (!targetNode) return 'links_to';
 
-    if (sourceNode.kind === 'prd_main' && targetNode.kind === 'prd_sub') return 'indexes';
-    if (sourceNode.kind === 'delivery_plan' && ['prd_main', 'prd_sub', 'foundation', 'page_explainer', 'page_delivery', 'brd'].includes(targetNode.kind)) {
+    if (sourceNode.kind === 'mainprd' && targetNode.kind === 'subprd') return 'indexes';
+    if (sourceNode.kind === 'delivery_plan' && ['mainprd', 'subprd', 'foundation', 'page_explainer', 'page_delivery', 'brd'].includes(targetNode.kind)) {
         return 'depends_on';
     }
-    if (['page_delivery', 'page_explainer', 'foundation', 'prd_feature_list', 'prd_main', 'prd_sub'].includes(sourceNode.kind) && targetNode.authority) {
+    if (['page_delivery', 'page_explainer', 'foundation', 'prd_feature_list', 'mainprd', 'subprd'].includes(sourceNode.kind) && targetNode.authority) {
         return 'depends_on';
     }
-    if (sourceNode.kind === 'source_code' && ['prd_main', 'prd_sub', 'delivery_plan', 'page_explainer', 'foundation'].includes(targetNode.kind)) {
+    if (sourceNode.kind === 'source_code' && ['mainprd', 'subprd', 'delivery_plan', 'page_explainer', 'foundation'].includes(targetNode.kind)) {
         return 'implements';
     }
-    if (['acceptance', 'test_case', 'test_review'].includes(sourceNode.kind) && ['prd_main', 'prd_sub', 'acceptance', 'source_code'].includes(targetNode.kind)) {
+    if (['acceptance', 'test_case', 'test_review'].includes(sourceNode.kind) && ['mainprd', 'subprd', 'acceptance', 'source_code'].includes(targetNode.kind)) {
         return 'verifies';
     }
     return 'links_to';
@@ -591,7 +591,7 @@ function buildValidationIssues(nodes, edges) {
         const source = byPath.get(edge.from);
         const target = byPath.get(edge.to);
         if (!source || !target) continue;
-        if (source.kind !== 'prd_main' || target.kind !== 'prd_sub') continue;
+        if (source.kind !== 'mainprd' || target.kind !== 'subprd') continue;
         if (!hasEdge(edges, target.path, source.path)) {
             issues.push({
                 severity: 'warning',
@@ -599,13 +599,13 @@ function buildValidationIssues(nodes, edges) {
                 message: `${target.path} should link back to ${source.path}`,
                 from: target.path,
                 to: source.path,
-                requiredBy: 'prd_main_to_sub_prd_bidirectional_index'
+                requiredBy: 'mainprd_to_subprd_bidirectional_index'
             });
         }
     }
 
     for (const node of nodes) {
-        if (!['brd', 'page_explainer', 'foundation', 'prd_main', 'prd_sub', 'delivery_plan'].includes(node.kind)) {
+        if (!['brd', 'page_explainer', 'foundation', 'mainprd', 'subprd', 'delivery_plan'].includes(node.kind)) {
             continue;
         }
         const connected = edges.some((edge) => edge.status === 'resolved' && (edge.from === node.path || edge.to === node.path));
@@ -633,9 +633,9 @@ function buildWikiSchema() {
         fileKinds: fileKindDefinitions,
         requiredRelations: [
             {
-                from_kind: 'prd_main',
+                from_kind: 'mainprd',
                 relation: 'indexes',
-                to_kind: 'prd_sub',
+                to_kind: 'subprd',
                 reverse_required: true,
                 reverse_relation: 'links_to',
                 missing_issue: 'missing_reverse_link'

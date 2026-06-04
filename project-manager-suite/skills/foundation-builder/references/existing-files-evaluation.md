@@ -48,26 +48,26 @@ Phase 1 询问用户是否有已有数据库/接口文件，用户回答"有"时
 2. 按 coding-standards 规范重新整理格式（表名、字段名、索引命名等）
 3. 补充缺失的规范强制字段（id/gmt_create/gmt_modified）
 4. 将已有的命名纳入术语表统一管理
-5. 产出新的 `foundation-schema/api-<slug>.md`
+5. 产出新的 `docs/prd/foundation/foundation-{schema,api}-<slug>.md`
 
 ### 部分涵盖
 
 1. 已有覆盖的部分：按规范重新整理
 2. 缺失的部分：从页面代码新推导，按正常 Phase 3/4 逻辑设计
 3. 合并为完整产物
-4. 产出新的 `foundation-schema/api-<slug>.md`
+4. 产出新的 `docs/prd/foundation/foundation-{schema,api}-<slug>.md`
 
 ### 不涵盖
 
 1. 按正常流程从零设计
 2. 已有文件仅作为背景参考（了解用户原有的命名习惯等）
-3. 产出新的 `foundation-schema/api-<slug>.md`
+3. 产出新的 `docs/prd/foundation/foundation-{schema,api}-<slug>.md`
 
 ## 融合后的两个动作
 
 ### 动作 1: 产出新文件
 
-产出 `foundation-schema-<slug>.md` 和/或 `foundation-api-<slug>.md`，是融合后的完整产物。格式遵循 Phase 3/4 的产物模板。
+产出 `docs/prd/foundation/foundation-schema-<slug>.md` 和/或 `docs/prd/foundation/foundation-api-<slug>.md`，是融合后的完整产物。格式遵循 Phase 3/4 的产物模板。
 
 ### 动作 2: 标注原始文件废弃
 
@@ -76,13 +76,13 @@ Phase 1 询问用户是否有已有数据库/接口文件，用户回答"有"时
 ```markdown
 ---
 ⛔ DEPRECATED — 本文件已停止维护
-superseded_by: foundation-schema-<slug>.md
+superseded_by: docs/prd/foundation/foundation-schema-<slug>.md
 deprecated_at: YYYY-MM-DD HH:MM
 deprecated_by: foundation-builder
 ---
 
 > **⛔ 请勿使用本文件**
-> 本文件内容已融合至 [foundation-schema-<slug>.md](foundation-schema-<slug>.md)，以该文件为准。
+> 本文件内容已融合至 [foundation-schema-<slug>.md](docs/prd/foundation/foundation-schema-<slug>.md)，以该文件为准。
 > 本文件仅作历史留档，不再更新。
 
 （以下为原始内容，不再维护）

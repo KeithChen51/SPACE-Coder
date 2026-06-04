@@ -1,7 +1,7 @@
 # PRD {N}: {区块名称}
 
 <!--
-  本文件是子文档模板。{} 中的内容为占位符，需替换为实际内容。
+  本文件是 subprd 模板。{} 中的内容为占位符，需替换为实际内容。
 
   ═══════════════════════════════════════════════════════════════
   开写前必做
@@ -42,12 +42,12 @@
   - 用户流程描述必须与 explainer-flow 一致
   - 术语必须使用 foundation-glossary 中的定义
   - Schema/API 信息只引用 foundation 产物，不重新定义
-  - 接口契约引用 foundation-api 中的定义，子 PRD 只补充本区块的业务说明
+  - 接口契约引用 foundation-api 中的定义，subprd 只补充本区块的业务说明
   - 数据链路表中的"来源表.列"必须在 foundation-schema 中存在
 -->
 
 > **文档版本**: 1.0 | **最后更新**: {日期}
-> **关联文档**: [主文档](prd-main-{slug}.md) · {相邻区块 PRD 链接} · [用户流程](explainer-flow-{slug}.md) · [交互语义](explainer-b-interaction-{slug}.md) · [术语表](foundation-glossary-{slug}.md) · [Schema](foundation-schema-{slug}.md) · [API](foundation-api-{slug}.md)
+> **关联文档**: [mainprd](../mainprd-{slug}.md) · {相邻 subprd 链接} · [用户流程](../../../src/frontend/page-preview/explainer-flow-{slug}.md) · [交互语义](../../../src/frontend/page-preview/explainer-b-interaction-{slug}.md) · [术语表](../foundation/foundation-glossary-{slug}.md) · [Schema](../foundation/foundation-schema-{slug}.md) · [API](../foundation/foundation-api-{slug}.md)
 
 ---
 
@@ -190,7 +190,7 @@
 -->
 
 **数据来源**：`{METHOD} /api/{path}` 返回的 `{字段名}`（含 {子字段列表}）
-> 接口详情见 [foundation-api-{slug}.md §N.M](...)
+> 接口详情见 [foundation-api-{slug}.md §N.M](foundation/foundation-api-{slug}.md)
 
 **布局**：
 
@@ -343,9 +343,9 @@
 ## §M+1 接口契约
 
 <!--
-  完整接口契约定义在 foundation-api 中。子 PRD 引用而非复制。
+  完整接口契约定义在 foundation-api 中。subprd 引用而非复制。
 
-  子 PRD 只补充本区块特有的业务说明：
+  subprd 只补充本区块特有的业务说明：
   1. 本区域使用的全部响应字段列表（按功能子区域标注章节）
   2. 前端渲染约束
   3. 特殊矩阵/映射表
@@ -357,7 +357,7 @@
 
 {一句话说明接口用途}
 
-> 完整接口契约见 [foundation-api-{slug}.md §N.M](...)。
+> 完整接口契约见 [foundation-api-{slug}.md §N.M](foundation/foundation-api-{slug}.md)。
 
 **本区域业务说明**：
 

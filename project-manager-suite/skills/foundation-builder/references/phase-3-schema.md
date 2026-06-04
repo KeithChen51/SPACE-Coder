@@ -9,7 +9,7 @@ Phase 2 术语表已获用户确认后进入。
 
 ## 输入
 
-- 已确认的术语表（`foundation-glossary-<slug>.md`）
+- 已确认的术语表（`docs/prd/foundation/foundation-glossary-<slug>.md`）
 - 页面代码文件（Vue 3 组件）
 - BRD 文件
 - `coding-standards/references/05-mysql-table.md`（外部规范，运行时读取）
@@ -71,7 +71,7 @@ Phase 2 术语表已获用户确认后进入。
 
 ## 产物模板
 
-文件名：`foundation-schema-<slug>.md`
+文件名：`docs/prd/foundation/foundation-schema-<slug>.md`
 
 ```markdown
 # Database Schema - <项目名称>
@@ -129,10 +129,10 @@ Phase 2 术语表已获用户确认后进入。
 当产物超过 400 行时，拆为索引文件 + 子文件目录：
 
 ```
-foundation-schema-<slug>.md          ← 索引文件
+docs/prd/foundation/foundation-schema-<slug>.md          ← 索引文件
   内容：全表总览表格 + 每张表的一行摘要 + 指向子文件的链接
 
-foundation-schema-<slug>/
+docs/prd/foundation/foundation-schema-<slug>/
   ├── <table_name_1>.md              ← 单表完整定义（字段表格 + 索引 + 使用接口）
   ├── <table_name_2>.md
   └── ...
@@ -149,7 +149,7 @@ foundation-schema-<slug>/
 
 ## 增量模式
 
-若已有前次 `foundation-schema-<slug>.md`：
+若已有前次 `docs/prd/foundation/foundation-schema-<slug>.md`：
 
 1. 对比当前页面字段需求与已有表结构
 2. **新增**：新页面引入的新实体 → 新增表
@@ -159,7 +159,7 @@ foundation-schema-<slug>/
 
 ## 表名/字段名命名
 
-必须使用术语表（`foundation-glossary-<slug>.md`）中的统一术语作为表名和字段名的来源。术语的中文名对应英文翻译作为实际命名。
+必须使用术语表（`docs/prd/foundation/foundation-glossary-<slug>.md`）中的统一术语作为表名和字段名的来源。术语的中文名对应英文翻译作为实际命名。
 
 ## 用户确认要点
 

@@ -130,7 +130,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 → page-explainer 冻结流程与交互语义 / gap 收口
 → prd-chief
 → 术语表 / Schema / API / foundation 交付清单
-→ 功能列表 / 主 PRD / 子 PRD
+→ 功能列表 / mainprd / subprd
 → 开发计划
 → 开发执行
 → 测试用例
@@ -181,7 +181,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
 | `test-case-chief` | 调度 `prd-acceptance-reviewer -> test-case-writer -> test-case-reviewer`，控制验收 + 测试用例环节推进 | S5 |
-| `prd-acceptance-reviewer` | 把子 PRD §X.6 验收条目拉齐为独立验收文档 | S5 验收文档 |
+| `prd-acceptance-reviewer` | 把 subprd §X.6 验收条目拉齐为独立验收文档 | S5 验收文档 |
 | `test-case-writer` | 基于验收文档产出按业务域组织的测试用例 + SQL 数据准备 | S5 测试用例 |
 | `test-case-reviewer` | 核查 TC 质量，原地修正或写入待裁定问题清单 | S5 TC 核查 |
 | `test-case-runner` | 按测试用例文档执行 API / UI 测试并生成报告 | S6 |

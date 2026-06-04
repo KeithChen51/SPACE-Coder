@@ -60,7 +60,7 @@ node <suite-path>/skills/project-link-indexer/scripts/validate-project-links.mjs
 - Markdown 链接：`[标题](path/to/file.md)`
 - Wiki 链接：`[[path/to/file.md|标题]]`
 - 计划中的 `PRD 双链·读`：反推 `delivery-plan -> PRD/foundation/page` 的 `depends_on`
-- 套件命名约定：识别 `project-profile.md`、`BRD-*`、`explainer-*`、`foundation-*`、`prd-main-*`、`prd-*`、`delivery-plan-*` 等文件角色
+- 套件命名约定：识别 `project-profile.md`、`BRD-*`、`explainer-*`、`foundation-*`、`mainprd-*`、`subprd/0X-subprd-*`、`delivery-plan-*` 等文件角色
 
 每条边都必须保留证据位置：来源文件、行号、原文和抽取语法。
 
@@ -80,7 +80,7 @@ node <suite-path>/skills/project-link-indexer/scripts/validate-project-links.mjs
 
 生成的人读索引可以同时保留两种链接：
 
-- `[[docs/prd/prd-main-demo.md|主 PRD]]`：方便支持 wiki link 的工具解析
-- `[主 PRD](../prd/prd-main-demo.md)`：普通 Markdown 可点击
+- `[[docs/prd/mainprd-demo.md|mainprd]]`：方便支持 wiki link 的工具解析
+- `[mainprd](../prd/mainprd-demo.md)`：普通 Markdown 可点击
 
 不要强制改写所有原始文件为 wiki link。V1 只在生成的 `docs/index/*` 中使用这种双链接风格。

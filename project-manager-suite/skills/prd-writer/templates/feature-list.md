@@ -27,7 +27,7 @@
 
 > 生成时间: {YYYY-MM-DD HH:MM}
 > 来源: prd-writer Phase 2
-> 上游: page-delivery-{slug} + explainer-flow-{slug} + explainer-interaction-{slug} + foundation-glossary-{slug}
+> 上游: page-delivery-{slug} + explainer-flow-{slug} + explainer-interaction-{slug} + docs/prd/foundation/foundation-glossary-{slug}
 
 ---
 
@@ -60,13 +60,15 @@
   - # 列使用全局递增编号
   - 页面名称与 page-delivery 中的路由对齐
   - 功能说明用一句话概括业务目的
-  - 子PRD 列在 Phase 4 完成后回填
+  - subprd文件 / 状态列在 Phase 4 逐份回填
+  - 状态固定为：待开始 / 待确认 / 已确认
+  - 全部状态为已确认前，不得声明完整版 PRD 已完成
 -->
 
-| # | 页面 | 区块 | 功能说明 | 子PRD |
-|---|------|------|---------|-------|
-| 1 | {页面名} | {区块名} | {一句话功能说明} | {Phase 4 回填} |
-| 2 | {页面名} | {区块名} | {一句话功能说明} | {Phase 4 回填} |
+| # | 页面 | 区块 | 功能说明 | subprd文件 | 状态 |
+|---|------|------|---------|-------------|------|
+| 1 | {页面名} | {区块名} | {一句话功能说明} | [01-subprd-{区块英文短名}.md](subprd/01-subprd-{区块英文短名}.md) | 待开始 |
+| 2 | {页面名} | {区块名} | {一句话功能说明} | [02-subprd-{区块英文短名}.md](subprd/02-subprd-{区块英文短名}.md) | 待开始 |
 
 ---
 

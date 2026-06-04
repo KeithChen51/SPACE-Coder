@@ -276,6 +276,7 @@ function findMatchingFiles(hostRoot, files, pattern, preferredDirs = []) {
 const DESIGN_ARTIFACT_DIRS = {
     brd: ['docs/brd'],
     page: ['src/frontend/page-preview', 'page-preview', '可操作页面'],
+    foundation: ['docs/prd/foundation'],
     prd: ['docs/prd']
 };
 
@@ -422,6 +423,116 @@ function extractNamedArtifactPaths(content) {
     return artifacts;
 }
 
+function findTableColumnIndex(headers, candidates) {
+    for (const candidate of candidates) {
+        const index = headers.findIndex((header) => header === candidate);
+        if (index !== -1) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+function normalizeMarkdownLinkTarget(rawPath) {
+    const value = normalizeArtifactPath(rawPath);
+    if (!value) return '';
+
+    const markdownLink = value.match(/\[[^\]]+\]\(([^)]+)\)/);
+    const wikiLink = value.match(/^\[\[([^|\]]+)(?:\|[^\]]+)?\]\]$/);
+    const target = markdownLink?.[1] || wikiLink?.[1] || value;
+
+    return normalizeArtifactPath(target.replace(/[?#].*$/, ''));
+}
+
+function resolveLinkedMarkdownFile(hostRoot, sourceFilePath, rawPath) {
+    const value = normalizeMarkdownLinkTarget(rawPath);
+    if (!value || isLikelyPlaceholderPath(value)) {
+        return null;
+    }
+
+    if (path.isAbsolute(value)) {
+        return value;
+    }
+
+    const normalizedValue = value.split(path.sep).join('/');
+    if (/^(?:docs|src|app|frontend|backend|server|web)\//.test(normalizedValue)) {
+        return path.resolve(hostRoot, normalizedValue);
+    }
+
+    return path.resolve(path.dirname(sourceFilePath), value);
+}
+
+function extractPrdIndexRows(content) {
+    const tables = parseMarkdownTables(content);
+    const rows = [];
+
+    for (const table of tables) {
+        const blockIndex = findTableColumnIndex(table.headers, ['区块', '功能区块', 'subprd']);
+        const pathIndex = findTableColumnIndex(table.headers, ['subprd文件', 'subprd 文件', '文件路径', '链接']);
+        const statusIndex = findTableColumnIndex(table.headers, ['状态', '确认状态']);
+        if (blockIndex === -1 || pathIndex === -1) {
+            continue;
+        }
+
+        for (const row of table.rows) {
+            const block = normalizeValue(row[blockIndex] || '');
+            const rawPath = row[pathIndex] || '';
+            if (!block || isPlaceholderText(block) || isLikelyPlaceholderPath(rawPath)) {
+                continue;
+            }
+
+            rows.push({
+                block,
+                rawPath,
+                status: statusIndex === -1 ? '' : normalizeValue(row[statusIndex] || '')
+            });
+        }
+    }
+
+    return rows;
+}
+
+function toPrdFileRefs(hostRoot, sourceFilePath, rows) {
+    return rows
+        .map((row) => {
+            const filePath = resolveLinkedMarkdownFile(hostRoot, sourceFilePath, row.rawPath);
+            return {
+                ...row,
+                filePath,
+                relativePath: filePath ? normalizePathForMatch(hostRoot, filePath) : '',
+                exists: Boolean(filePath && fs.existsSync(filePath))
+            };
+        })
+        .filter((row) => row.relativePath);
+}
+
+function uniqueSorted(values) {
+    return Array.from(new Set(values.filter(Boolean))).sort();
+}
+
+function listsEqual(left, right) {
+    if (left.length !== right.length) {
+        return false;
+    }
+
+    return left.every((value, index) => value === right[index]);
+}
+
+function collectUnconfirmedPrdRows(source, rows) {
+    return rows
+        .filter((row) => row.status !== '已确认')
+        .map((row) => ({
+            source,
+            block: row.block,
+            status: row.status || '未标记'
+        }));
+}
+
+function isSubprdPath(relativePath) {
+    return /^docs\/prd\/subprd\/\d{2}-subprd-[^/]+\.md$/u.test(relativePath);
+}
+
 function listResolvedFiles(hostRoot, rawPaths) {
     const files = rawPaths
         .map((rawPath) => resolveArtifactFilePath(hostRoot, rawPath))
@@ -540,7 +651,7 @@ function inspectFoundationArtifacts(hostRoot) {
         hostRoot,
         markdownFiles,
         /^foundation-delivery-.+\.md$/,
-        DESIGN_ARTIFACT_DIRS.prd
+        DESIGN_ARTIFACT_DIRS.foundation
     );
     if (!foundationDelivery) {
         return {
@@ -566,14 +677,48 @@ function inspectFoundationArtifacts(hostRoot) {
 function inspectPrdArtifacts(hostRoot) {
     const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
     const featureList = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-feature-list-.+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
-    const mainPrd = findLatestMatchingFile(hostRoot, markdownFiles, /^prd-main-.+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
-    const subPrds = findMatchingFiles(hostRoot, markdownFiles, /^prd-(?!feature-list-|main-).+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
+    const mainprd = findLatestMatchingFile(hostRoot, markdownFiles, /^mainprd-.+\.md$/, DESIGN_ARTIFACT_DIRS.prd);
+    const featureRows = featureList ? extractPrdIndexRows(loadMarkdownFile(featureList.filePath)) : [];
+    const mainRows = mainprd ? extractPrdIndexRows(loadMarkdownFile(mainprd.filePath)) : [];
+    const featureRefs = featureList ? toPrdFileRefs(hostRoot, featureList.filePath, featureRows) : [];
+    const mainRefs = mainprd ? toPrdFileRefs(hostRoot, mainprd.filePath, mainRows) : [];
+    const featureTargets = uniqueSorted(featureRefs.map((row) => row.relativePath));
+    const mainTargets = uniqueSorted(mainRefs.map((row) => row.relativePath));
+    const expectedTargets = uniqueSorted([...featureTargets, ...mainTargets]);
+    const existingTargets = expectedTargets.filter((relativePath) => fs.existsSync(path.join(hostRoot, relativePath)));
+    const missingSubprd = expectedTargets.filter((relativePath) => !fs.existsSync(path.join(hostRoot, relativePath)));
+    const indexCountsAligned = featureRows.length > 0 && featureRows.length === mainRows.length;
+    const indexTargetsAligned = expectedTargets.length > 0 && listsEqual(featureTargets, mainTargets);
+    const subprdPathsValid = expectedTargets.length > 0 && expectedTargets.every(isSubprdPath);
+    const unconfirmedRows = [
+        ...collectUnconfirmedPrdRows('feature-list', featureRows),
+        ...collectUnconfirmedPrdRows('mainprd', mainRows)
+    ];
+    const allRowsConfirmed = unconfirmedRows.length === 0;
 
     return {
         featureListExists: Boolean(featureList),
-        mainPrdExists: Boolean(mainPrd),
-        subPrdCount: subPrds.length,
-        fullPrdReady: Boolean(featureList) && Boolean(mainPrd) && subPrds.length > 0
+        featureListPath: featureList?.relativePath || null,
+        featureListItemCount: featureRows.length,
+        mainprdExists: Boolean(mainprd),
+        mainprdPath: mainprd?.relativePath || null,
+        mainprdIndexCount: mainRows.length,
+        expectedSubprdCount: expectedTargets.length,
+        subprdCount: existingTargets.length,
+        missingSubprd,
+        indexCountsAligned,
+        indexTargetsAligned,
+        subprdPathsValid,
+        allRowsConfirmed,
+        unconfirmedRows,
+        fullPrdReady:
+            Boolean(featureList) &&
+            Boolean(mainprd) &&
+            indexCountsAligned &&
+            indexTargetsAligned &&
+            subprdPathsValid &&
+            missingSubprd.length === 0 &&
+            allRowsConfirmed
     };
 }
 
@@ -1089,8 +1234,19 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
             pass: prdArtifacts.fullPrdReady,
             evidence: {
                 featureListExists: prdArtifacts.featureListExists,
-                mainPrdExists: prdArtifacts.mainPrdExists,
-                subPrdCount: prdArtifacts.subPrdCount
+                featureListPath: prdArtifacts.featureListPath,
+                featureListItemCount: prdArtifacts.featureListItemCount,
+                mainprdExists: prdArtifacts.mainprdExists,
+                mainprdPath: prdArtifacts.mainprdPath,
+                mainprdIndexCount: prdArtifacts.mainprdIndexCount,
+                expectedSubprdCount: prdArtifacts.expectedSubprdCount,
+                subprdCount: prdArtifacts.subprdCount,
+                indexCountsAligned: prdArtifacts.indexCountsAligned,
+                indexTargetsAligned: prdArtifacts.indexTargetsAligned,
+                subprdPathsValid: prdArtifacts.subprdPathsValid,
+                allRowsConfirmed: prdArtifacts.allRowsConfirmed,
+                missingSubprd: prdArtifacts.missingSubprd,
+                unconfirmedRows: prdArtifacts.unconfirmedRows
             }
         };
     }
@@ -1347,6 +1503,11 @@ function resolveNextActionWithContext({ validationResult, targetStage, resolvedR
     const foundationBlocker = blockers.find((item) => item.code === 'foundation_missing');
     if (foundationBlocker) {
         return '停留 S2，先完成 foundation-builder 产物并确认交付清单中的文件真实存在';
+    }
+
+    const fullPrdBlocker = blockers.find((item) => item.code === 'full_prd_missing');
+    if (fullPrdBlocker) {
+        return '停留 S2，先补齐 mainprd 与全部 subprd，并确认功能列表和 mainprd 状态后再进入 S3/S5';
     }
 
     const baselineBlocker = blockers.find((item) => item.code === 'baseline_audit_missing');

@@ -8,9 +8,9 @@ Phase 4 API 已获用户确认、Schema 使用接口已回填后进入。
 
 ## 输入
 
-- 已确认的术语表（`foundation-glossary-<slug>.md`）
-- 已确认的 Schema（`foundation-schema-<slug>.md`）
-- 已确认的 API（`foundation-api-<slug>.md`）
+- 已确认的术语表（`docs/prd/foundation/foundation-glossary-<slug>.md`）
+- 已确认的 Schema（`docs/prd/foundation/foundation-schema-<slug>.md`）
+- 已确认的 API（`docs/prd/foundation/foundation-api-<slug>.md`）
 - 页面代码文件（Vue 3 组件）
 - 已冻结的交互语义（`explainer-b-interaction-<slug>.md`，仅 locked 条目）
 

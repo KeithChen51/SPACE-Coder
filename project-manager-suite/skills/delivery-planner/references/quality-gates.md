@@ -47,8 +47,8 @@
 - [ ] 读过 `<suite-path>/skills/ai-project-manager/references/defaults/tech-stack.md`（套包内置技术栈参考，所有 Task 技术实现细节应与实际技术栈一致）
 - [ ] 读过仓库规则源
 - [ ] 读过当前计划或目标样板计划
-- [ ] 读过 PRD 主文档 / 需求导航文档
-- [ ] 读过与任务相关的子 PRD / API / 数据库章节
+- [ ] 读过 mainprd / 需求导航文档
+- [ ] 读过与任务相关的 subprd / API / 数据库章节
 - [ ] 读过至少一组真实代码或 SQL 文件
 - [ ] 读过至少一组测试或验证资产（如任务需要验收口径）
 

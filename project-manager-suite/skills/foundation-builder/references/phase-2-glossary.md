@@ -46,7 +46,7 @@ Phase 1 完成后自动进入。
 
 ## 产物模板
 
-文件名：`foundation-glossary-<slug>.md`
+文件名：`docs/prd/foundation/foundation-glossary-<slug>.md`
 
 ```markdown
 # 术语表 - <项目名称>
@@ -79,7 +79,7 @@ Phase 1 完成后自动进入。
 
 ## 增量模式
 
-若已有前次 `foundation-glossary-<slug>.md`：
+若已有前次 `docs/prd/foundation/foundation-glossary-<slug>.md`：
 
 1. 读取前次术语表
 2. 对比当前提取结果与已有术语

@@ -13,7 +13,7 @@ description: Use when delivery-plan 已就绪，需要调度 S5 测试用例环�
 
 你是 S5 测试用例环节的观察者与裁判。你自己不审 PRD，不写验收文档，不写测试用例，你的职责是：
 
-1. 确认前置门禁（PRD 主索引 + 子 PRD + foundation 四件 + delivery-plan 全部就绪）
+1. 确认前置门禁（mainprd + subprd + foundation 四件 + delivery-plan 全部就绪）
 2. 观察子 skill 的产物状态，判断下一步该执行哪个子 skill（prd-acceptance-reviewer / test-case-writer / test-case-reviewer）
 3. 有 gap 需要回环时，判定回环并指示下一步，具体怎么修改是子 skill 的事
 4. 全部完成后标记 DONE，下游直接读子 skill 的产物文件
@@ -60,12 +60,12 @@ description: Use when delivery-plan 已就绪，需要调度 S5 测试用例环�
 
 | 来源 | 文件 | 位置 | 用途 |
 |------|------|------|------|
-| prd-writer | `prd-main-<slug>.md` | `<host>/docs/prd/` | 确认 PRD 主索引齐 |
-| prd-writer | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 子 PRD 至少 1 份存在（不强制校验区块数量） |
-| foundation-builder | `foundation-glossary-<slug>.md` | `<host>/docs/prd/` | 术语表齐 |
-| foundation-builder | `foundation-schema-<slug>.md`（或同名子目录） | `<host>/docs/prd/` | Schema 齐（支持拆分模式） |
-| foundation-builder | `foundation-api-<slug>.md`（或同名子目录） | `<host>/docs/prd/` | API 齐（支持拆分模式） |
-| foundation-builder | `foundation-delivery-<slug>.md` | `<host>/docs/prd/` | foundation 交付清单齐 |
+| prd-writer | `mainprd-<slug>.md` | `<host>/docs/prd/` | 确认 mainprd 齐 |
+| prd-writer | `0X-subprd-<区块英文短名>.md` | `<host>/docs/prd/subprd/` | subprd 至少 1 份存在（不强制校验区块数量） |
+| foundation-builder | `foundation-glossary-<slug>.md` | `<host>/docs/prd/foundation/` | 术语表齐 |
+| foundation-builder | `foundation-schema-<slug>.md`（或同名子目录） | `<host>/docs/prd/foundation/` | Schema 齐（支持拆分模式） |
+| foundation-builder | `foundation-api-<slug>.md`（或同名子目录） | `<host>/docs/prd/foundation/` | API 齐（支持拆分模式） |
+| foundation-builder | `foundation-delivery-<slug>.md` | `<host>/docs/prd/foundation/` | foundation 交付清单齐 |
 | delivery-planner | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 开发计划齐 |
 
 ### 运行期观察点

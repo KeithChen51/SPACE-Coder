@@ -12,12 +12,12 @@
 0.5. **脚本化上游产物发现**（Step 0.5 强制前置，见 SKILL.md）
 1. 仓库规则源
 2. 当前正式计划与必要历史计划
-3. PRD 导航源（来自脚本输出 `prdMain`）
-4. 任务相关 PRD（来自脚本输出 `prdChildren`，按任务选读）
+3. PRD 导航源（来自脚本输出 `mainprd`）
+4. 任务相关 PRD（来自脚本输出 `subprd`，按任务选读）
 5. 真实代码与 SQL
 6. 测试与验证资产
 
-核心原则：**先判断仓库角色，后脚本发现，后规则；先目标态，后现状；先主文档，后局部细节。**
+核心原则：**先判断仓库角色，后脚本发现，后规则；先目标态，后现状；先 mainprd，后局部细节。**
 
 ## 二、仓库规则源
 
@@ -41,20 +41,20 @@
 
 ## 四、PRD 导航源（由脚本清单驱动）
 
-Step 0.5 脚本输出的 `prdMain` 字段即为 PRD 主文档的绝对路径。
+Step 0.5 脚本输出的 `mainprd` 字段即为 mainprd 的绝对路径。
 
 | 资料类型 | 用途 | 来源 |
 |---|---|---|
-| PRD 主文档 (`prd-main-<slug>.md`) | 建立全局地图，确定功能边界和章节入口 | 脚本 `prdMain.path` |
+| mainprd (`mainprd-<slug>.md`) | 建立全局地图，确定功能边界和章节入口 | 脚本 `mainprd.path` |
 | PRD 功能列表 (`prd-feature-list-<slug>.md`) | 页面全景 + 区块业务逻辑总览 | 脚本 `prdFeatureList.path` |
 
-PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD。
+PRD 导航文档是第一层入口。先建立地图，再按任务进入 subprd。
 
-> 如果 `prdMain` 为 `null`，进入失败分支，不要继续读取其他资料。
+> 如果 `mainprd` 为 `null`，进入失败分支，不要继续读取其他资料。
 
 ## 五、任务相关 PRD 源（由脚本清单驱动）
 
-脚本输出的 `prdChildren` 数组列举了所有子文档路径。按任务类型补读相关块，不整包读取。
+脚本输出的 `subprd` 数组列举了所有 subprd 路径。按任务类型补读相关块，不整包读取。
 
 | 任务类型 | 优先补读 |
 |---|---|
@@ -111,10 +111,10 @@ PRD 导航文档是第一层入口。先建立地图，再按任务进入子 PRD
 
 必须先运行 Step 0.5 脚本，再至少读取：
 - **`<suite-path>/skills/ai-project-manager/references/defaults/tech-stack.md`（套包内置技术栈参考，必读）**
-- 脚本清单：`prdMain` + `foundations` 全部 + `prdFeatureList`
+- 脚本清单：`mainprd` + `foundations` 全部 + `prdFeatureList`
 - 仓库规则源
 - 当前正式计划或成熟样本计划
-- `prdChildren` 中与任务相关的条目（非全部）
+- `subprd` 中与任务相关的条目（非全部）
 - 至少一组真实代码 / SQL / 验证资产
 
 前置条件：
@@ -143,13 +143,13 @@ Step 0.5 脚本可以跳过整包读取，但至少读取：
 
 | 文件类型 | 命名模式 | 优先级 | 脚本字段 |
 |---------|----------|--------|---------|
-| PRD 主文档 | `docs/prd/prd-main-<slug>.md` | 最高，必读 | `prdMain` |
+| mainprd | `docs/prd/mainprd-<slug>.md` | 最高，必读 | `mainprd` |
 | PRD 功能列表 | `docs/prd/prd-feature-list-<slug>.md` | 高 | `prdFeatureList` |
-| PRD 子文档 | `docs/prd/prd-<slug>-<区块名>.md`（排除 prd-main、prd-feature-list） | 按任务需要 | `prdChildren[]` |
-| Schema | `docs/prd/foundation-schema-<slug>.md`（或 `-part<N>.md`）| 高，必需 | `foundations[type=schema]` |
-| API | `docs/prd/foundation-api-<slug>.md`（或 `-part<N>.md`） | 高，必需 | `foundations[type=api]` |
-| 术语表 | `docs/prd/foundation-glossary-<slug>.md` | 中 | `foundations[type=glossary]` |
-| 交付清单 | `docs/prd/foundation-delivery-<slug>.md` | 中 | `foundations[type=delivery]` |
+| subprd | `docs/prd/subprd/0X-subprd-<区块英文短名>.md` | 按任务需要 | `subprd[]` |
+| Schema | `docs/prd/foundation/foundation-schema-<slug>.md`（或 `-part<N>.md`）| 高，必需 | `foundations[type=schema]` |
+| API | `docs/prd/foundation/foundation-api-<slug>.md`（或 `-part<N>.md`） | 高，必需 | `foundations[type=api]` |
+| 术语表 | `docs/prd/foundation/foundation-glossary-<slug>.md` | 中 | `foundations[type=glossary]` |
+| 交付清单 | `docs/prd/foundation/foundation-delivery-<slug>.md` | 中 | `foundations[type=delivery]` |
 | 用户流程 | `src/frontend/page-preview/explainer-flow-<slug>.md` | 中 | `explainers[type=flow]` |
 | 交互描述 | `src/frontend/page-preview/explainer-b-interaction-<slug>.md` | 中 | `explainers[type=b-interaction]` |
 | 交互差异 | `src/frontend/page-preview/explainer-b-gap-<slug>.md` | 低 | `explainers[type=b-gap]` |

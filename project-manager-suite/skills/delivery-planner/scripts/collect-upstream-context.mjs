@@ -15,7 +15,8 @@
  *   （delivery-planner 专属前置脚本，不属于全局 tools/）
  *
  * Purpose:
- *   Scan the host project's docs/prd/ directory plus src/frontend/page-preview/
+ *   Scan the host project's docs/prd/ directory, docs/prd/foundation/
+ *   and src/frontend/page-preview/
  *   and discover upstream PRD + foundation + page explainer documents that
  *   delivery-planner must ingest before drafting a development plan.
  *
@@ -24,9 +25,9 @@
  *     - fallback mode: keyword-based fuzzy classification for non-pipeline projects
  *
  *   Outputs a structured JSON blob with:
- *     - prdMain      – the prd-main-<slug>.md file (highest priority)
+ *     - mainprd      – the mainprd-<slug>.md file (highest priority)
  *     - prdFeatureList – prd-feature-list-<slug>.md
- *     - prdChildren  – all other prd-<slug>-<block>.md sub-documents
+ *     - subprd       – numbered files under docs/prd/subprd/
  *     - foundations  – foundation-{glossary,schema,api,delivery}-<slug>.md
  *     - explainers   – explainer-{flow,*-interaction,*-gap,delivery}-<slug>.md
  *     - missingExpected – files that SHOULD exist per PIPELINE.md but don't
@@ -52,15 +53,17 @@ const __filename = fileURLToPath(import.meta.url);
 /** File size threshold (bytes) above which we add a warning. */
 const LARGE_FILE_THRESHOLD = 40_000;
 const PAGE_PREVIEW_DIR = path.join('src', 'frontend', 'page-preview');
+const FOUNDATION_SUBDIR = 'foundation';
+const SUBPRD_SUBDIR = 'subprd';
 
 /**
  * Precise patterns – compiled from PIPELINE.md naming conventions.
  * Used in "pipeline" mode (the default happy path).
  */
 const PATTERNS = {
-    prdMain:            /^prd-main-(?<slug>[a-z0-9-]+)\.md$/,
+    mainprd:            /^mainprd-(?<slug>[a-z0-9-]+)\.md$/,
     prdFeatureList:     /^prd-feature-list-(?<slug>[a-z0-9-]+)\.md$/,
-    prdChild:           /^prd-(?!main-|feature-list-)(?<slug>[a-z0-9-]+)-(?<block>[^/.]+)\.md$/u,
+    subprd:             /^(?<order>\d{2})-subprd-(?<block>[^/.]+)\.md$/u,
     foundationGlossary: /^foundation-glossary-(?<slug>[a-z0-9-]+)\.md$/,
     foundationSchema:   /^foundation-schema-(?<slug>[a-z0-9-]+)(?:-part\d+)?\.md$/,
     foundationApi:      /^foundation-api-(?<slug>[a-z0-9-]+)(?:-part\d+)?\.md$/,
@@ -191,6 +194,27 @@ function mergePagePreviewExplainers(classified, pagePreviewClassified) {
     return classified;
 }
 
+function mergeFoundationArtifacts(classified, foundationClassified) {
+    if (!classified.foundationGlossary && foundationClassified.foundationGlossary) {
+        classified.foundationGlossary = foundationClassified.foundationGlossary;
+    }
+    if (!classified.foundationDelivery && foundationClassified.foundationDelivery) {
+        classified.foundationDelivery = foundationClassified.foundationDelivery;
+    }
+
+    classified.foundationSchema.push(...foundationClassified.foundationSchema);
+    classified.foundationApi.push(...foundationClassified.foundationApi);
+
+    return classified;
+}
+
+function mergeSubprdArtifacts(classified, subprdClassified) {
+    classified.subprd.push(...subprdClassified.subprd);
+    classified.subprd.sort((a, b) => a.order - b.order || a.filename.localeCompare(b.filename));
+
+    return classified;
+}
+
 function fileMeta(docsPath, filename) {
     const abs = path.join(docsPath, filename);
     const stat = fs.statSync(abs);
@@ -215,7 +239,7 @@ function extractTitle(filePath) {
 }
 
 /**
- * Extract upstream reference table from prd-main-<slug>.md.
+ * Extract upstream reference table from mainprd-<slug>.md.
  * Looks for markdown tables that mention filenames matching our patterns.
  */
 function extractPrdMainRefs(filePath) {
@@ -235,11 +259,17 @@ function extractPrdMainRefs(filePath) {
 
 // ─── Pipeline mode: precise classification ────────────────────────────────────
 
-function classifyFiles(files, docsPath) {
+function classifyFiles(files, docsPath, options = {}) {
+    const {
+        includePrd = true,
+        includeSubprd = true,
+        includeFoundation = true,
+        includeExplainer = true,
+    } = options;
     const result = {
-        prdMain: null,
+        mainprd: null,
         prdFeatureList: null,
-        prdChildren: [],
+        subprd: [],
         foundationGlossary: null,
         foundationSchema: [],
         foundationApi: [],
@@ -254,67 +284,72 @@ function classifyFiles(files, docsPath) {
     for (const filename of files) {
         const meta = fileMeta(docsPath, filename);
 
-        if (PATTERNS.prdMain.test(filename)) {
-            const slug = filename.match(PATTERNS.prdMain).groups.slug;
-            result.prdMain = { ...meta, slug, title: extractTitle(meta.path), upstreamRefs: [] };
+        if (includePrd && PATTERNS.mainprd.test(filename)) {
+            const slug = filename.match(PATTERNS.mainprd).groups.slug;
+            result.mainprd = { ...meta, slug, title: extractTitle(meta.path), upstreamRefs: [] };
             continue;
         }
 
-        if (PATTERNS.prdFeatureList.test(filename)) {
+        if (includePrd && PATTERNS.prdFeatureList.test(filename)) {
             const slug = filename.match(PATTERNS.prdFeatureList).groups.slug;
             result.prdFeatureList = { ...meta, slug, title: extractTitle(meta.path) };
             continue;
         }
 
-        if (PATTERNS.prdChild.test(filename)) {
-            const m = filename.match(PATTERNS.prdChild);
-            result.prdChildren.push({ ...meta, slug: m.groups.slug, block: m.groups.block, title: extractTitle(meta.path) });
+        if (includeSubprd && PATTERNS.subprd.test(filename)) {
+            const m = filename.match(PATTERNS.subprd);
+            result.subprd.push({
+                ...meta,
+                order: Number(m.groups.order),
+                block: m.groups.block,
+                title: extractTitle(meta.path),
+            });
             continue;
         }
 
-        if (PATTERNS.foundationGlossary.test(filename)) {
+        if (includeFoundation && PATTERNS.foundationGlossary.test(filename)) {
             const slug = filename.match(PATTERNS.foundationGlossary).groups.slug;
             result.foundationGlossary = { ...meta, slug, title: extractTitle(meta.path) };
             continue;
         }
 
-        if (PATTERNS.foundationSchema.test(filename)) {
+        if (includeFoundation && PATTERNS.foundationSchema.test(filename)) {
             const slug = filename.match(PATTERNS.foundationSchema).groups.slug;
             result.foundationSchema.push({ ...meta, slug, title: extractTitle(meta.path), subfiles: enumerateSplitSubfiles(docsPath, filename) });
             continue;
         }
 
-        if (PATTERNS.foundationApi.test(filename)) {
+        if (includeFoundation && PATTERNS.foundationApi.test(filename)) {
             const slug = filename.match(PATTERNS.foundationApi).groups.slug;
             result.foundationApi.push({ ...meta, slug, title: extractTitle(meta.path), subfiles: enumerateSplitSubfiles(docsPath, filename) });
             continue;
         }
 
-        if (PATTERNS.foundationDelivery.test(filename)) {
+        if (includeFoundation && PATTERNS.foundationDelivery.test(filename)) {
             const slug = filename.match(PATTERNS.foundationDelivery).groups.slug;
             result.foundationDelivery = { ...meta, slug, title: extractTitle(meta.path) };
             continue;
         }
 
-        if (PATTERNS.explainerFlow.test(filename)) {
+        if (includeExplainer && PATTERNS.explainerFlow.test(filename)) {
             const slug = filename.match(PATTERNS.explainerFlow).groups.slug;
             result.explainerFlow = { ...meta, slug, title: extractTitle(meta.path) };
             continue;
         }
 
-        if (PATTERNS.explainerInteraction.test(filename)) {
+        if (includeExplainer && PATTERNS.explainerInteraction.test(filename)) {
             const m = filename.match(PATTERNS.explainerInteraction);
             result.explainerInteraction.push({ ...meta, slug: m.groups.slug, side: m.groups.side, title: extractTitle(meta.path) });
             continue;
         }
 
-        if (PATTERNS.explainerGap.test(filename)) {
+        if (includeExplainer && PATTERNS.explainerGap.test(filename)) {
             const m = filename.match(PATTERNS.explainerGap);
             result.explainerGap.push({ ...meta, slug: m.groups.slug, side: m.groups.side, title: extractTitle(meta.path) });
             continue;
         }
 
-        if (PATTERNS.explainerDelivery.test(filename)) {
+        if (includeExplainer && PATTERNS.explainerDelivery.test(filename)) {
             const slug = filename.match(PATTERNS.explainerDelivery).groups.slug;
             result.explainerDelivery = { ...meta, slug, title: extractTitle(meta.path) };
             continue;
@@ -323,8 +358,8 @@ function classifyFiles(files, docsPath) {
         result.unrecognized.push(filename);
     }
 
-    if (result.prdMain) {
-        result.prdMain.upstreamRefs = extractPrdMainRefs(result.prdMain.path);
+    if (result.mainprd) {
+        result.mainprd.upstreamRefs = extractPrdMainRefs(result.mainprd.path);
     }
 
     return result;
@@ -336,9 +371,9 @@ function classifyFiles(files, docsPath) {
  */
 function hasPipelineHits(classified) {
     return !!(
-        classified.prdMain ||
+        classified.mainprd ||
         classified.prdFeatureList ||
-        classified.prdChildren.length > 0
+        classified.subprd.length > 0
     );
 }
 
@@ -400,25 +435,25 @@ function fallbackClassify(files, docsPath) {
 function detectMissing(classified) {
     const missing = [];
 
-    if (!classified.prdMain) {
+    if (!classified.mainprd) {
         missing.push({
-            file: 'prd-main-<slug>.md',
-            reason: 'PRD 主文档是 delivery-planner 的最高优先级入口，缺失时无法建立需求地图',
+            file: 'mainprd-<slug>.md',
+            reason: 'mainprd 是 delivery-planner 的最高优先级入口，缺失时无法建立需求地图',
             severity: 'required',
         });
     }
 
-    if (classified.prdChildren.length === 0) {
+    if (classified.subprd.length === 0) {
         missing.push({
-            file: 'prd-<slug>-<block>.md',
-            reason: '至少需要一份 PRD 子文档，否则无法进行字段级任务拆解',
+            file: 'docs/prd/subprd/0X-subprd-<block>.md',
+            reason: '至少需要一份 subprd，否则无法进行字段级任务拆解',
             severity: 'required',
         });
     }
 
     if (classified.foundationSchema.length === 0) {
         missing.push({
-            file: 'foundation-schema-<slug>.md',
+            file: 'docs/prd/foundation/foundation-schema-<slug>.md',
             reason: 'Schema 是数据库类任务完成标准的依据，缺失将导致字段口径无法核查',
             severity: 'required',
         });
@@ -426,7 +461,7 @@ function detectMissing(classified) {
 
     if (classified.foundationApi.length === 0) {
         missing.push({
-            file: 'foundation-api-<slug>.md',
+            file: 'docs/prd/foundation/foundation-api-<slug>.md',
             reason: 'API 设计文档是接口任务核心文件的来源，缺失将导致核心文件列举不实',
             severity: 'required',
         });
@@ -442,7 +477,7 @@ function detectMissing(classified) {
 
     if (!classified.foundationGlossary) {
         missing.push({
-            file: 'foundation-glossary-<slug>.md',
+            file: 'docs/prd/foundation/foundation-glossary-<slug>.md',
             reason: '术语表提供统一命名口径，缺失时风险较低但建议补充',
             severity: 'expected',
         });
@@ -450,8 +485,8 @@ function detectMissing(classified) {
 
     if (!classified.foundationDelivery) {
         missing.push({
-            file: 'foundation-delivery-<slug>.md',
-            reason: '交付清单包含产物索引，缺失时可从 prd-main 回推',
+            file: 'docs/prd/foundation/foundation-delivery-<slug>.md',
+            reason: '交付清单包含产物索引，缺失时可从 mainprd 回推',
             severity: 'expected',
         });
     }
@@ -465,7 +500,7 @@ function collectWarnings(classified) {
     const warnings = [];
 
     const largeFiles = [
-        classified.prdMain,
+        classified.mainprd,
         classified.prdFeatureList,
         classified.foundationGlossary,
         classified.foundationDelivery,
@@ -473,7 +508,7 @@ function collectWarnings(classified) {
         classified.explainerDelivery,
         ...classified.foundationSchema,
         ...classified.foundationApi,
-        ...classified.prdChildren,
+        ...classified.subprd,
         ...classified.explainerInteraction,
         ...classified.explainerGap,
     ]
@@ -555,9 +590,8 @@ function buildPipelineOutput({ hostRoot, docsPath, classified, missingExpected, 
     ].filter(Boolean);
 
     const slug =
-        classified.prdMain?.slug ||
+        classified.mainprd?.slug ||
         classified.prdFeatureList?.slug ||
-        classified.prdChildren[0]?.slug ||
         foundations[0]?.slug ||
         null;
 
@@ -569,13 +603,13 @@ function buildPipelineOutput({ hostRoot, docsPath, classified, missingExpected, 
             slug,
             mode: 'pipeline',
         },
-        prdMain: classified.prdMain
+        mainprd: classified.mainprd
             ? {
-                path: classified.prdMain.path,
-                title: classified.prdMain.title,
-                sizeBytes: classified.prdMain.sizeBytes,
-                isLarge: classified.prdMain.isLarge,
-                upstreamRefs: classified.prdMain.upstreamRefs,
+                path: classified.mainprd.path,
+                title: classified.mainprd.title,
+                sizeBytes: classified.mainprd.sizeBytes,
+                isLarge: classified.mainprd.isLarge,
+                upstreamRefs: classified.mainprd.upstreamRefs,
               }
             : null,
         prdFeatureList: classified.prdFeatureList
@@ -586,8 +620,9 @@ function buildPipelineOutput({ hostRoot, docsPath, classified, missingExpected, 
                 isLarge: classified.prdFeatureList.isLarge,
               }
             : null,
-        prdChildren: classified.prdChildren.map((f) => ({
+        subprd: classified.subprd.map((f) => ({
             path: f.path,
+            order: f.order,
             block: f.block,
             title: f.title,
             sizeBytes: f.sizeBytes,
@@ -655,16 +690,16 @@ function formatPipelineReport(output, verbose) {
     lines.push(`Scanned   : ${output.meta.scannedAt}`);
     lines.push('');
 
-    lines.push('── PRD 主文档 ──');
-    if (output.prdMain) {
-        lines.push(`  ✅ ${output.prdMain.path}`);
-        if (output.prdMain.title) lines.push(`     标题: ${output.prdMain.title}`);
-        if (output.prdMain.isLarge) lines.push(`     ⚠️  文件较大 (${(output.prdMain.sizeBytes / 1024).toFixed(1)} KB)，请按章节读取`);
-        if (verbose && output.prdMain.upstreamRefs.length > 0) {
-            lines.push(`     上游引用: ${output.prdMain.upstreamRefs.join(', ')}`);
+    lines.push('── mainprd ──');
+    if (output.mainprd) {
+        lines.push(`  ✅ ${output.mainprd.path}`);
+        if (output.mainprd.title) lines.push(`     标题: ${output.mainprd.title}`);
+        if (output.mainprd.isLarge) lines.push(`     ⚠️  文件较大 (${(output.mainprd.sizeBytes / 1024).toFixed(1)} KB)，请按章节读取`);
+        if (verbose && output.mainprd.upstreamRefs.length > 0) {
+            lines.push(`     上游引用: ${output.mainprd.upstreamRefs.join(', ')}`);
         }
     } else {
-        lines.push('  ❌ 未找到 prd-main-<slug>.md');
+        lines.push('  ❌ 未找到 mainprd-<slug>.md');
     }
     lines.push('');
 
@@ -676,11 +711,11 @@ function formatPipelineReport(output, verbose) {
     }
     lines.push('');
 
-    lines.push(`── PRD 子文档 (${output.prdChildren.length} 份) ──`);
-    if (output.prdChildren.length === 0) {
-        lines.push('  ❌ 未找到任何 prd-<slug>-<block>.md');
+    lines.push(`── subprd (${output.subprd.length} 份) ──`);
+    if (output.subprd.length === 0) {
+        lines.push('  ❌ 未找到任何 docs/prd/subprd/0X-subprd-*.md');
     } else {
-        for (const c of output.prdChildren) {
+        for (const c of output.subprd) {
             const sizeTag = c.isLarge ? ` ⚠️(${(c.sizeBytes / 1024).toFixed(1)} KB)` : '';
             lines.push(`  ✅ [${c.block}] ${c.path}${sizeTag}`);
         }
@@ -743,7 +778,7 @@ function formatPipelineReport(output, verbose) {
     lines.push('── 结论 ──');
     if (output.canProceed) {
         lines.push('  ✅ 可以进入 delivery-planner 写作流程');
-        lines.push('     请将以上文件路径作为 Step 1 的读取清单（按优先级: prdMain → foundations → prdChildren）');
+        lines.push('     请将以上文件路径作为 Step 1 的读取清单（按优先级: mainprd → foundations → subprd）');
     } else {
         lines.push('  ❌ 进入失败分支：必需上游文档缺失，请先补齐后再运行 delivery-planner');
     }
@@ -819,6 +854,10 @@ function main() {
     }
 
     const files = readDocsDir(docsPath);
+    const foundationPath = path.join(docsPath, FOUNDATION_SUBDIR);
+    const foundationFiles = readDocsDir(foundationPath);
+    const subprdPath = path.join(docsPath, SUBPRD_SUBDIR);
+    const subprdFiles = readDocsDir(subprdPath);
     const pagePreviewPath = path.join(hostRoot, PAGE_PREVIEW_DIR);
     const pagePreviewFiles =
         path.resolve(pagePreviewPath) === path.resolve(docsPath)
@@ -826,9 +865,24 @@ function main() {
             : readDocsDir(pagePreviewPath);
 
     // Step 1: try pipeline mode (precise matching)
-    const classified = classifyFiles(files, docsPath);
+    const classified = classifyFiles(files, docsPath, { includeSubprd: false, includeFoundation: false, includeExplainer: false });
+    if (foundationFiles.length > 0) {
+        mergeFoundationArtifacts(
+            classified,
+            classifyFiles(foundationFiles, foundationPath, { includePrd: false, includeSubprd: false, includeExplainer: false })
+        );
+    }
+    if (subprdFiles.length > 0) {
+        mergeSubprdArtifacts(
+            classified,
+            classifyFiles(subprdFiles, subprdPath, { includePrd: false, includeFoundation: false, includeExplainer: false })
+        );
+    }
     if (pagePreviewFiles.length > 0) {
-        mergePagePreviewExplainers(classified, classifyFiles(pagePreviewFiles, pagePreviewPath));
+        mergePagePreviewExplainers(
+            classified,
+            classifyFiles(pagePreviewFiles, pagePreviewPath, { includePrd: false, includeSubprd: false, includeFoundation: false })
+        );
     }
 
     // Step 2: check if pipeline mode found any PRD hits

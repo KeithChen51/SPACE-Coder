@@ -101,7 +101,7 @@ changelog: |
 node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <hostRoot> --json
 ```
 
-> 如果项目不在默认的 `docs/prd/` 目录存放文档，追加 `--docs-dir <相对路径>` 参数。
+> 如果项目不在默认的 `docs/prd/` 目录存放 PRD 文档，追加 `--docs-dir <相对路径>` 参数；foundation 产物固定放在该目录下的 `foundation/` 子目录。
 > 如果项目未安装 suite（`.agent/` 目录不存在），改用 suite 的绝对路径运行脚本。
 
 **读取脚本输出后，按以下逻辑分支执行：**
@@ -110,10 +110,10 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 
 按脚本输出的路径清单作为 Step 1 的**强制读取清单**，顺序如下：
 
-1. `prdMain.path`（最高优先级，必读）
+1. `mainprd.path`（最高优先级，必读）
 2. `foundations` 数组中所有条目（按 type 顺序：glossary → schema → api → delivery）
 3. `prdFeatureList.path`（若存在）
-4. `prdChildren` 数组（按任务相关性选读，不要全部整包读取）
+4. `subprd` 数组（按任务相关性选读，不要全部整包读取）
 5. `explainers` 数组（按任务相关性选读）
 
 > 对 `isLarge: true` 的文件，**禁止整包读取**，必须按章节定位读取。

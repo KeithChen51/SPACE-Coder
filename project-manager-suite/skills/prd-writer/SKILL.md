@@ -1,6 +1,6 @@
 ---
 name: prd-writer
-description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和技术地基，产出功能列表、主文档和按区块拆分的子文档。page-designer + foundation-builder 的直接下游。
+description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和技术地基，产出功能列表、mainprd 和按区块拆分的 subprd。page-designer + foundation-builder 的直接下游。
 ---
 
 # PRD Writer Skill
@@ -11,8 +11,8 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 
 你消费前面所有环节的产物（BRD、页面代码、术语表、Schema、API），产出：
 1. **功能列表** — 产品全貌 + 页面区块拆解
-2. **主文档** — 全局索引枢纽
-3. **子文档** — 按区块拆分的详细规格，字段级可追溯
+2. **mainprd** — 全局索引枢纽
+3. **subprd** — 按区块拆分的详细规格，字段级可追溯
 
 **不做的事**：不定义术语表（foundation-glossary）、不定义 Schema（foundation-schema）、不定义 API（foundation-api）。这些权威来源在 foundation-builder，本 skill 只引用。
 
@@ -21,12 +21,13 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | # | 规则 | 原因 |
 |---|------|------|
 | H1 | §3 列出的所有上游文件全部存在才启动 | 直接引用，不走间接 |
-| H2 | 功能列表必须在主文档之前完成 | 主文档引用功能列表 |
-| H3 | 主文档必须在子文档之前完成 | 子文档依赖主文档的全局语境 |
-| H4 | 每份子文档完成后回填主文档的双向引用 | 保持索引同步 |
+| H2 | 功能列表必须在 mainprd 之前完成 | mainprd 引用功能列表 |
+| H3 | mainprd 必须在 subprd 之前完成 | subprd 依赖 mainprd 的全局语境 |
+| H4 | 每份 subprd 完成并经用户确认后，必须同时回填功能列表和 mainprd 索引 | 保持索引同步，避免只生成部分 subprd 却被误判为完整 PRD |
 | H5 | 术语必须使用 foundation-glossary 中的定义 | 全局统一 |
 | H6 | Schema/API 信息只引用不重写 | 权威来源在 foundation-builder |
 | H7 | 每个 Phase 产出后等用户确认再继续 | 防止错误传播 |
+| H8 | 完整版 PRD 就绪必须满足：功能列表区块数 = mainprd 的 subprd 索引行数 = 真实存在的 subprd 文件数，且全部状态为 `已确认` | 防止只产出 1 份 subprd 就误进入 S3 |
 
 ## 3) 上游输入（全部直接引用）
 
@@ -38,23 +39,23 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | 4 | `explainer-flow-<slug>.md` | page-explainer | 用户流程全貌 |
 | 5 | `explainer-b-interaction-<slug>.md` | page-explainer | 结构化交互语义（仅消费 locked 条目） |
 | 6 | `explainer-delivery-<slug>.md` | page-explainer | 入口索引：产物清单、流程 → 产物映射、本环节一致性自查结论 |
-| 7 | `foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
-| 8 | `foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema（可能为拆分模式索引，见下方注） |
-| 9 | `foundation-api-<slug>.md` | foundation-builder | API 接口设计（可能为拆分模式索引，见下方注） |
-| 10 | `foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
+| 7 | `docs/prd/foundation/foundation-glossary-<slug>.md` | foundation-builder | 术语表 |
+| 8 | `docs/prd/foundation/foundation-schema-<slug>.md` | foundation-builder | 数据库 Schema（可能为拆分模式索引，见下方注） |
+| 9 | `docs/prd/foundation/foundation-api-<slug>.md` | foundation-builder | API 接口设计（可能为拆分模式索引，见下方注） |
+| 10 | `docs/prd/foundation/foundation-delivery-<slug>.md` | foundation-builder | 交付清单、一致性自查结果 |
 
 缺任何一个就**中止**，提示用户先完成对应上游 skill。
 
 目录读取口径：
-- `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-delivery-<slug>.md` 与 explainer 产物优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件。
-- 实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取；仅旧项目尚未迁移时，才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`。
-- `foundation-*.md`、`prd-*.md` 优先从 `docs/prd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `BRD-<slug>-*.md` 固定从 `docs/brd/` 读取。
+- `page-delivery-<slug>.md` 与 explainer 产物固定从 `src/frontend/page-preview/` 读取。
+- 实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取。
+- `foundation-*.md` 固定从 `docs/prd/foundation/` 读取；`mainprd-*.md` 和 `prd-feature-list-*.md` 固定从 `docs/prd/` 读取；subprd 固定从 `docs/prd/subprd/` 读取。
 
 **拆分消费协议**（适用于 foundation-schema、foundation-api）：
 
 1. 拿到主文件路径后，stat 同名子目录（去 `.md`）是否存在
-2. 子目录存在 → 主文件是索引，**必须**从 `foundation-delivery-<slug>.md` 的"拆分子文件"列读取子文件清单，逐个读入作为权威来源；主文件仅用于获得索引结构
+2. 子目录存在 → 主文件是索引，**必须**从 `docs/prd/foundation/foundation-delivery-<slug>.md` 的"拆分子文件"列读取子文件清单，逐个读入作为权威来源；主文件仅用于获得索引结构
 3. 子目录不存在 → 主文件即权威来源
 4. 拆分消费的上游契约见 PIPELINE.md §"产物拆分约定"
 
@@ -63,8 +64,32 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | 产物 | 文件名 | 产出顺序 |
 |------|--------|---------|
 | 功能列表 | `prd-feature-list-<slug>.md` | Phase 2 |
-| 主文档 | `prd-main-<slug>.md` | Phase 3 |
-| 子文档(N份) | `prd-<slug>-<区块名>.md` | Phase 4 |
+| mainprd | `mainprd-<slug>.md` | Phase 3 |
+| subprd(N份) | `docs/prd/subprd/0X-subprd-<区块英文短名>.md` | Phase 4 |
+
+subprd 命名必须满足：
+- 文件夹固定为 `docs/prd/subprd/`。
+- 文件名固定用两位序号开头：`01-subprd-file-intake-protection.md`、`02-subprd-detection-report.md`。
+- 序号与功能列表中的 `#` 保持一致，不跳号。
+
+## 4.1) 完整版 PRD 完成协议
+
+`prd-writer | DONE` 之前必须满足以下全部条件：
+
+| 检查项 | 合格条件 |
+|--------|---------|
+| 功能列表 | 功能总表中每个区块都有 `subprd文件` 和 `状态` 两列值 |
+| mainprd | subprd 索引行数与功能列表区块数一致 |
+| subprd 文件 | mainprd 索引中的每个 subprd 文件都真实存在 |
+| 状态闭合 | 功能列表和 mainprd 中每个 subprd 状态均为 `已确认` |
+| 反链 | 每份 subprd 均链接回 `../mainprd-<slug>.md` |
+
+**状态值固定为三种**：
+- `待开始`：文件尚未生成。
+- `待确认`：文件已生成，但用户尚未确认。
+- `已确认`：用户已确认，可进入下一份 subprd 或 Phase 5。
+
+只要存在任一区块状态不是 `已确认`，只能视为 `prd-writer phase=4 RUNNING`，不得声明完整版 PRD 就绪，也不得交给 S3。
 
 ## 5) 工作流概览（5 Phase）
 
@@ -76,18 +101,19 @@ Phase 2: 功能列表
   → 加载 templates/feature-list.md
   → 产出功能列表 → 用户确认
   ↓
-Phase 3: 主文档
+Phase 3: mainprd
   → 加载 templates/main-prd.md
-  → 产出主文档 → 用户确认
+  → 产出 mainprd → 用户确认
   ↓
-Phase 4: 子文档
+Phase 4: subprd
   → 加载 templates/sub-prd.md + references/anti-patterns.md
   → 按功能列表中的区块逐份产出 → 每份用户确认
-  → 每份完成后回填主文档的双向引用
+  → 每份确认后回填功能列表和 mainprd 索引
+  → 只有全部 subprd 状态为已确认，才进入 Phase 5
   ↓
 Phase 5: 一致性自查
   → 加载 references/phase-5-consistency-check.md
-  → 子 PRD ↔ foundation 产物交叉校验 → 修正 → 用户确认
+  → subprd ↔ foundation 产物交叉校验 → 修正 → 用户确认
 ```
 
 ## 6) Reference 加载协议
@@ -103,12 +129,12 @@ Phase 5: 一致性自查
 
 ## 7) Phase 1: 输入收集（内联）
 
-1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
-2. 优先在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**
-3. 优先在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-4. 优先在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**
-5. 优先在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
-6. 优先在 `docs/prd/` 搜索 `foundation-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**
+1. 在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仍不存在则**中止**
+2. 在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仍不存在则**中止**
+3. 在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer
+4. 在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仍不存在则**中止**
+5. 在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+6. 在 `docs/prd/foundation/` 搜索 `foundation-delivery-<slug>.md`；仍不存在则**中止**
 7. 从 foundation-delivery 中获取 glossary/schema/api 主文件路径，逐个校验存在
 8. 对 schema / api 主文件：stat 同名子目录是否存在
    - 存在（拆分模式）→ 从 foundation-delivery 的"拆分子文件"列读清单，逐个校验每个子文件存在；任一缺失则**中止**，提示用户补齐 delivery 或重跑 foundation-builder
@@ -139,18 +165,19 @@ Phase 完成时：
 ## 9) 禁止事项
 
 1. 没有上游文件就开始撰写
-2. 跳过功能列表直接写主文档或子文档
+2. 跳过功能列表直接写 mainprd 或 subprd
 3. 自行定义术语/Schema/API 而非引用 foundation 产物
-4. 在子 PRD 中描述不属于本区块的字段/接口/管理页
-5. 子 PRD 中使用 foundation-glossary 之外的术语
+4. 在 subprd 中描述不属于本区块的字段/接口/管理页
+5. subprd 中使用 foundation-glossary 之外的术语
 6. 跳过一致性自查直接声称完成
-7. 不回填主文档双向引用就进入下一份子文档
+7. 不回填 mainprd 双向引用就进入下一份 subprd
+8. 只生成部分 subprd 就声称完整版 PRD 已完成或可进入 S3
 
 ## 10) 质量红线
 
-1. 功能列表中每个区块都必须有对应子 PRD
-2. 子 PRD 数据链路表中每个"来源表.列"必须在 foundation-schema 中存在
-3. 子 PRD 引用的每个接口必须在 foundation-api 中存在
-4. 主文档子 PRD 索引表必须与实际产出的子文档一致
-5. 子 PRD 中每个功能子区域 §X 都必须有 X.6 验收小节；验收表按该子区域实际涉及的维度选写（业务规则 / UX 交互 / 异常兜底 三类中取适用项），不强制三类齐全
-6. 子 PRD 边界严格——字段/接口/管理页不越界（详见 anti-patterns.md）
+1. 功能列表中每个区块都必须有对应 subprd，且功能列表、mainprd、真实文件三者数量一致
+2. subprd 数据链路表中每个"来源表.列"必须在 foundation-schema 中存在
+3. subprd 引用的每个接口必须在 foundation-api 中存在
+4. mainprd 的 subprd 索引表必须与实际产出的 subprd 一致，且全部状态为 `已确认` 后才算完整 PRD
+5. subprd 中每个功能子区域 §X 都必须有 X.6 验收小节；验收表按该子区域实际涉及的维度选写（业务规则 / UX 交互 / 异常兜底 三类中取适用项），不强制三类齐全
+6. subprd 边界严格——字段/接口/管理页不越界（详见 anti-patterns.md）

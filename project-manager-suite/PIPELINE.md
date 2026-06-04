@@ -38,7 +38,7 @@ S2 ──────── prd-chief 调度 ───────────�
        ▼  术语表 / Schema / API + 交付清单
    prd-writer
        │
-       ▼  功能列表 / 主 PRD / 子 PRD
+       ▼  功能列表 / mainprd / subprd
 
 S3 ─────────────────────────────────────────────
    delivery-planner
@@ -93,15 +93,17 @@ S5 ──────── test-case-chief 调度 ─────────�
 │   │   ├── project-link-graph.md             # project-link-indexer 编译出的人读 wiki 索引
 │   │   └── project-wiki-schema.json          # project-link-indexer 的节点/边/诊断 schema
 │   ├── prd/                                  # 技术地基 + PRD 层
-│   │   ├── foundation-glossary-<slug>.md     # foundation-builder 术语表
-│   │   ├── foundation-schema-<slug>.md       # foundation-builder 数据库 Schema（单文件或索引）
-│   │   ├── foundation-schema-<slug>/         # 可选：Schema 超 400 行时拆分，内含 <table>.md
-│   │   ├── foundation-api-<slug>.md          # foundation-builder API 接口（单文件或索引）
-│   │   ├── foundation-api-<slug>/            # 可选：API 超 400 行时拆分，内含 <module>.md
-│   │   ├── foundation-delivery-<slug>.md     # foundation-builder 交付清单
+│   │   ├── foundation/                       # foundation-builder 产物
+│   │   │   ├── foundation-glossary-<slug>.md # 术语表
+│   │   │   ├── foundation-schema-<slug>.md   # 数据库 Schema（单文件或索引）
+│   │   │   ├── foundation-schema-<slug>/     # 可选：Schema 超 400 行时拆分，内含 <table>.md
+│   │   │   ├── foundation-api-<slug>.md      # API 接口（单文件或索引）
+│   │   │   ├── foundation-api-<slug>/        # 可选：API 超 400 行时拆分，内含 <module>.md
+│   │   │   └── foundation-delivery-<slug>.md # 交付清单
 │   │   ├── prd-feature-list-<slug>.md        # prd-writer 功能列表
-│   │   ├── prd-main-<slug>.md                # prd-writer 主 PRD（索引枢纽）
-│   │   └── prd-<slug>-<区块名>.md            # prd-writer 子 PRD（N 份，按区块拆分）
+│   │   ├── mainprd-<slug>.md                 # prd-writer mainprd（索引枢纽）
+│   │   └── subprd/                           # prd-writer subprd
+│   │       └── 0X-subprd-<区块英文短名>.md    # N 份，按区块拆分
 │   └── plans/                                # 开发执行计划层
 │       └── delivery-plan-<slug>.md           # delivery-planner 产出的开发执行计划
 ├── src/
@@ -118,7 +120,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 └── docs/test-case/                            # 测试用例层（S5 产物）
     ├── acceptance-<slug>.md                  # prd-acceptance-reviewer 验收文档主索引
     ├── acceptance-<slug>/                    # 按 PRD 区块拆的子验收文档
-    │   └── <区块名>.md                        # 每个区块一份，对应一个子 PRD
+    │   └── <区块名>.md                        # 每个区块一份，对应一个 subprd
     ├── tc-main-<slug>.md                     # test-case-writer 测试用例主索引
     ├── <业务域>/                              # test-case-writer 按业务域组织的 TC 文件夹
     │   ├── tc-<业务域>.md                     # 域内测试用例文件
@@ -155,11 +157,11 @@ S5 ──────── test-case-chief 调度 ─────────�
 | brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
 | page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（元数据） | Vue 3 前端工程目录写入 `<host>/<工程名>/`；`page-ledger-<slug>.json`、`page-delivery-<slug>.md` 等元数据文件写入 `<host>/src/frontend/page-preview/` |
 | page-explainer | `<host>/src/frontend/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / gap / delivery）及后续新增 |
-| foundation-builder | `<host>/docs/prd/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
-| prd-writer | `<host>/docs/prd/` | `prd-feature-list-<slug>.md`、`prd-main-<slug>.md`、`prd-<slug>-<区块名>.md` 及后续新增 |
+| foundation-builder | `<host>/docs/prd/foundation/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
+| prd-writer | `<host>/docs/prd/` + `<host>/docs/prd/subprd/` | `prd-feature-list-<slug>.md`、`mainprd-<slug>.md`、`subprd/0X-subprd-<区块英文短名>.md` 及后续新增 |
 | delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
 | coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写 `docs/plans/delivery-plan-<slug>.md` 中已完成 Task 的状态字段 |
-| prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另可对 `<host>/docs/prd/` 下子 PRD 的 §X.6 验收小节做条目修订与回链追加（原地回写），不做 baseline / changelog / baseline.md 维护 |
+| prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另可对 `<host>/docs/prd/subprd/` 下 subprd 的 §X.6 验收小节做条目修订与回链追加（原地回写），不做 baseline / changelog / baseline.md 维护 |
 | test-case-writer | `<host>/docs/test-case/` | `tc-main-<slug>.md`、`<业务域>/tc-<业务域>.md`、`<业务域>/sql/*.sql` |
 | test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`；对已产出 TC 文件做原地修正 |
 
@@ -380,18 +382,18 @@ S5 ──────── test-case-chief 调度 ─────────�
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
 
 **产出文件**：
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 功能列表 | `prd-feature-list-<slug>.md` | `<host>/docs/prd/` | 产品背景 + 页面全景 + 区块业务逻辑 |
-| 主文档 | `prd-main-<slug>.md` | `<host>/docs/prd/` | 全局索引枢纽，引用所有上游产物 |
-| 子文档（N 份） | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 按区块拆分，字段级可追溯 |
+| mainprd | `mainprd-<slug>.md` | `<host>/docs/prd/` | 全局索引枢纽，引用所有上游产物 |
+| subprd（N 份） | `0X-subprd-<区块英文短名>.md` | `<host>/docs/prd/subprd/` | 按区块拆分，字段级可追溯 |
 
 ---
 
@@ -405,13 +407,13 @@ S5 ──────── test-case-chief 调度 ─────────�
 |------|------|------|
 | `project-profile.md` | ai-project-manager | `<host>/project-profile.md` |
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
-| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `mainprd-<slug>.md` | prd-writer | `<host>/docs/prd/` |
 | `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
-| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` |
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `0X-subprd-<区块英文短名>.md` | prd-writer | `<host>/docs/prd/subprd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
 
 **产出文件**：
 
@@ -444,7 +446,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ## 8. prd-acceptance-reviewer — 验收标准审阅
 
-**职责**：消费子 PRD 中每个功能子区域 §X 末尾的 X.6 验收小节，拉齐到独立的验收文档，按 PRD 区块拆文件；在 PRD 侧只允许修订 §X.6 内部验收条目并在 §X.6 末尾追加回链。不改 PRD 正文、不编写测试用例、不维护 baseline / changelog / baseline.md。
+**职责**：消费 subprd 中每个功能子区域 §X 末尾的 X.6 验收小节，拉齐到独立的验收文档，按 PRD 区块拆文件；在 PRD 侧只允许修订 §X.6 内部验收条目并在 §X.6 末尾追加回链。不改 PRD 正文、不编写测试用例、不维护 baseline / changelog / baseline.md。
 
 **依赖文件**：
 
@@ -452,21 +454,21 @@ S5 ──────── test-case-chief 调度 ─────────�
 |------|------|------|
 | `project-profile.md` | ai-project-manager | `<host>/project-profile.md` |
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
 | `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
-| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` |
-| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` |
+| `mainprd-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `0X-subprd-<区块英文短名>.md` | prd-writer | `<host>/docs/prd/subprd/` |
 
 **产出文件**：
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 验收文档主索引 | `acceptance-<slug>.md` | `<host>/docs/test-case/` | 全局入口，索引所有区块验收子文件 |
-| 验收文档子文件 | `acceptance-<slug>/<区块名>.md` | `<host>/docs/test-case/acceptance-<slug>/` | 按 PRD 区块拆，一份对应一个子 PRD 的 X.6 验收汇总 |
-| PRD §X.6 验收条目修订 + 回链追加（原地回写） | `prd-<slug>-<区块名>.md` | `<host>/docs/prd/` | 仅在子 PRD 每个 §X.6 小节内部修订验收条目，并在 §X.6 末尾追加到验收文档子文件的回链；不维护 baseline / changelog / baseline.md |
+| 验收文档子文件 | `acceptance-<slug>/<区块名>.md` | `<host>/docs/test-case/acceptance-<slug>/` | 按 PRD 区块拆，一份对应一个 subprd 的 X.6 验收汇总 |
+| PRD §X.6 验收条目修订 + 回链追加（原地回写） | `0X-subprd-<区块英文短名>.md` | `<host>/docs/prd/subprd/` | 仅在 subprd 每个 §X.6 小节内部修订验收条目，并在 §X.6 末尾追加到验收文档子文件的回链；不维护 baseline / changelog / baseline.md |
 
 ---
 
@@ -479,13 +481,13 @@ S5 ──────── test-case-chief 调度 ─────────�
 | 文件 | 来源 | 位置 |
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-schema-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-api-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
 | `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
-| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` |
-| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` |
+| `mainprd-<slug>.md` | prd-writer | `<host>/docs/prd/` |
+| `0X-subprd-<区块英文短名>.md` | prd-writer | `<host>/docs/prd/subprd/` |
 | `acceptance-<slug>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/` |
 | `acceptance-<slug>/<区块名>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/acceptance-<slug>/` |
 
@@ -541,8 +543,8 @@ S5 ──────── test-case-chief 调度 ─────────�
 | foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
 | foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ | | 👁 | ✓ | ✓ | |
 | prd-feature-list | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
-| prd-main | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
-| prd-子文档 | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） | 👁 | ✓ | ✓ | |
+| mainprd | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
+| subprd | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） | 👁 | ✓ | ✓ | |
 | delivery-plan | | | | | | | | | 产出 | ✓（硬依赖，逐 Task 消费） | 👁 | | | |
 | 验收文档（主索引 + 子文件） | | | | | | | | | | | 👁 | 产出 | ✓ | ✓ |
 | TC 主索引 + 域 TC + SQL | | | | | | | | | | | 👁 | | 产出 | ✓（原地修正） |

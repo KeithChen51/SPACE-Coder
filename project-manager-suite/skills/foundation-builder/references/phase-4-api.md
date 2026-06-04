@@ -9,8 +9,8 @@ Phase 3 Schema 已获用户确认后进入。
 
 ## 输入
 
-- 已确认的术语表（`foundation-glossary-<slug>.md`）
-- 已确认的 Schema（`foundation-schema-<slug>.md`）
+- 已确认的术语表（`docs/prd/foundation/foundation-glossary-<slug>.md`）
+- 已确认的 Schema（`docs/prd/foundation/foundation-schema-<slug>.md`）
 - 页面代码文件（Vue 3 组件）
 - `coding-standards/references/09-api-design.md`（外部规范，运行时读取）
 
@@ -54,7 +54,7 @@ Phase 3 Schema 已获用户确认后进入。
 
 ## 产物模板
 
-文件名：`foundation-api-<slug>.md`
+文件名：`docs/prd/foundation/foundation-api-<slug>.md`
 
 ```markdown
 # API 接口设计 - <项目名称>
@@ -120,10 +120,10 @@ Phase 3 Schema 已获用户确认后进入。
 当产物超过 400 行时，拆为索引文件 + 子文件目录：
 
 ```
-foundation-api-<slug>.md             ← 索引文件
+docs/prd/foundation/foundation-api-<slug>.md             ← 索引文件
   内容：全接口总览表格 + 指向子文件的链接
 
-foundation-api-<slug>/
+docs/prd/foundation/foundation-api-<slug>/
   ├── <module_name_1>.md             ← 单模块接口定义（按业务域分组）
   ├── <module_name_2>.md
   └── ...
@@ -131,7 +131,7 @@ foundation-api-<slug>/
 
 ## Schema 使用接口回填
 
-Phase 4 完成后，回填 `foundation-schema-<slug>.md` 中每张表的 **使用接口** 占位：
+Phase 4 完成后，回填 `docs/prd/foundation/foundation-schema-<slug>.md` 中每张表的 **使用接口** 占位：
 
 1. 遍历所有已设计的 API 接口
 2. 对于每个接口，找到其 `数据源表`
@@ -140,7 +140,7 @@ Phase 4 完成后，回填 `foundation-schema-<slug>.md` 中每张表的 **使�
 
 ## 增量模式
 
-若已有前次 `foundation-api-<slug>.md`：
+若已有前次 `docs/prd/foundation/foundation-api-<slug>.md`：
 
 1. 对比当前 Schema 与前次 API 的对应关系
 2. **新增**：新增的 Schema 表 → 推导新接口追加

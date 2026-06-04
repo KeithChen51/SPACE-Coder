@@ -26,7 +26,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | H6 | 每个 Phase 产出后必须等用户确认再进入下一 Phase | 防止错误传播 |
 | H7 | 用户提供的外部已有文件，融合后必须标注废弃 | 防止下游误用 |
 | H8 | 引用 explainer 交互语义时，仅消费 status=locked 的条目；若引用了 open 项，必须在产物中标注「依据未冻结，待上游确认」 | 防止未冻结描述下沉为权威设计 |
-| H9 | `foundation-delivery-<slug>.md` 的交付产物表必须使用 `产物 / 文件路径 / 行数 / 拆分子文件` 表头 | 主入口按 `文件路径` 列抽取并校验声明文件，表头不匹配会导致 foundationReadyForPrd 无法通过 |
+| H9 | `docs/prd/foundation/foundation-delivery-<slug>.md` 的交付产物表必须使用 `产物 / 文件路径 / 行数 / 拆分子文件` 表头 | 主入口按 `文件路径` 列抽取并校验声明文件，表头不匹配会导致 foundationReadyForPrd 无法通过 |
 
 ## 3) 上游输入
 
@@ -39,19 +39,19 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | page-explainer | `explainer-b-interaction-<slug>.md` | 是 | 结构化交互语义（仅消费 locked 条目），辅助 API 设计 |
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引：按流程 → 产物映射快速定位本次 Schema/API 涉及的语义条目 |
 | 用户提供 | 已有数据库/接口文件（可选） | 否 | 现有表结构、接口定义 |
-| 自身前次产出 | `foundation-*-<slug>.md` | 否 | 增量更新时读取 |
+| 自身前次产出 | `docs/prd/foundation/foundation-*-<slug>.md` | 否 | 增量更新时读取 |
 
 > **注意**：Schema 和 API 直接从前端页面代码反推，确保地基与前端实际消费对齐。
-> **目录读取口径**：`BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件；实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取（仅旧项目才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`）；自身 `foundation-*.md` 优先从 `docs/prd/` 读取。仅旧项目尚未迁移时，才回退读取根目录同名文件。
+> **目录读取口径**：`BRD-<slug>-*.md` 固定从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物固定从 `src/frontend/page-preview/` 读取；实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取；自身 `foundation-*.md` 固定从 `docs/prd/foundation/` 读取。
 
 ## 4) 产物
 
 | 产物 | 文件名 | 产出顺序 |
 |------|--------|---------|
-| 术语表 | `foundation-glossary-<slug>.md` | Phase 2（最先） |
-| 数据库 Schema | `foundation-schema-<slug>.md` | Phase 3 |
-| API 接口设计 | `foundation-api-<slug>.md` | Phase 4 |
-| 交付清单 | `foundation-delivery-<slug>.md` | Phase 6（最后） |
+| 术语表 | `docs/prd/foundation/foundation-glossary-<slug>.md` | Phase 2（最先） |
+| 数据库 Schema | `docs/prd/foundation/foundation-schema-<slug>.md` | Phase 3 |
+| API 接口设计 | `docs/prd/foundation/foundation-api-<slug>.md` | Phase 4 |
+| 交付清单 | `docs/prd/foundation/foundation-delivery-<slug>.md` | Phase 6（最后） |
 
 **拆分规则**：超过 400 行的产物自动拆分为索引文件 + 子文件目录。详见各 Phase reference。
 
@@ -104,14 +104,14 @@ Phase 6: 交付清单落盘
 
 Phase 1 逻辑简单，直接在此定义：
 
-1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 brd-writer
-2. 优先在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-designer
-3. 优先在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-4. 优先在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer
-5. 优先在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
+1. 在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仍不存在则**中止**，提示用户先完成 brd-writer
+2. 在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-designer
+3. 在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer
+4. 在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer
+5. 在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
 6. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
 7. 从 BRD 读取：项目类型、核心业务模型
-8. 优先在 `docs/prd/` 检测 `foundation-glossary/schema/api-<slug>.md` 是否存在；仅旧项目尚未迁移时，才回退检查根目录同名文件
+8. 在 `docs/prd/foundation/` 检测 `foundation-{glossary,schema,api}-<slug>.md` 是否存在
    - 存在 → 增量模式，加载 `references/incremental-update.md`
    - 不存在 → 首次模式
 9. 询问用户是否有已有数据库/接口文件

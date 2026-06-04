@@ -5,12 +5,12 @@
 
 ## 触发条件
 
-Phase 1 检测到 `foundation-glossary/schema/api-<slug>.md` 中任意一个已存在时加载。
+Phase 1 检测到 `docs/prd/foundation/foundation-{glossary,schema,api}-<slug>.md` 中任意一个已存在时加载。
 
 ## 变更检测逻辑
 
 ```
-读取前次产物（foundation-glossary/schema/api-<slug>.md）
+读取前次产物（docs/prd/foundation/foundation-{glossary,schema,api}-<slug>.md）
   ↓
 读取当前上游产物（page-delivery + 页面代码 + BRD）
   ↓

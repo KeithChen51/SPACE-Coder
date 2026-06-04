@@ -8,7 +8,7 @@ Phase 5 一致性自查全部通过并获用户确认后进入。
 
 ## 交付清单模板
 
-文件名：`foundation-delivery-<slug>.md`
+文件名：`docs/prd/foundation/foundation-delivery-<slug>.md`
 
 > **主入口协议**：下方“交付产物”表不是展示用自由表格。主入口会按表头 `产物 / 文件路径` 抽取声明文件并校验是否真实存在。表头必须写作 `文件路径`，不得替换为 `主文件`、`路径`、`文件` 等同义词。
 
@@ -30,17 +30,17 @@ Phase 5 一致性自查全部通过并获用户确认后进入。
 
 | 产物 | 文件路径 | 行数 | 拆分子文件 |
 |------|--------|------|----------|
-| 术语表 | <foundation-glossary 路径> | N | — |
-| 数据库 Schema | <foundation-schema 路径> | N | — 或 子文件清单 |
-| API 接口设计 | <foundation-api 路径> | N | — 或 子文件清单 |
+| 术语表 | docs/prd/foundation/foundation-glossary-<slug>.md | N | — |
+| 数据库 Schema | docs/prd/foundation/foundation-schema-<slug>.md | N | — 或 子文件清单 |
+| API 接口设计 | docs/prd/foundation/foundation-api-<slug>.md | N | — 或 子文件清单 |
 
 **"拆分子文件"列填写规则：**
 - 单文件模式：填 `—`
 - 拆分模式：填完整路径列表，一行一条，如：
   ```
-  foundation-schema-<slug>/users.md
-  foundation-schema-<slug>/orders.md
-  foundation-schema-<slug>/products.md
+  docs/prd/foundation/foundation-schema-<slug>/users.md
+  docs/prd/foundation/foundation-schema-<slug>/orders.md
+  docs/prd/foundation/foundation-schema-<slug>/products.md
   ```
 - 下游消费协议见 PIPELINE.md §"产物拆分约定"；delivery 清单必须枚举全部子文件路径，不允许遗漏。
 

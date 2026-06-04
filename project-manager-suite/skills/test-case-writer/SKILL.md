@@ -1,6 +1,6 @@
 ---
 name: test-case-writer
-description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.md` 和 `acceptance-<slug>/<区块名>.md` 生成测试用例主文档、业务域 TC 文件和 SQL 数据准备。只写 TC，不改 PRD、不改验收文档、不做 TC 核查。
+description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.md` 和 `acceptance-<slug>/<区块名>.md` 生成测试用例 mainprd、业务域 TC 文件和 SQL 数据准备。只写 TC，不改 PRD、不改验收文档、不做 TC 核查。
 ---
 
 # Test Case Writer Skill
@@ -32,8 +32,8 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` | 交付范围辅助确认 |
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` | 业务背景辅助理解 |
 | `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` | 区块 / 功能索引辅助定位 |
-| `prd-main-<slug>.md` | prd-writer | `<host>/docs/prd/` | 主 PRD 辅助上下文 |
-| `prd-<slug>-<区块名>.md` | prd-writer | `<host>/docs/prd/` | 业务规则、数据链路、接口说明辅助阅读 |
+| `mainprd-<slug>.md` | prd-writer | `<host>/docs/prd/` | mainprd 辅助上下文 |
+| `0X-subprd-<区块英文短名>.md` | prd-writer | `<host>/docs/prd/subprd/` | 业务规则、数据链路、接口说明辅助阅读 |
 
 ### 可选运行时辅助输入（不属于 PIPELINE §9 依赖）
 
@@ -46,7 +46,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | 文件 | 位置 | 用途 |
 |------|------|------|
 | `methodology.md` | `../test-case-chief/knowledge/methodology.md` | 测试设计方法论 + BCDE 覆盖 |
-| `templates-shared.md` | `../test-case-chief/knowledge/templates-shared.md` | 文件头、验收矩阵、主文档、版本历史模板 |
+| `templates-shared.md` | `../test-case-chief/knowledge/templates-shared.md` | 文件头、验收矩阵、mainprd、版本历史模板 |
 
 ## 3) 产出
 
@@ -117,7 +117,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | 文件 | 内容 | 何时读取 |
 |------|------|---------|
 | `../test-case-chief/knowledge/methodology.md` | 方法论 + BCDE 覆盖维度 | Phase 1 / 3 设计用例时 |
-| `../test-case-chief/knowledge/templates-shared.md` | 主文档、验收矩阵、文件头模板 | Phase 2-4 生成文档时 |
+| `../test-case-chief/knowledge/templates-shared.md` | mainprd、验收矩阵、文件头模板 | Phase 2-4 生成文档时 |
 | `references/self-check.md` | 生成期自检清单、陷阱速查 | Phase 5 自检时 |
 | `references/type-domain.md` | 业务域 TC：API / UI 验证策略 | 生成业务域文件时 |
 | `references/type-regression.md` | 缺陷回归测试策略 | 输入有已知缺陷记录时 |

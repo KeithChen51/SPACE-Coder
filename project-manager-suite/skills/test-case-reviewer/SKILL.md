@@ -43,7 +43,7 @@ description: Use when test-case-writer 已产出 `tc-main-<slug>.md` 和业务�
 | 文件 / 目录 | 用途 |
 |---|---|
 | foundation-glossary / foundation-schema / foundation-api | 核查字段、枚举、API 契约是否存在 |
-| 子 PRD（prd-<slug>-<区块名>.md） | §5.27 被动察觉时读 TC 引用的 PRD 正文段落——**只读 TC 引用到的位置**，不主动扫全文 |
+| subprd（docs/prd/subprd/0X-subprd-<区块英文短名>.md） | §5.27 被动察觉时读 TC 引用的 PRD 正文段落——**只读 TC 引用到的位置**，不主动扫全文 |
 | 宿主代码实现 | 核查 SQL 数据链路时按需抽读 |
 
 和 PIPELINE §10 的"不查 PRD 或验收文档"对齐说明：这里的"不查"指不审查上游正确性；读取验收文档作为唯一 Oracle、读取 TC 已引用的 PRD 局部段落做被动事实记录，不算越界。

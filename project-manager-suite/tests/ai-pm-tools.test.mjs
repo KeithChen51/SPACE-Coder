@@ -186,6 +186,58 @@ function buildPlanContent(overrides = {}) {
 `;
 }
 
+function writeFoundationArtifacts(hostRoot, slug = 'demo') {
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', `foundation-glossary-${slug}.md`), '# 术语表\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', `foundation-schema-${slug}.md`), '# 数据结构\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', `foundation-api-${slug}.md`), '# 接口草案\n');
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'foundation', `foundation-delivery-${slug}.md`),
+        `# Foundation 交付清单
+
+| 产物 | 文件路径 | 说明 |
+|---|---|---|
+| 术语表 | docs/prd/foundation/foundation-glossary-${slug}.md | 已确认 |
+| 数据结构 | docs/prd/foundation/foundation-schema-${slug}.md | 已确认 |
+| 接口草案 | docs/prd/foundation/foundation-api-${slug}.md | 已确认 |
+`
+    );
+}
+
+function writeFullPrdArtifacts(hostRoot, slug = 'demo') {
+    const mainFile = `mainprd-${slug}.md`;
+    const subprdFile = 'subprd/01-subprd-core.md';
+
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', `prd-feature-list-${slug}.md`),
+        `# 功能列表
+
+## 功能总表
+
+| # | 页面 | 区块 | 功能说明 | subprd文件 | 状态 |
+|---|---|---|---|---|---|
+| 1 | 操作页 | 核心操作 | 处理核心流程 | [01-subprd-core.md](${subprdFile}) | 已确认 |
+`
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', mainFile),
+        `# mainprd
+
+## subprd索引
+
+| # | 区块 | 所属页面 | subprd文件 | 状态 |
+|---|---|---|---|---|
+| 1 | 核心操作 | 操作页 | [01-subprd-core.md](${subprdFile}) | 已确认 |
+`
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', subprdFile),
+        `# 核心操作 subprd
+
+- mainprd回链：[${mainFile}](../${mainFile})
+`
+    );
+}
+
 function buildValidDeliveryPlanContent() {
     return `# Demo Delivery Plan
 
@@ -212,7 +264,7 @@ function buildValidDeliveryPlanContent() {
 #### T0.1 实现演示任务
 
 **PRD 双链·读**：
-- \`prd-main-demo.md\` §1
+- \`mainprd-demo.md\` §1
 
 **核心逻辑**：
 - 根据 PRD 处理演示任务。
@@ -244,7 +296,7 @@ function buildValidDeliveryPlanContent() {
 ## 8. PRD → 任务反向索引
 | PRD | Task |
 |---|---|
-| prd-main-demo.md §1 | T0.1 |
+| mainprd-demo.md §1 | T0.1 |
 `;
 }
 
@@ -519,7 +571,7 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
 
     writeFile(
         path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'),
-        '# BRD Demo\n\n- 下游 PRD：[主 PRD](../prd/prd-main-demo.md)\n'
+        '# BRD Demo\n\n- 下游 PRD：[mainprd](../prd/mainprd-demo.md)\n'
     );
     writeFile(
         path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-delivery-demo.md'),
@@ -530,16 +582,16 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
         '# Foundation 交付清单\n\n- 页面说明：[[src/frontend/page-preview/explainer-delivery-demo.md|页面交付清单]]\n'
     );
     writeFile(
-        path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'),
-        '# 主 PRD\n\n| 子 PRD | 链接 |\n|---|---|\n| 订单 | [订单](prd-demo-order.md) |\n'
+        path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'),
+        '# mainprd\n\n| subprd | 链接 |\n|---|---|\n| 订单 | [订单](subprd/01-subprd-order.md) |\n'
     );
     writeFile(
-        path.join(hostRoot, 'docs', 'prd', 'prd-demo-order.md'),
-        '# 订单子 PRD\n\n- 主文档回链：[prd-main-demo.md](prd-main-demo.md)\n'
+        path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-order.md'),
+        '# 订单 subprd\n\n- mainprd回链：[mainprd-demo.md](../mainprd-demo.md)\n'
     );
     writeFile(
         path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'),
-        '# Demo Delivery Plan\n\n## 3. 执行阶段\n\n### T0.1 订单任务\n\n**PRD 双链·读**：\n- `prd-main-demo.md` §1\n\n## 8. PRD → 任务反向索引\n| PRD | Task |\n|---|---|\n| prd-main-demo.md §1 | T0.1 |\n'
+        '# Demo Delivery Plan\n\n## 3. 执行阶段\n\n### T0.1 订单任务\n\n**PRD 双链·读**：\n- `mainprd-demo.md` §1\n\n## 8. PRD → 任务反向索引\n| PRD | Task |\n|---|---|\n| mainprd-demo.md §1 | T0.1 |\n'
     );
 
     const result = collectProjectLinks({ hostRoot, write: true });
@@ -552,14 +604,14 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
     assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.graphJson)), true);
     assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.graphMarkdown)), true);
     assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.wikiSchemaJson)), true);
-    assert.equal(nodeByPath.get('docs/prd/prd-main-demo.md').kind, 'prd_main');
+    assert.equal(nodeByPath.get('docs/prd/mainprd-demo.md').kind, 'mainprd');
     assert.equal(nodeByPath.get('docs/plans/delivery-plan-demo.md').kind, 'delivery_plan');
     assert.ok(
         result.edges.some(
             (edge) =>
                 edge.relation === 'indexes' &&
-                edge.from === 'docs/prd/prd-main-demo.md' &&
-                edge.to === 'docs/prd/prd-demo-order.md'
+                edge.from === 'docs/prd/mainprd-demo.md' &&
+                edge.to === 'docs/prd/subprd/01-subprd-order.md'
         )
     );
     assert.ok(
@@ -567,7 +619,7 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
             (edge) =>
                 edge.relation === 'depends_on' &&
                 edge.from === 'docs/plans/delivery-plan-demo.md' &&
-                edge.to === 'docs/prd/prd-main-demo.md' &&
+                edge.to === 'docs/prd/mainprd-demo.md' &&
                 edge.evidence.some((item) => item.syntax === 'prd_double_link')
         )
     );
@@ -578,10 +630,10 @@ test('validate-project-links reports broken links and missing reverse links with
     const hostRoot = createHostFixture();
 
     writeFile(
-        path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'),
-        '# 主 PRD\n\n| 子 PRD | 链接 |\n|---|---|\n| 订单 | [订单](prd-demo-order.md) |\n| 缺失 | [缺失](missing-doc.md) |\n'
+        path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'),
+        '# mainprd\n\n| subprd | 链接 |\n|---|---|\n| 订单 | [订单](subprd/01-subprd-order.md) |\n| 缺失 | [缺失](missing-doc.md) |\n'
     );
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-order.md'), '# 订单子 PRD\n\n- 暂无主文档回链\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-order.md'), '# 订单 subprd\n\n- 暂无mainprd回链\n');
 
     const result = validateProjectLinks({ hostRoot });
     const codes = result.issues.map((item) => item.code);
@@ -599,7 +651,7 @@ test('project-link-indexer ignores source-code string fixtures and unresolved pl
 
     writeFile(
         path.join(hostRoot, 'README.md'),
-        '# Demo\n\n- 模板路径：`prd-<slug>-<区块名>.md`\n- 通配路径：`docs/prd/*.md`\n'
+        '# Demo\n\n- 模板路径：`0X-subprd-<区块英文短名>.md`\n- 通配路径：`docs/prd/*.md`\n'
     );
     writeFile(
         path.join(hostRoot, 'src', 'fixture.js'),
@@ -610,7 +662,7 @@ test('project-link-indexer ignores source-code string fixtures and unresolved pl
     const targets = result.issues.map((item) => item.target || '');
 
     assert.equal(targets.some((item) => item.includes('missing-from-code.md')), false);
-    assert.equal(targets.some((item) => item.includes('prd-<slug>-<区块名>.md')), false);
+    assert.equal(targets.some((item) => item.includes('0X-subprd-<区块英文短名>.md')), false);
     assert.equal(targets.some((item) => item.includes('docs/prd/*.md')), false);
 });
 
@@ -766,9 +818,7 @@ test('route-check enters S5 when full PRD and verifiable build evidence exist', 
         logContent: '记录 S5 阶段切换'
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-feature-list-demo.md'), '# 功能列表\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'), '# 主 PRD\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-core.md'), '# 子 PRD\n');
+    writeFullPrdArtifacts(hostRoot);
 
     const result = routeCheck({ hostRoot, targetStage: 'S5' });
 
@@ -793,14 +843,157 @@ test('route-check blocks S3 when foundation artifacts are missing', () => {
         logContent: '记录 S3 阶段切换'
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-feature-list-demo.md'), '# 功能列表\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'), '# 主 PRD\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-core.md'), '# 子 PRD\n');
+    writeFullPrdArtifacts(hostRoot);
 
     const result = routeCheck({ hostRoot, targetStage: 'S3' });
 
     assert.equal(result.canEnter, false);
     assert.equal(result.gateChecks.foundationReadyForDevelopmentPlan.pass, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'foundation_missing'));
+});
+
+test('route-check blocks S3 until every feature-list subprd is confirmed and exists', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S2',
+            recommended_stage: 'S3',
+            current_round_deliverable: '开发执行计划'
+        },
+        planOverrides: {
+            current_stage: 'S2',
+            current_goal: '准备进入开发计划阶段',
+            next_tasks: '调用 delivery-planner'
+        },
+        logContent: '记录 S3 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFoundationArtifacts(hostRoot);
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'prd-feature-list-demo.md'),
+        `# 功能列表
+
+## 功能总表
+
+| # | 页面 | 区块 | 功能说明 | subprd文件 | 状态 |
+|---|---|---|---|---|---|
+| 1 | 操作页 | 核心操作 | 处理核心流程 | [01-subprd-core.md](subprd/01-subprd-core.md) | 已确认 |
+| 2 | 操作页 | 重置开始 | 重新开始审核流程 | [02-subprd-reset.md](subprd/02-subprd-reset.md) | 待确认 |
+`
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'),
+        `# mainprd
+
+## subprd索引
+
+| # | 区块 | 所属页面 | subprd文件 | 状态 |
+|---|---|---|---|---|
+| 1 | 核心操作 | 操作页 | [01-subprd-core.md](subprd/01-subprd-core.md) | 已确认 |
+| 2 | 重置开始 | 操作页 | [02-subprd-reset.md](subprd/02-subprd-reset.md) | 待确认 |
+`
+    );
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-core.md'), '# 核心操作 subprd\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S3' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.foundationReadyForDevelopmentPlan.pass, true);
+    assert.equal(result.gateChecks.fullPrdReady.pass, false);
+    assert.equal(result.gateChecks.fullPrdReady.evidence.featureListItemCount, 2);
+    assert.equal(result.gateChecks.fullPrdReady.evidence.mainprdIndexCount, 2);
+    assert.equal(result.gateChecks.fullPrdReady.evidence.subprdCount, 1);
+    assert.deepEqual(result.gateChecks.fullPrdReady.evidence.missingSubprd, ['docs/prd/subprd/02-subprd-reset.md']);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'full_prd_missing'));
+    assert.match(result.nextAction, /停留 S2/);
+    assert.doesNotMatch(result.nextAction, /可进入 S3/);
+});
+
+test('route-check rejects root-level subprd because specs must live under docs/prd/subprd', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S2',
+            recommended_stage: 'S3',
+            current_round_deliverable: '开发执行计划'
+        },
+        planOverrides: {
+            current_stage: 'S2',
+            current_goal: '准备进入开发计划阶段',
+            next_tasks: '调用 delivery-planner'
+        },
+        logContent: '记录 S3 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFoundationArtifacts(hostRoot);
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'prd-feature-list-demo.md'),
+        `# 功能列表
+
+## 功能总表
+
+| # | 页面 | 区块 | 功能说明 | subprd文件 | 状态 |
+|---|---|---|---|---|---|
+| 1 | 操作页 | 核心操作 | 处理核心流程 | [01-subprd-core.md](01-subprd-core.md) | 已确认 |
+`
+    );
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'),
+        `# mainprd
+
+## subprd索引
+
+| # | 区块 | 所属页面 | subprd文件 | 状态 |
+|---|---|---|---|---|
+| 1 | 核心操作 | 操作页 | [01-subprd-core.md](01-subprd-core.md) | 已确认 |
+`
+    );
+    writeFile(path.join(hostRoot, 'docs', 'prd', '01-subprd-core.md'), '# 核心操作 subprd\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S3' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.foundationReadyForDevelopmentPlan.pass, true);
+    assert.equal(result.gateChecks.fullPrdReady.pass, false);
+    assert.equal(result.gateChecks.fullPrdReady.evidence.subprdPathsValid, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'full_prd_missing'));
+});
+
+test('route-check rejects root-level foundation artifacts because foundation must live under docs/prd/foundation', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S2',
+            recommended_stage: 'S3',
+            current_round_deliverable: '开发执行计划'
+        },
+        planOverrides: {
+            current_stage: 'S2',
+            current_goal: '准备进入开发计划阶段',
+            next_tasks: '调用 delivery-planner'
+        },
+        logContent: '记录 S3 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFullPrdArtifacts(hostRoot);
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-glossary-demo.md'), '# 术语表\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-schema-demo.md'), '# 数据结构\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-api-demo.md'), '# 接口草案\n');
+    writeFile(
+        path.join(hostRoot, 'docs', 'prd', 'foundation-delivery-demo.md'),
+        `# Foundation 交付清单
+
+| 产物 | 文件路径 | 说明 |
+|---|---|---|
+| 术语表 | docs/prd/foundation-glossary-demo.md | 已确认 |
+| 数据结构 | docs/prd/foundation-schema-demo.md | 已确认 |
+| 接口草案 | docs/prd/foundation-api-demo.md | 已确认 |
+`
+    );
+
+    const result = routeCheck({ hostRoot, targetStage: 'S3' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.fullPrdReady.pass, true);
+    assert.equal(result.gateChecks.foundationReadyForDevelopmentPlan.pass, false);
+    assert.equal(result.gateChecks.foundationReadyForDevelopmentPlan.evidence.foundationDeliveryExists, false);
     assert.ok(result.blockingReasons.some((item) => item.code === 'foundation_missing'));
 });
 
@@ -1398,10 +1591,10 @@ test('collect-upstream-context includes page-preview explainer outputs in slim f
         'collect-upstream-context.mjs'
     );
 
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-ops-tool.md'), '# 主 PRD\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-ops-tool-report.md'), '# 报表区块\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-schema-ops-tool.md'), '# Schema\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-api-ops-tool.md'), '# API\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'mainprd-ops-tool.md'), '# mainprd\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-report.md'), '# 报表区块\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-schema-ops-tool.md'), '# Schema\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-api-ops-tool.md'), '# API\n');
     writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-flow-ops-tool.md'), '# 用户流程\n');
     writeFile(
         path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-interaction-ops-tool.md'),
@@ -1422,8 +1615,8 @@ test('collect-upstream-context includes page-preview explainer outputs in slim f
     );
 });
 
-test('collect-upstream-context recognizes Chinese PRD child block names', () => {
-    const hostRoot = makeTempDir('pm-suite-collect-chinese-prd-');
+test('collect-upstream-context reads foundation artifacts from docs/prd/foundation', () => {
+    const hostRoot = makeTempDir('pm-suite-collect-foundation-dir-');
     const collectPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
@@ -1432,17 +1625,47 @@ test('collect-upstream-context recognizes Chinese PRD child block names', () => 
         'collect-upstream-context.mjs'
     );
 
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-main-demo.md'), '# 主 PRD\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'prd-demo-用户管理.md'), '# 用户管理\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-schema-demo.md'), '# Schema\n');
-    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation-api-demo.md'), '# API\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'), '# mainprd\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-core.md'), '# 核心区块\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-glossary-demo.md'), '# 术语表\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-schema-demo.md'), '# Schema\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-api-demo.md'), '# API\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-delivery-demo.md'), '# Foundation 交付清单\n');
 
     const output = execFileSync(process.execPath, [collectPath, hostRoot, '--json'], { encoding: 'utf8' });
     const result = JSON.parse(output);
 
     assert.equal(result.canProceed, true);
-    assert.equal(result.prdChildren.length, 1);
-    assert.equal(result.prdChildren[0].block, '用户管理');
+    assert.deepEqual(
+        result.foundations.map((item) => item.type).sort(),
+        ['api', 'delivery', 'glossary', 'schema']
+    );
+    assert.ok(result.foundations.every((item) => item.path.includes(path.join('docs', 'prd', 'foundation'))));
+});
+
+test('collect-upstream-context recognizes numbered subprd files', () => {
+    const hostRoot = makeTempDir('pm-suite-collect-numbered-subprd-');
+    const collectPath = path.join(
+        CURRENT_SUITE_ROOT,
+        'skills',
+        'delivery-planner',
+        'scripts',
+        'collect-upstream-context.mjs'
+    );
+
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'), '# mainprd\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-user-management.md'), '# 用户管理\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-schema-demo.md'), '# Schema\n');
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'foundation', 'foundation-api-demo.md'), '# API\n');
+
+    const output = execFileSync(process.execPath, [collectPath, hostRoot, '--json'], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.canProceed, true);
+    assert.equal(result.subprd.length, 1);
+    assert.equal(result.subprd[0].block, 'user-management');
+    assert.equal(result.subprd[0].order, 1);
+    assert.ok(result.subprd[0].path.includes(path.join('docs', 'prd', 'subprd', '01-subprd-user-management.md')));
 });
 
 test('delivery plan template satisfies its own structure validator', () => {

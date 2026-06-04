@@ -286,13 +286,13 @@ function detectExistingArtifacts(files) {
     const explainerFlow = findDocs(files, /^explainer-flow-.+\.md$/i, 'src/frontend/page-preview/', pageFallbackDirs);
     const interaction = findDocs(files, /^explainer-b-interaction-.+\.md$/i, 'src/frontend/page-preview/', pageFallbackDirs);
     const explainerDelivery = findDocs(files, /^explainer-delivery-.+\.md$/i, 'src/frontend/page-preview/', pageFallbackDirs);
-    const foundationGlossary = findDocs(files, /^foundation-glossary-.+\.md$/i, 'docs/prd/');
-    const foundationSchema = findDocs(files, /^foundation-schema-.+\.md$/i, 'docs/prd/');
-    const foundationApi = findDocs(files, /^foundation-api-.+\.md$/i, 'docs/prd/');
-    const foundationDelivery = findDocs(files, /^foundation-delivery-.+\.md$/i, 'docs/prd/');
+    const foundationGlossary = findDocs(files, /^foundation-glossary-.+\.md$/i, 'docs/prd/foundation/');
+    const foundationSchema = findDocs(files, /^foundation-schema-.+\.md$/i, 'docs/prd/foundation/');
+    const foundationApi = findDocs(files, /^foundation-api-.+\.md$/i, 'docs/prd/foundation/');
+    const foundationDelivery = findDocs(files, /^foundation-delivery-.+\.md$/i, 'docs/prd/foundation/');
     const prdFeatureList = findDocs(files, /^prd-feature-list-.+\.md$/i, 'docs/prd/');
-    const prdMain = findDocs(files, /^prd-main-.+\.md$/i, 'docs/prd/');
-    const prdChildren = findDocs(files, /^prd-(?!feature-list-|main-).+\.md$/i, 'docs/prd/');
+    const mainprd = findDocs(files, /^mainprd-.+\.md$/i, 'docs/prd/');
+    const subprd = findDocs(files, /^\d{2}-subprd-.+\.md$/i, 'docs/prd/subprd/');
 
     return {
         brd,
@@ -305,8 +305,8 @@ function detectExistingArtifacts(files) {
         foundationApi,
         foundationDelivery,
         prdFeatureList,
-        prdMain,
-        prdChildren
+        mainprd,
+        subprd
     };
 }
 
@@ -384,8 +384,8 @@ function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evid
         ...docs.foundationApi,
         ...docs.foundationDelivery,
         ...docs.prdFeatureList,
-        ...docs.prdMain,
-        ...docs.prdChildren
+        ...docs.mainprd,
+        ...docs.subprd
     ].map((file) => file.relativePath);
 
     const missingStartupFields = [
@@ -485,7 +485,7 @@ function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evid
 - 规则入口文件：\`【系统推断】 project-rules.md 或 docs/rules/\`
 - 计划入口文件：\`【系统推断】 docs/plans/execution-plan.md\`
 - 最近状态入口：\`【系统推断】 logs/\`
-- PRD 总入口：\`【系统推断】 docs/prd/prd-main-<slug>.md\`
+- PRD 总入口：\`【系统推断】 docs/prd/mainprd-<slug>.md\`
 - 身份识别方式：\`【系统推断】 待按宿主项目确认\`
 - 任务类型规则入口：\`【系统推断】 docs/rules/\`
 - 最近状态定位口径：\`【系统推断】 最近日志文件\`
@@ -525,7 +525,7 @@ function buildArtifacts({ profileExistsAfterWrite, docs, evidence }) {
         docs.foundationSchema.length > 0 &&
         docs.foundationApi.length > 0 &&
         docs.foundationDelivery.length > 0;
-    const prdPresent = docs.prdFeatureList.length > 0 && docs.prdMain.length > 0 && docs.prdChildren.length > 0;
+    const prdPresent = docs.prdFeatureList.length > 0 && docs.mainprd.length > 0 && docs.subprd.length > 0;
 
     const artifacts = [
         {
@@ -573,12 +573,12 @@ function buildArtifacts({ profileExistsAfterWrite, docs, evidence }) {
             type: 'PRD',
             ...artifactStatus(prdPresent, [
                 ...docs.prdFeatureList,
-                ...docs.prdMain,
-                ...docs.prdChildren
+                ...docs.mainprd,
+                ...docs.subprd
             ].map((file) => file.relativePath)),
             expected_location: 'docs/prd/',
             recommended_skill: prdPresent ? null : 'prd-writer',
-            reason: prdPresent ? '已发现 PRD 文件' : '缺少功能列表、主 PRD 与子 PRD'
+            reason: prdPresent ? '已发现 PRD 文件' : '缺少功能列表、mainprd 与 subprd'
         }
     ];
 

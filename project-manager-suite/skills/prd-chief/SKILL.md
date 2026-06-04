@@ -13,7 +13,7 @@ description: Use when 页面环节产物全部就绪（delivery + 页面代码 +
 2. 观察子 skill 的产物文件状态，判断下一步该执行哪个子 skill
 3. 全部完成后标记 DONE，下游直接读子 skill 的产物文件
 
-**你可以做的事**：读取产物文件内容，基于内容做合格性判断（如检查索引表是否与子文档一致、自查结果是否通过）。
+**你可以做的事**：读取产物文件内容，基于内容做合格性判断（如检查索引表是否与 subprd 一致、自查结果是否通过）。
 
 **你不做的事**：不定义术语表、不设计 Schema/API、不撰写 PRD、不产出任何文件、不修改任何子 skill 的产物、不做任何子 skill 的具体工作。子 skill 不感知你的存在——你不向子 skill 传递指令或参数。子 skill 依然直接和用户交互。
 
@@ -26,6 +26,7 @@ description: Use when 页面环节产物全部就绪（delivery + 页面代码 +
 | H3 | 不向子 skill 传递任何指令或参数，子 skill 按自身逻辑独立运行 | 子 skill 不感知调度层存在 |
 | H4 | 只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成，不依赖子 skill 的聊天输出或状态标记 | 判断依据是文件事实，不是对话状态 |
 | H5 | 只检查产物**完整性**（文件是否齐、索引是否闭合），不检查产物**质量**（一致性自查是否通过、内容是否正确），质量由子 skill 自行负责 | prd-chief 只管路由和完整性，不管质检 |
+| H6 | prd-writer 完成必须按“功能列表区块数 = mainprd 索引行数 = 真实 subprd 文件数，且状态全部为 `已确认`”判断 | 防止只生成部分 subprd 就误判 PRD 环节完成 |
 
 ## 3) 上游输入
 
@@ -41,10 +42,10 @@ prd-chief 检查前置文件是否存在。Stage 2 以后会读取产物内容�
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引，作为 page-explainer 环节完工标志 |
 
 目录读取口径：
-- `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件。
-- 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取；仅旧项目才回退检查 `page-preview/<工程名>/` 或 `可操作页面/`。
-- `foundation-*.md`、`prd-*.md` 优先从 `docs/prd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
+- `BRD-<slug>-*.md` 固定从 `docs/brd/` 读取。
+- `page-delivery-<slug>.md`、`explainer-*.md` 固定从 `src/frontend/page-preview/` 读取。
+- 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取。
+- `foundation-*.md` 固定从 `docs/prd/foundation/` 读取；`mainprd-*.md` 与 `prd-feature-list-*.md` 固定从 `docs/prd/` 读取；subprd 固定从 `docs/prd/subprd/` 读取。
 
 ## 4) 出口检查清单
 
@@ -64,8 +65,9 @@ prd-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在�
 | 检查文件 | 合格条件 |
 |---------|---------|
 | `prd-feature-list-<slug>.md` | 存在 |
-| `prd-main-<slug>.md` | 存在，子 PRD 索引表与实际子文档一致 |
-| `prd-<slug>-<区块名>.md`（N 份） | 功能列表中每个区块都有对应子 PRD |
+| `mainprd-<slug>.md` | 存在，subprd 索引表与功能列表区块一致 |
+| `docs/prd/subprd/0X-subprd-<区块英文短名>.md`（N 份） | 功能列表中每个区块都有对应 subprd，且文件真实存在 |
+| subprd 状态 | 功能列表和 mainprd 中的 subprd 状态均为 `已确认` |
 
 ## 5) 状态机
 
@@ -89,11 +91,11 @@ START
 └────────┬─────────────┘
          ▼
 ┌──────────────────────┐
-│ prd-writer            │── 等待 feature-list + main + 全部子文档存在
+│ prd-writer            │── 等待 feature-list + mainprd + 全部 subprd 存在且已确认
 └────────┬─────────────┘
          ▼
 ┌──────────────────────┐
-│ 校验 prd-writer       │── main 索引与子文档一致？
+│ 校验 prd-writer       │── feature-list / mainprd / subprd 一致且状态全为已确认？
 │ 产物完整性            │── 不完整 → 提示用户，不进入下一步
 └────────┬─────────────┘
          ▼
@@ -134,17 +136,23 @@ START
 1. 指示：`下一步请执行 prd-writer`
 2. 检查完整产物集是否全部存在：
    - `docs/prd/` 中的 `prd-feature-list-<slug>.md`
-   - `docs/prd/` 中的 `prd-main-<slug>.md`
-   - 功能列表中每个区块对应的 `docs/prd/prd-<slug>-<区块名>.md`
-3. 任一必需文件缺失 → prd-writer 尚未完成，继续等待
-4. 全部存在后，检查 `prd-main` 中的子 PRD 索引表与实际子文档是否一致
-5. 一致 → 进入 Stage 4
+   - `docs/prd/` 中的 `mainprd-<slug>.md`
+   - 功能列表中每个区块对应的 `docs/prd/subprd/0X-subprd-<区块英文短名>.md`
+3. 检查三方一致性：
+   - 功能列表功能总表中的区块数
+   - `mainprd` 的 subprd 索引行数
+   - 真实存在的 subprd 文件数
+4. 检查状态闭合：
+   - 功能列表中每个 subprd 状态均为 `已确认`
+   - `mainprd` 中每个 subprd 状态均为 `已确认`
+5. 任一必需文件缺失、数量不一致或存在非 `已确认` 状态 → prd-writer 尚未完成，继续等待
+6. 全部一致 → 进入 Stage 4
 
 ### Stage 4: 完成校验
 
 1. 验证 foundation-builder 4 个产物文件均真实存在
-2. 验证 prd-writer 产物文件均真实存在（feature-list + main + 全部子 PRD）
-3. 验证 prd-main 索引表与实际子文档一致
+2. 验证 prd-writer 产物文件均真实存在（feature-list + mainprd + 全部 subprd）
+3. 验证 feature-list、mainprd 索引表与实际 subprd 一致，且状态全部为 `已确认`
 4. 全部通过 → 输出完成状态
 
 ## 7) 状态标记（强制）
