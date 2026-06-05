@@ -275,8 +275,8 @@ S2 页面环节收口后的回写口径：
 | **S0.5 既有项目基线诊断** | 已有代码接入套件；项目维护性差，缺少 BRD / 页面说明 / foundation / PRD 等关键文件 | 项目画像草稿 + 关键维护文件缺口清单 | 进入 `project-baseline-auditor`，由其生成或更新 `project-profile.md`，并产出 `docs/baseline/baseline-audit-<slug>.json` |
 | **S1 业务需求文档** | 首次必问已结束，启动最小必需字段包已齐；需要形成可评审的业务需求文档 | 业务需求文档 / BRD | 默认进入 `brd-writer` 能力，由其独占产出 BRD |
 | **S2 页面设计、技术地基与完整版 PRD** | 已有业务需求文档；需要先完成页面代码、交互语义冻结与页面环节收口，再反推术语表 / Schema / API，最后沉淀 AI 可直接编码的 PRD | 首轮：页面代码 / 页面交付清单 + 待确认项；页面环节收口后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD | 先进入 `page-chief` 调度页面环节（`page-designer` → `page-explainer`，必要时回环）；页面环节 DONE 后进入 `prd-chief` 调度 PRD 环节（`foundation-builder` → `prd-writer`） |
-| **S3 任务拆解与开发计划** | 完整版 PRD 已形成；需要拆成开发任务并形成开发计划 | 正式开发计划正文 + 当前执行摘要 | 进入 `delivery-planner` 能力，由其独占产出 `delivery-plan-<slug>.md`；主入口回写 `execution-plan.md` 驾驶舱摘要 |
-| **S4 开发执行** | 开发计划已明确；可以进入编码、联调和实现 | 当前任务的执行结果 + 任务状态更新 + 问题/决策记录 | 进入 `coding-standards` 能力，由其独占承接开发执行 |
+| **S3 任务拆解与开发计划** | 完整版 PRD 已形成；需要拆成开发任务并形成开发计划 | 正式开发计划文件组 + 当前执行摘要 | 进入 `delivery-planner` 能力，由其独占产出 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`；主入口回写 `execution-plan.md` 驾驶舱摘要 |
+| **S4 开发执行** | 正式开发计划文件组存在且通过结构校验；可以进入编码、联调和实现 | 当前任务的执行结果 + 任务状态更新 + 问题/决策记录 | 进入 `coding-standards` 能力，由其独占承接开发执行 |
 | **S5 测试用例生成** | 开发执行已完成，或当前版本已具备可验证基础；需要基于 PRD 生成标准化测试用例 | 验收文档 + 单域测试用例文件 + 验收矩阵 + 版本历史 | 进入 `test-case-chief` 调度链路（`prd-acceptance-reviewer` → `test-case-writer` → `test-case-reviewer`），由其独占产出测试用例 |
 | **S6 测试执行** | 测试用例已准备好；需要执行测试并记录问题 | 验收结论 + 不符合项清单 + 补缺建议 + 阶段收口建议 | 进入 `test-case-runner` 能力，由其独占产出测试结果 |
 | **S7 完工前安全扫描** | 已进入完工 / 交付前收口；需要完成固定安全闸门扫描并给出放行结论 | 安全扫描报告 + `PASS / BLOCK / WAIVER` 结论 + 输入证据缺口说明 | 进入 `security-scan` 能力，由其独占产出完工前安全闸门报告 |
@@ -292,8 +292,9 @@ S2 页面环节收口后的回写口径：
 8. 命中 S2 时，若 `page-designer` 产物已存在，但 `page-chief` 尚未判定 DONE（包括页面方向未确认、`page-explainer` 产物未齐、交互语义存在 `open`、或仍有未解决 gap），则本轮只能继续页面环节，不得进入 `prd-chief`、`foundation-builder`、`prd-writer` 或 S3
 9. 命中 S2 时，只有 `page-chief` 已 DONE，才允许进入 `prd-chief`；只有 `foundation-builder` 已完成，才允许由 `prd-chief` 继续推进 `prd-writer`
 10. 命中 S7 时，主入口不得把"即将完工"当成口头结论直接放行；必须进入 `security-scan`，输出固定结构的安全扫描报告和 `PASS / BLOCK / WAIVER` 结论后，才算完成完工前闸门
-11. 命中 S3 并由 `delivery-planner` 产出或更新正式开发计划后，主入口必须把正式计划入口、当前活跃任务与下一步动作同步回 `execution-plan.md`；不得把完整 Phase / Task 正文直接塞进执行计划驾驶舱
-12. S3 驾驶舱同步时，只能读取正式计划顶部固定的“驾驶舱摘要”区块；不得从整份计划正文自由总结
+11. 命中 S3 并由 `delivery-planner` 产出或更新正式开发计划后，主入口必须把主开发计划入口、任务看板入口、当前子开发计划入口、当前活跃任务与下一步动作同步回 `execution-plan.md`；不得把完整开发计划文件组直接塞进执行计划驾驶舱
+12. S3 驾驶舱同步时，只能读取主开发计划入口、任务看板当前 Task 行和当前子开发计划；不得从完整开发计划文件组自由总结
+13. 命中 S4 但正式开发计划文件组缺失或结构校验失败时，主入口不得进入 `coding-standards`；必须停留开发计划修复链路，调用 `delivery-planner` 生成或修复 `docs/plans/delivery-plans/` 下的 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
 
 ### 2.2 S2 设计流水线协议
 
@@ -351,6 +352,20 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 - `project-devlog` 的价值是承担阶段切换、正式交付、跨会话承接和复盘，不是逐条复刻对话
 
 运行环境允许时，优先通过 `tools/devlog-sync.mjs` 完成结构化写入；`project-devlog` 继续承担日志内容组织、回写口径和人工复盘规则。
+
+`project-link-indexer` 不归属于单一阶段，而是全局伴随能力。主入口只判断调起场景，不判断索引是否需要 build / refresh / noop；索引状态判断和索引写入由 `project-link-indexer` 自己完成。
+
+主入口每次运行 `route-check.mjs` 后必须读取 `companionActions`。若其中包含 `project-link-indexer`，必须先加载并执行该 skill；执行完成后，再继续主阶段路由或本轮收口。
+
+满足以下任一条件时，`route-check.mjs` 应在 `companionActions` 中返回 `project-link-indexer`：
+- S0.5 baseline audit 完成后
+- S1 BRD 完成后
+- S2 页面 / foundation / PRD 产物形成或拆分后
+- S3 开发计划文件组形成或修复后
+- S5 验收文档 / 测试用例形成后
+- 用户询问文件关系、坏链、回链、孤立文件或影响范围时
+
+执行入口：`node skills/project-link-indexer/scripts/run-project-link-indexer.mjs <hostRoot> --trigger <trigger> --json`。
 
 ---
 

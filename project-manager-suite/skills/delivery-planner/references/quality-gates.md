@@ -5,6 +5,12 @@
 ## 一、结构门禁
 
 逐项确认：
+- [ ] 主开发计划位于 `docs/plans/delivery-plans/main-delivery-plan-<slug>.md`
+- [ ] 任务看板位于 `docs/plans/delivery-plans/task-kanban-<slug>.md`
+- [ ] 子开发计划位于 `docs/plans/delivery-plans/sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
+- [ ] 主开发计划的执行阶段以子开发计划索引组织任务
+- [ ] 任务看板中的每个 Task 都链接一个子开发计划
+- [ ] 每个子开发计划只包含一个 Task 正文
 - [ ] 有计划头部元信息
 - [ ] 有本计划使用指南
 - [ ] 有环境依赖声明
@@ -20,11 +26,11 @@
 - [ ] 有 AI 执行示例
 - [ ] 有 PRD → 任务反向索引
 
-如果缺任何一项，默认不能称为“完整执行计划”。
+如果缺任何一项，默认不能称为正式开发计划。
 
 ## 二、任务字段门禁
 
-随机抽查每个 Phase 的至少 1 个 Task，确认它具备：
+检查每个子开发计划里的 Task，确认它具备：
 - [ ] `PRD 双链·读`
 - [ ] `核心逻辑`
 - [ ] `核心文件`

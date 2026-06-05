@@ -24,6 +24,7 @@ import {
     FILE_ROLE_IDS,
     STAGE_IDS,
     fieldPackages,
+    globalCompanionAbilities,
     routeTargets,
     gatingRules,
     markdownStructure,
@@ -835,11 +836,11 @@ function inspectDevelopmentPlanArtifacts(hostRoot) {
     const deliveryPlan = findLatestMatchingFile(
         hostRoot,
         markdownFiles,
-        /^delivery-plan-.+\.md$/,
-        ['docs/plans']
+        /^main-delivery-plan-.+\.md$/,
+        ['docs/plans/delivery-plans']
     );
     const validation = deliveryPlan
-        ? validatePlan(loadMarkdownFile(deliveryPlan.filePath))
+        ? validatePlan(loadMarkdownFile(deliveryPlan.filePath), { planPath: deliveryPlan.filePath })
         : null;
 
     return {
@@ -1476,6 +1477,103 @@ function resolveRouteTarget(targetStage, gateChecks) {
     };
 }
 
+function findDevelopmentPlanBlocker(blockers) {
+    return blockers.find((item) => item.code === 'development_plan_missing' || item.code === 'development_plan_invalid') || null;
+}
+
+function resolveRecoveryRouteTarget({ targetStage, blockers, gateChecks }) {
+    if (targetStage !== STAGE_IDS.S4) {
+        return null;
+    }
+
+    const developmentPlanBlocker = findDevelopmentPlanBlocker(blockers);
+    if (!developmentPlanBlocker) {
+        return null;
+    }
+
+    return {
+        skill: 'delivery-planner',
+        source: 'development-plan-gate',
+        recoveryFor: developmentPlanBlocker.code,
+        exclusiveDeliverable: true,
+        evidence: {
+            deliveryPlanPath: gateChecks.developmentPlanReady?.evidence.deliveryPlanPath || null,
+            structureValid: Boolean(gateChecks.developmentPlanReady?.evidence.structureValid),
+            structureErrors: gateChecks.developmentPlanReady?.evidence.structureErrors || []
+        }
+    };
+}
+
+function makeProjectLinkIndexerAction(trigger, reason) {
+    return {
+        skill: 'project-link-indexer',
+        trigger,
+        reason
+    };
+}
+
+function projectLinkIndexerRegistered() {
+    return globalCompanionAbilities.some((ability) => ability.skill === 'project-link-indexer');
+}
+
+function resolveCompanionActions({ targetStage, gateChecks, validationResult }) {
+    if (!projectLinkIndexerRegistered() || !validationResult.authority[FILE_ROLE_IDS.PROFILE]) {
+        return [];
+    }
+
+    if (gateChecks.projectBaselineAuditReady?.pass) {
+        return [
+            makeProjectLinkIndexerAction(
+                'after_existing_project_baseline_audit',
+                'S0.5 baseline audit 完成后，主入口必须调起 project-link-indexer 建立或刷新文件级索引'
+            )
+        ];
+    }
+
+    if (targetStage === STAGE_IDS.S2 && gateChecks.brdReadyForPage?.evidence?.brdExists) {
+        return [
+            makeProjectLinkIndexerAction(
+                'artifact_files_added_or_split',
+                'S1 BRD 完成后，主入口必须调起 project-link-indexer 建立或刷新文件级索引'
+            )
+        ];
+    }
+
+    if (
+        [STAGE_IDS.S3, STAGE_IDS.S5].includes(targetStage) &&
+        (gateChecks.pageStageClosedForPrd?.pass ||
+            gateChecks.foundationReadyForDevelopmentPlan?.pass ||
+            gateChecks.fullPrdReady?.pass)
+    ) {
+        return [
+            makeProjectLinkIndexerAction(
+                'artifact_files_added_or_split',
+                'S2 页面、foundation 或 PRD 产物形成后，主入口必须调起 project-link-indexer 建立或刷新文件级索引'
+            )
+        ];
+    }
+
+    if (targetStage === STAGE_IDS.S4 && gateChecks.developmentPlanReady?.pass) {
+        return [
+            makeProjectLinkIndexerAction(
+                'artifact_files_added_or_split',
+                'S3 开发计划文件组形成或修复后，主入口必须调起 project-link-indexer 建立或刷新文件级索引'
+            )
+        ];
+    }
+
+    if (targetStage === STAGE_IDS.S6 && gateChecks.testCasesReady?.pass) {
+        return [
+            makeProjectLinkIndexerAction(
+                'artifact_files_added_or_split',
+                'S5 验收文档或测试用例形成后，主入口必须调起 project-link-indexer 建立或刷新文件级索引'
+            )
+        ];
+    }
+
+    return [];
+}
+
 function resolveNextActionWithContext({ validationResult, targetStage, resolvedRouteTarget, blockers, gateChecks }) {
     if (targetStage === STAGE_IDS.S0_5 && resolvedRouteTarget?.skill === 'project-baseline-auditor') {
         return '可进入 S0.5，默认交由 project-baseline-auditor，先扫描代码并生成/更新 project-profile.md 与 baseline-audit 清单';
@@ -1518,6 +1616,15 @@ function resolveNextActionWithContext({ validationResult, targetStage, resolvedR
     const writebackBlocker = blockers.find((item) => item.code === 'stage_transition_writeback_missing');
     if (writebackBlocker) {
         return '先调用 project-devlog 完成阶段切换日志回写，再进入下一阶段能力';
+    }
+
+    const developmentPlanBlocker = findDevelopmentPlanBlocker(blockers);
+    if (developmentPlanBlocker) {
+        if (developmentPlanBlocker.code === 'development_plan_missing') {
+            return '停留开发计划修复链路，先调用 delivery-planner 生成 docs/plans/delivery-plans/ 下的 main-delivery-plan-<slug>.md、task-kanban-<slug>.md 和 sub-delivery-plan-<slug>-<TaskID>-<short-name>.md，再重新运行 S4 门禁';
+        }
+
+        return '停留开发计划修复链路，先调用 delivery-planner 修复 docs/plans/delivery-plans/ 下的正式开发计划文件组，使 main-delivery-plan-<slug>.md、task-kanban-<slug>.md 和子开发计划通过结构校验，再重新运行 S4 门禁';
     }
 
     if (targetStage === STAGE_IDS.S2) {
@@ -1584,13 +1691,24 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         recommendedStage,
         gateChecks
     });
-    const resolvedRouteTarget = resolveRouteTarget(resolvedTargetStage, gateChecks);
+    const stageRouteTarget = resolveRouteTarget(resolvedTargetStage, gateChecks);
+    const recoveryRouteTarget = resolveRecoveryRouteTarget({
+        targetStage: resolvedTargetStage,
+        blockers: blockingReasons,
+        gateChecks
+    });
+    const resolvedRouteTarget = recoveryRouteTarget || stageRouteTarget;
     const isBaselineEntry = resolvedTargetStage === STAGE_IDS.S0_5;
     const hasStartupBootstrapBlocker =
         !isBaselineEntry &&
         (!validationResult.authority[FILE_ROLE_IDS.PROFILE] ||
             blockingReasons.some((item) => item.code === 'startup_minimum_missing'));
     const visibleRouteTarget = hasStartupBootstrapBlocker ? null : resolvedRouteTarget;
+    const companionActions = resolveCompanionActions({
+        targetStage: resolvedTargetStage,
+        gateChecks,
+        validationResult
+    });
 
     const result = {
         hostRoot: resolvedHostRoot,
@@ -1599,6 +1717,7 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         targetStage: resolvedTargetStage,
         routeTarget: visibleRouteTarget,
         canEnter: blockingReasons.length === 0,
+        companionActions,
         gateChecks,
         blockingReasons,
         context: {
@@ -1644,6 +1763,15 @@ function formatTextReport(result) {
 
     if (result.routeTarget?.skill) {
         lines.push(`Route target: ${result.routeTarget.skill}`);
+    }
+
+    lines.push('', 'Companion actions:');
+    if (result.companionActions.length === 0) {
+        lines.push('- none');
+    } else {
+        for (const action of result.companionActions) {
+            lines.push(`- ${action.skill}: ${action.trigger} (${action.reason})`);
+        }
     }
 
     lines.push('', 'Gate checks:');

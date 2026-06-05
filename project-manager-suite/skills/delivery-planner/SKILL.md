@@ -1,17 +1,11 @@
 ---
 name: delivery-planner
 description: 当任务涉及代码仓库内的开发实施计划时使用，例如功能开发、缺陷修复、重构、联调、完工前改造的 Phase / Task 拆解、计划更新、完成标准补强与完成闸门回写。仅限代码开发计划；不要用于产品排期、运营计划、纯文档执行计划、PRD 编写计划、测试执行排期或其他非代码项目计划。即使用户没有明确提到“skill”或“方法论”，只要语境明确是在做代码开发计划，也应触发本 skill。
-version: 1.2.0
-changelog: |
-  v1.2.0 – 移除技术栈访谈与宿主文件生成逻辑；改为在 Step 1 直接读取套包内置
-           tech-stack.md（skills/ai-project-manager/references/defaults/tech-stack.md）作为技术参考。
-  v1.1.0 – 增加脚本驱动：Step 0.5 前置运行 collect-upstream-context.mjs 收集上游产物清单，
-           Step 5 产出自检改用 validate-plan-structure.mjs 结构化校验，消除纯 prompt 纪律的漏读风险。
 ---
 
 # delivery-planner
 
-本 skill 用来生成或更新面向 AI 执行、人类 review 的执行计划文档。它沉淀的是一套可复用的方法论，而不是某个项目专属计划的外壳。
+本 skill 用来生成或更新面向 AI 执行、人类 review 的开发计划文件组。它沉淀的是一套可复用的方法论，而不是某个项目专属计划的外壳。
 
 与纯 prompt 驱动的核心差异：**在进入任何读取步骤之前，必须先运行 `collect-upstream-context.mjs` 脚本**，由脚本程序化发现并清单化上游 PRD + foundation 文档，消除依赖 prompt 纪律的漏读风险。**计划产出后，必须运行 `validate-plan-structure.mjs` 脚本**做结构化校验。
 
@@ -25,7 +19,7 @@ changelog: |
 
 - 想看什么时候该用这个 skill：看 [什么时候使用](#什么时候使用)
 - 想看上游文档怎么先收集：看 [Step 0.5：运行上游产物收集](#step-05运行上游产物收集硬性前置不可跳过)
-- 想看计划正文怎么写：看 [Step 3：按完整执行计划协议输出](#step-3按完整执行计划协议输出)
+- 想看计划正文怎么写：看 [Step 3：按多文件开发计划协议输出](#step-3按多文件开发计划协议输出)
 - 想看产出文件落到哪里：看 [产出要求](#产出要求)
 - 想看和 `execution-plan.md` 怎么分工：看 [与 `execution-plan.md` 的关系](#与-execution-planmd-的关系)
 
@@ -34,17 +28,21 @@ changelog: |
 - 设计流水线：[`../../PIPELINE.md`](../../PIPELINE.md)
 - 全局文件协议：[`../ai-project-manager/references/core/global-files-protocol.md`](../ai-project-manager/references/core/global-files-protocol.md)
 - 主入口运行协议：[`../ai-project-manager/references/core/runtime.md`](../ai-project-manager/references/core/runtime.md)
-- 计划模板：[`./templates/delivery-plan-template.md`](./templates/delivery-plan-template.md)
+- 主开发计划模板：[`./templates/main-delivery-plan-template.md`](./templates/main-delivery-plan-template.md)
+- 子开发计划模板：[`./templates/sub-delivery-plan-template.md`](./templates/sub-delivery-plan-template.md)
+- 任务看板模板：[`./templates/task-kanban-template.md`](./templates/task-kanban-template.md)
 - 结构说明：[`./references/plan-anatomy.md`](./references/plan-anatomy.md)
 - 自检门禁：[`./references/quality-gates.md`](./references/quality-gates.md)
 
 ## 与 `execution-plan.md` 的关系
 
-- `delivery-plan-<slug>.md` 是正式开发计划正文权威源，默认位于宿主项目 `docs/plans/`
+- `docs/plans/delivery-plans/main-delivery-plan-<slug>.md` 是正式开发计划入口，负责保留全局方法、阶段索引、发布闸门、风险和 PRD 反向索引
+- `docs/plans/delivery-plans/task-kanban-<slug>.md` 是任务状态总览，Task 与子开发计划一一对应
+- `docs/plans/delivery-plans/sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 是单个 Task 的执行正文，每个文件只承载一个 Task
 - `execution-plan.md` 是主入口维护的当前执行驾驶舱，只保留正式计划入口、当前活跃任务、下一步动作和完成标准摘要
-- 本 skill 负责生成或更新正式计划正文，不负责把完整 Phase / Task 正文复制进 `execution-plan.md`
+- 本 skill 负责生成或更新正式开发计划文件组，不负责把完整 Phase / Task 正文复制进 `execution-plan.md`
 - 当本 skill 完成新建或更新后，应由 `ai-project-manager` 把摘要同步回 `execution-plan.md`
-- 驾驶舱摘要必须使用 `templates/delivery-plan-template.md` 顶部的固定区块，不允许自由发挥字段名或顺序
+- 驾驶舱摘要必须来自主开发计划入口、当前任务看板行和当前子开发计划，不允许自由发挥字段名或顺序
 - 仅在以下事件发生时同步摘要：首次生成正式计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越
 
 ## 非目标
@@ -78,12 +76,12 @@ changelog: |
 
 在判断「新建计划 / 更新计划 / 局部补 Phase」之前，必须先判断**当前仓库角色**：
 
-- **宿主项目**：当前仓库是被服务的业务项目，允许继续走正式 `delivery-plan-<slug>.md` 生成流程
+- **宿主项目**：当前仓库是被服务的业务项目，允许继续走正式开发计划文件组生成流程
 - **套件 / 框架 / skill 源码仓库**：当前仓库主要承载规则、脚本、模板、插件或文档，不是某个宿主业务项目
 
 若判定为**套件 / 框架 / skill 源码仓库**：
 - **不得**把当前仓库视为 `<host>`
-- **不得**在当前仓库的 `docs/plans/` 下生成 `delivery-plan-<slug>.md`
+- **不得**在当前仓库的 `docs/plans/delivery-plans/` 下生成正式开发计划文件组
 - 应改为输出内部维护文档、改造计划或设计文档，落到更合适的 `docs/` 或 `docs/tooling/` 位置
 
 先确认当前属于哪一种：
@@ -141,7 +139,7 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 4. 不触发失败分支，`missingExpected` 检测被禁用
 5. `canProceed` 始终为 `true`
 
-> 但若同时满足“`slug = null` + 无 PRD / foundation 主链 + 当前仓库明显是套件 / 框架 / skill 源码仓库”，则只允许进入内部维护文档路线，不允许把该仓库当宿主生成正式 `delivery-plan-<slug>.md`。
+> 但若同时满足“`slug = null` + 无 PRD / foundation 主链 + 当前仓库明显是套件 / 框架 / skill 源码仓库”，则只允许进入内部维护文档路线，不允许把该仓库当宿主生成正式开发计划文件组。
 
 ---
 
@@ -175,7 +173,9 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 计划头部元信息中应注明 `开发模式: solo-local` 或 `开发模式: 团队协作`。
 
 生成新计划前，再读取：
-- `templates/delivery-plan-template.md`
+- `templates/main-delivery-plan-template.md`
+- `templates/sub-delivery-plan-template.md`
+- `templates/task-kanban-template.md`
 - `references/plan-anatomy.md`
 
 ### Step 2：先建立目标态，再写任务拆解
@@ -192,9 +192,19 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 - 按交付物或结果拆解，不把计划写成纯动作流水账
 - 完成标准要体现共享的“什么算完成”，未满足则不能标记完成
 
-### Step 3：按完整执行计划协议输出
+### Step 3：按多文件开发计划协议输出
 
-默认输出必须包含以下章节：
+正式计划必须落在宿主项目的 `docs/plans/delivery-plans/` 目录下：
+
+```text
+docs/plans/delivery-plans/
+  main-delivery-plan-<slug>.md
+  task-kanban-<slug>.md
+  sub-delivery-plan-<slug>-T0.1-<short-name>.md
+  sub-delivery-plan-<slug>-T0.2-<short-name>.md
+```
+
+主开发计划必须包含以下章节：
 1. 计划头部元信息
 2. 本计划使用指南
 3. PRD 加载约束
@@ -209,9 +219,22 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 12. AI 执行示例
 13. PRD → 任务反向索引
 
+主开发计划中的“执行阶段”只写 Phase 目标、进入 / 退出条件和子开发计划索引，不写完整 Task 正文。
+
+任务看板必须是独立文件 `task-kanban-<slug>.md`，至少包含：
+- Task ID
+- 子开发计划链接
+- Owner
+- 前置
+- 状态
+- 完成日期
+- 备注
+
+子开发计划必须与任务看板中的 Task 一一对应。每个 `sub-delivery-plan-*.md` 只包含一个 Task 正文。
+
 > Solo 模式下，`分工与边界` 章节的角色可精简为 `AI`（执行）与 `人类 Owner`（审核决策），不必列出多个团队角色。
 
-每个任务默认必须包含：
+子开发计划中的每个 Task 必须包含：
 - `PRD 双链·读`
 - `核心逻辑`
 - `核心文件`
@@ -248,11 +271,13 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 完成初稿或更新稿后，**必须先运行结构校验脚本**：
 
 ```bash
-node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <计划文件路径> --json
+node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <主开发计划路径> --json
 ```
 
 **脚本会自动检查**：
-- 13 个必需章节是否齐全
+- 主开发计划 13 个必需章节是否齐全
+- 主开发计划、任务看板、子开发计划之间的 Task 是否一一对应
+- 每个子开发计划是否只包含一个 Task 正文
 - 每个 Task 是否具备 7 个必填字段
 - 完成标准中是否出现高风险模糊词（`数据完整`、`配置补齐`、`符合预期` 等）
 
@@ -265,11 +290,11 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 完整自检清单见：
 - `references/quality-gates.md`
 
-## Harness 增强协议（兼容模式）
+## Harness 增强协议
 
-兼容原则：
-- 现有 13 章节骨架和 7 个 Task 默认字段继续保留，不推倒重来
-- 增强内容优先加在关键 Phase / 关键 Task 上，不要求一次把历史计划全部重写
+增强原则：
+- 主开发计划保留完整全局骨架，任务正文下沉到子开发计划
+- 增强内容优先加在关键 Phase / 关键 Task 上
 - 新建计划默认按增强协议写；更新计划按“受影响范围”补增强字段
 
 增强协议最少补齐三件事：
@@ -294,23 +319,26 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 
 ### 新建计划
 
-- 默认落到宿主项目的 `docs/plans/`，主文件名为 `delivery-plan-<slug>.md`
+- 默认落到宿主项目的 `docs/plans/delivery-plans/`
+- 主开发计划文件名为 `main-delivery-plan-<slug>.md`
+- 任务看板文件名为 `task-kanban-<slug>.md`
+- 子开发计划文件名为 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
 - 计划标题、目标、Phase 命名、看板状态要与当前仓库术语一致
-- 结构默认使用 `templates/delivery-plan-template.md`
+- 结构默认使用 `templates/main-delivery-plan-template.md`、`templates/sub-delivery-plan-template.md`、`templates/task-kanban-template.md`
 - **计划头部元信息中必须记录 `collect-upstream-context.mjs` 的运行结论**（slug、扫描时间、是否进入失败分支）
 - 不要把完整正文回写进 `execution-plan.md`；驾驶舱只同步入口和摘要
-- 顶部“驾驶舱摘要”区块必须填写完整，作为后续同步 `execution-plan.md` 的唯一机读来源
+- 主开发计划入口、当前任务看板行和当前子开发计划共同构成后续同步 `execution-plan.md` 的依据
 
 ### 更新计划
 
-- 在原文件上直接回写，不要另起一份“修订版草稿”替代正式计划
-- 同步更新状态、日期、依赖、发布闸门、风险与应对、反向索引中受影响的部分
+- 在正式计划文件组上直接回写，不要另起一套草稿替代正式计划
+- 同步更新子开发计划状态、任务看板状态、日期、依赖、发布闸门、风险与应对、反向索引中受影响的部分
 - 若本次升级了验收口径，必须把新口径写入计划正文
 
 ### 局部补 Phase
 
 - 只补一个 Phase 也不能只改该小节
-- 至少同步检查：任务看板、风险与应对、发布闸门、PRD → 任务反向索引
+- 至少同步检查：主开发计划阶段索引、任务看板、相关子开发计划、风险与应对、发布闸门、PRD → 任务反向索引
 
 ## 失败分支
 
@@ -347,7 +375,7 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 
 - 需要运行上游发现脚本时：`node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <hostRoot> --json`
 - 需要运行产出校验脚本时：`node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <计划文件路径> --json`
-- 需要模板时：读取 `templates/delivery-plan-template.md`
+- 需要模板时：读取 `templates/main-delivery-plan-template.md`、`templates/sub-delivery-plan-template.md`、`templates/task-kanban-template.md`
 - 需要章节说明时：读取 `references/plan-anatomy.md`
 - 需要判断先读哪些资料时：读取 `references/source-loading-order.md`
 - 需要做产出自检时：读取 `references/quality-gates.md`

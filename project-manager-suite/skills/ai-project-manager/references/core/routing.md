@@ -82,6 +82,7 @@
 |-----------------------------------------------|--------------|
 | `coding-standards` (涉及代码/结构/SQL/测试时加载) | `skills/coding-standards/` |
 | `project-devlog` (每轮有实质产出、阶段切换、需要收口时加载) | `skills/project-devlog/` |
+| `project-link-indexer` (阶段产物形成/拆分后，或需要文件关系、坏链、回链、孤立文件、影响范围诊断时加载) | `skills/project-link-indexer/` |
 
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|
@@ -146,7 +147,11 @@
 ├── project-profile.md     (仅在宿主缺少项目画像文件时创建；已有则映射到宿主权威文件)
 ├── project-rules.md       (仅在宿主缺少全局规则文件时创建；已有则映射到宿主权威文件)
 ├── docs/plans/
-│   └── execution-plan.md  (启动期 AI 记忆骨架中的当前执行计划载体)
+│   ├── execution-plan.md  (启动期 AI 记忆骨架中的当前执行计划载体)
+│   └── delivery-plans/
+│       ├── main-delivery-plan-<slug>.md
+│       ├── task-kanban-<slug>.md
+│       └── sub-delivery-plan-<slug>-<TaskID>-<short-name>.md
 ├── docs/rules/            (宿主专项规则权威目录；首次创建后应自动从套件默认规则源补齐默认文件)
 ├── logs/                  (`project-devlog` 默认状态回写与开发日志目录；不再创建 `project-status.md`)
 └── .agent/skills/         (宿主项目本地 AI 配置和扩充能力挂载位)
@@ -193,7 +198,8 @@ tools/    # 仅在出现脚本、自动化、迁移需求时补建
 
 内部结构约束：
 - `routing.md` 只约束“是否需要补一个代码根目录”，不再预设其内部结构
-- 代码根目录下的真实文件组织以宿主既有工程结构、`delivery-plan-<slug>.md` 中 Task 的 `核心文件` 字段，以及具体实现阶段读取到的编码规范为准
+- 代码根目录下的真实文件组织以宿主既有工程结构、当前 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 中 Task 的 `核心文件` 字段，以及具体实现阶段读取到的编码规范为准
+- 若 S4 门禁发现 `docs/plans/delivery-plans/` 下正式开发计划文件组缺失或结构校验失败，路由目标应回到 `delivery-planner`，先生成或修复 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`，不得继续进入 `coding-standards`
 - 若宿主已经存在 `frontend/`、`backend/`、`server/`、`web/` 等既有工程目录，优先映射现有结构，不按协议再造一层 `<项目名>-Toc/`、`<项目名>-Config/` 之类的目录模板
 
 > **操作纪律**：先扫描，能映射的映射，识别到真缺失再补。若只是某个次要阶段还没到，其所属目录不要提前建立。在操作结束后，给出已建和延后建的总结单。

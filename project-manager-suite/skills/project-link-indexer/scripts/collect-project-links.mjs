@@ -233,8 +233,20 @@ function normalizePosix(inputPath) {
 }
 
 function shouldIgnoreDir(relativeDir) {
+    const normalizedDir = normalizePosix(relativeDir);
+    const segments = normalizedDir.split('/').filter(Boolean);
+
     return [...ignoredDirectories].some((ignored) => {
-        return relativeDir === ignored || relativeDir.startsWith(`${ignored}/`);
+        if (!ignored.includes('/')) {
+            return segments.includes(ignored);
+        }
+
+        return (
+            normalizedDir === ignored ||
+            normalizedDir.startsWith(`${ignored}/`) ||
+            normalizedDir.endsWith(`/${ignored}`) ||
+            normalizedDir.includes(`/${ignored}/`)
+        );
     });
 }
 
@@ -314,7 +326,8 @@ function extractSlug(kind, relativePath) {
         /^foundation-(?:glossary|schema|api|delivery)-(.+)$/,
         /^prd-feature-list-(.+)$/,
         /^mainprd-(.+)$/,
-        /^delivery-plan-(.+)$/,
+        /^main-delivery-plan-(.+)$/,
+        /^task-kanban-(.+)$/,
         /^acceptance-(.+)$/,
         /^tc-main-(.+)$/
     ];
@@ -326,6 +339,11 @@ function extractSlug(kind, relativePath) {
 
     if (kind === 'subprd') {
         const match = baseName.match(/^\d{2}-subprd-(.+)$/);
+        if (match) return match[1];
+    }
+
+    if (kind === 'delivery_plan') {
+        const match = baseName.match(/^sub-delivery-plan-(.+?)-T\d+\.\d+-.+$/);
         if (match) return match[1];
     }
 
@@ -349,7 +367,7 @@ function classifyFile(relativePath) {
     if (/^docs\/prd\/prd-feature-list-.+\.md$/.test(relativePath)) return 'prd_feature_list';
     if (/^docs\/prd\/mainprd-.+\.md$/.test(relativePath)) return 'mainprd';
     if (/^docs\/prd\/subprd\/\d{2}-subprd-.+\.md$/.test(relativePath)) return 'subprd';
-    if (/^docs\/plans\/delivery-plan-.+\.md$/.test(relativePath)) return 'delivery_plan';
+    if (/^docs\/plans\/delivery-plans\/(?:main-delivery-plan|sub-delivery-plan|task-kanban)-.+\.md$/.test(relativePath)) return 'delivery_plan';
     if (/^docs\/test-case\/acceptance-.+\.md$/.test(relativePath)) return 'acceptance';
     if (/^docs\/test-case\/acceptance-.+\/.+\.md$/.test(relativePath)) return 'acceptance';
     if (/^docs\/test-case\/tc-main-.+\.md$/.test(relativePath)) return 'test_case';
@@ -452,7 +470,7 @@ function resolveTarget({ sourcePath, rawTarget, indexes }) {
         if (!target.includes('/')) {
             addCandidate(path.posix.join('docs/prd', target));
             addCandidate(path.posix.join('docs/brd', target));
-            addCandidate(path.posix.join('docs/plans', target));
+            addCandidate(path.posix.join('docs/plans/delivery-plans', target));
             addCandidate(path.posix.join('src/frontend/page-preview', target));
             for (const byBaseMatch of indexes.byBase.get(path.basename(target)) || []) {
                 addCandidate(byBaseMatch);
@@ -644,7 +662,7 @@ function buildWikiSchema() {
         writePolicy: {
             mayRewrite: Object.values(OUTPUTS),
             mustNotRewriteAsSourceOfTruth: true,
-            sourceOfTruth: 'project-profile.md, docs/brd, src/frontend/page-preview, docs/prd, docs/plans, docs/test-case, and host code files'
+            sourceOfTruth: 'project-profile.md, docs/brd, src/frontend/page-preview, docs/prd, docs/plans/delivery-plans, docs/test-case, and host code files'
         }
     };
 }

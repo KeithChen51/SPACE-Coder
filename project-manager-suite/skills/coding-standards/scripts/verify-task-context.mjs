@@ -13,7 +13,7 @@
  *
  * Purpose:
  *   Before coding-standards starts implementing a Task, verify that:
- *     1. The Task exists in the delivery plan
+ *     1. The Task exists in the delivery plan file group
  *     2. All files referenced in the Task's "PRD双链·读" field actually exist on disk
  *     3. The Task's "核心文件" field is declared (non-empty)
  *   OR check environment readiness if --env-check is passed.
@@ -22,7 +22,7 @@
  *
  * Usage:
  *   node <suite-path>/skills/coding-standards/scripts/verify-task-context.mjs \
- *     <delivery-plan-path> <task-id> [--json] [--env-check]
+ *     <main-delivery-plan-path> <task-id> [--json] [--env-check]
  *
  * Exit codes:
  *   0 – canExecute/envReady: true (all checks passed)
@@ -42,7 +42,7 @@ const __filename = fileURLToPath(import.meta.url);
 
 function printUsage() {
     console.log(
-        'Usage: node verify-task-context.mjs <delivery-plan-path> <task-id> [--json] [--env-check] [--docs-dir <rel-path>]'
+        'Usage: node verify-task-context.mjs <main-delivery-plan-path> <task-id> [--json] [--env-check] [--docs-dir <rel-path>]'
     );
 }
 
@@ -67,7 +67,7 @@ function parseArgs(argv) {
         throw new Error(`Unknown argument: ${arg}`);
     }
 
-    if (!options.planFile) throw new Error('Missing <delivery-plan-path> argument.');
+    if (!options.planFile) throw new Error('Missing <main-delivery-plan-path> argument.');
     if (!options.taskId) throw new Error('Missing <task-id> argument.');
     return options;
 }
@@ -135,7 +135,7 @@ function verifyEnv(planFile) {
     const planDir = path.dirname(planPath);
     for (const { targetDir, requiredItem } of declarations.dirs) {
         // Just checking if we can find it relative to host dir
-        const hostDir = path.resolve(planDir, '..', '..');
+        const hostDir = resolveHostRoot(planDir);
         const resolvedPath = path.resolve(hostDir, targetDir, requiredItem);
         if (!fs.existsSync(resolvedPath)) {
             missingEnv.push(`缺失工程依赖: ${path.join(targetDir, requiredItem)} 未找到。`);
@@ -171,6 +171,142 @@ function extractTaskBlock(content, taskId) {
     }
 
     return blocks.find((b) => b.id === taskId) || null;
+}
+
+function resolveHostRoot(planDir) {
+    if (
+        path.basename(planDir) === 'delivery-plans' &&
+        path.basename(path.dirname(planDir)) === 'plans' &&
+        path.basename(path.dirname(path.dirname(planDir))) === 'docs'
+    ) {
+        return path.resolve(planDir, '..', '..', '..');
+    }
+
+    return path.resolve(planDir, '..', '..');
+}
+
+function normalizeMarkdownTarget(target) {
+    return target
+        .split('#')[0]
+        .trim()
+        .replace(/^\.\/+/, '');
+}
+
+function extractMarkdownLinks(content, basenamePattern) {
+    const refs = [];
+    const lines = content.split('\n');
+
+    for (const line of lines) {
+        for (const match of line.matchAll(/\[[^\]]+\]\(([^)]+\.md(?:#[^)]+)?)\)/g)) {
+            const target = normalizeMarkdownTarget(match[1]);
+            if (basenamePattern.test(path.basename(target))) {
+                refs.push(target);
+            }
+        }
+        for (const match of line.matchAll(/`([^`]+\.md(?:#[^`]*)?)`/g)) {
+            const target = normalizeMarkdownTarget(match[1]);
+            if (basenamePattern.test(path.basename(target))) {
+                refs.push(target);
+            }
+        }
+    }
+
+    return [...new Set(refs)];
+}
+
+function resolveRelativeTo(baseDir, target) {
+    if (path.isAbsolute(target)) return target;
+    return path.resolve(baseDir, target);
+}
+
+function findTaskInKanban(kanbanContent, taskId) {
+    const lines = kanbanContent.split('\n');
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('|') || !trimmed.includes(taskId)) continue;
+
+        const cells = trimmed
+            .split('|')
+            .slice(1, -1)
+            .map((cell) => cell.trim());
+        if (cells[0] !== taskId) continue;
+
+        const link = trimmed.match(/\[[^\]]+\]\(([^)]*sub-delivery-plan-[^)]+\.md)\)/)
+            || trimmed.match(/`([^`]*sub-delivery-plan-[^`]+\.md)`/);
+        if (!link) return { taskId, subPlanTarget: '' };
+
+        return { taskId, subPlanTarget: normalizeMarkdownTarget(link[1]) };
+    }
+
+    return null;
+}
+
+function isMainDeliveryPlan(planPath) {
+    return (
+        path.basename(path.dirname(planPath)) === 'delivery-plans' &&
+        /^main-delivery-plan-.+\.md$/.test(path.basename(planPath))
+    );
+}
+
+function resolveTaskSource(planPath, content, taskId) {
+    const planDir = path.dirname(planPath);
+
+    if (!isMainDeliveryPlan(planPath)) {
+        return {
+            content,
+            taskPlanPath: planPath,
+            task: extractTaskBlock(content, taskId),
+        };
+    }
+
+    const kanbanTargets = extractMarkdownLinks(content, /^task-kanban-.+\.md$/);
+    if (kanbanTargets.length === 0) {
+        return {
+            content: '',
+            taskPlanPath: null,
+            task: null,
+            reason: `Task ${taskId} cannot be resolved because task kanban is not linked from the main delivery plan.`,
+        };
+    }
+
+    const kanbanPath = resolveRelativeTo(planDir, kanbanTargets[0]);
+    if (!fs.existsSync(kanbanPath)) {
+        return {
+            content: '',
+            taskPlanPath: null,
+            task: null,
+            reason: `Task ${taskId} cannot be resolved because task kanban does not exist: ${kanbanTargets[0]}`,
+        };
+    }
+
+    const kanbanContent = fs.readFileSync(kanbanPath, 'utf8');
+    const kanbanTask = findTaskInKanban(kanbanContent, taskId);
+    if (!kanbanTask || !kanbanTask.subPlanTarget) {
+        return {
+            content: '',
+            taskPlanPath: null,
+            task: null,
+            reason: `Task ${taskId} is not linked to a sub delivery plan in task kanban.`,
+        };
+    }
+
+    const taskPlanPath = resolveRelativeTo(planDir, kanbanTask.subPlanTarget);
+    if (!fs.existsSync(taskPlanPath)) {
+        return {
+            content: '',
+            taskPlanPath,
+            task: null,
+            reason: `Task ${taskId} sub delivery plan does not exist: ${kanbanTask.subPlanTarget}`,
+        };
+    }
+
+    const taskContent = fs.readFileSync(taskPlanPath, 'utf8');
+    return {
+        content: taskContent,
+        taskPlanPath,
+        task: extractTaskBlock(taskContent, taskId),
+    };
 }
 
 // ─── PRD link extraction ──────────────────────────────────────────────────────
@@ -213,18 +349,21 @@ function verifyTask(planFile, taskId, docsDir = 'docs/prd') {
 
     const content = fs.readFileSync(planPath, 'utf8');
     const planDir = path.dirname(planPath);
-    // 计划落在 <host>/docs/plans/；PRD/foundation 落在 <host>/<docsDir>（默认 docs/prd）。
+    // 计划落在 <host>/docs/plans/delivery-plans/；PRD/foundation 落在 <host>/<docsDir>（默认 docs/prd）。
     // 与 collect-upstream-context.mjs 同口径：PRD 双链优先按 <host>/<docsDir>/<link> 解析。
-    const hostRoot = path.resolve(planDir, '..', '..');
+    const hostRoot = resolveHostRoot(planDir);
     const prdDocsDir = path.resolve(hostRoot, docsDir);
 
-    const task = extractTaskBlock(content, taskId);
+    const taskSource = resolveTaskSource(planPath, content, taskId);
+    const task = taskSource.task;
+    const taskPlanPath = taskSource.taskPlanPath;
     if (!task) {
         return {
             taskId,
             taskTitle: null,
             canExecute: false,
-            reason: `Task ${taskId} not found in delivery plan.`,
+            reason: taskSource.reason || `Task ${taskId} not found in delivery plan file group.`,
+            taskPlanPath,
             missingFiles: [],
             coreFilesDeclared: false,
         };
@@ -238,7 +377,7 @@ function verifyTask(planFile, taskId, docsDir = 'docs/prd') {
         const candidates = [
             path.resolve(prdDocsDir, link),                                  // <host>/<docsDir>/<link>：PRD/foundation 实际所在，裸名与拆分子目录引用都命中
             path.resolve(hostRoot, 'src', 'frontend', 'page-preview', link), // page-explainer 产物所在；与 collect-upstream-context 的第二上游位置同口径
-            path.resolve(planDir, '..', '..', link),                         // 宿主根相对：兼容 link 写成完整相对路径（docs/prd/... 或 src/frontend/page-preview/...）
+            path.resolve(hostRoot, link),                                     // 宿主根相对路径
             path.resolve(planDir, link),                                     // 计划目录相对
             path.resolve(link),                                              // 兜底：cwd / 绝对路径
         ];
@@ -254,6 +393,7 @@ function verifyTask(planFile, taskId, docsDir = 'docs/prd') {
     return {
         taskId,
         taskTitle: task.title,
+        taskPlanPath,
         canExecute,
         prdLinksFound: prdLinks,
         prdLinksDeclared,
@@ -298,7 +438,7 @@ function formatReport(result) {
     lines.push('');
 
     if (!result.taskTitle) {
-        lines.push(`  • Task ${result.taskId} 在 delivery plan 中不存在`);
+        lines.push(`  • Task ${result.taskId} 在开发计划文件组中不存在`);
     }
 
     if (result.prdLinksDeclared === false) {

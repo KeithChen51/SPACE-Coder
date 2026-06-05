@@ -105,7 +105,10 @@ S5 ──────── test-case-chief 调度 ─────────�
 │   │   └── subprd/                           # prd-writer subprd
 │   │       └── 0X-subprd-<区块英文短名>.md    # N 份，按区块拆分
 │   └── plans/                                # 开发执行计划层
-│       └── delivery-plan-<slug>.md           # delivery-planner 产出的开发执行计划
+│       └── delivery-plans/                   # delivery-planner 产出的正式开发计划文件组
+│           ├── main-delivery-plan-<slug>.md  # 主开发计划入口
+│           ├── task-kanban-<slug>.md         # 独立任务看板
+│           └── sub-delivery-plan-<slug>-T0.1-<short-name>.md # 子开发计划，每个 Task 一份
 ├── src/
 │   ├── ...                                   # 代码实装层（S4），coding-standards 按 Task 核心文件字段产出的实装代码
 │   └── frontend/
@@ -159,8 +162,8 @@ S5 ──────── test-case-chief 调度 ─────────�
 | page-explainer | `<host>/src/frontend/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/foundation/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` + `<host>/docs/prd/subprd/` | `prd-feature-list-<slug>.md`、`mainprd-<slug>.md`、`subprd/0X-subprd-<区块英文短名>.md` 及后续新增 |
-| delivery-planner | `<host>/docs/plans/` | `delivery-plan-<slug>.md` 及后续该 skill 新增的计划文件 |
-| coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写 `docs/plans/delivery-plan-<slug>.md` 中已完成 Task 的状态字段 |
+| delivery-planner | `<host>/docs/plans/delivery-plans/` | `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` |
+| coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写对应子开发计划和任务看板状态 |
 | prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另可对 `<host>/docs/prd/subprd/` 下 subprd 的 §X.6 验收小节做条目修订与回链追加（原地回写），不做 baseline / changelog / baseline.md 维护 |
 | test-case-writer | `<host>/docs/test-case/` | `tc-main-<slug>.md`、`<业务域>/tc-<业务域>.md`、`<业务域>/sql/*.sql` |
 | test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`；对已产出 TC 文件做原地修正 |
@@ -254,6 +257,16 @@ S5 ──────── test-case-chief 调度 ─────────�
 ## 全局伴随. project-link-indexer — 文件级引用索引
 
 **职责**：按需扫描宿主项目已有文件，编译出可重建的文件级引用关系图，用于 LLM wiki 导航、坏链诊断、缺回链诊断和影响范围查询。它是全阶段伴随能力，不改变当前阶段，不给阶段路由建议。
+
+**调度机制**：阶段产物完成后回到 `ai-project-manager`；主入口按场景调起 `project-link-indexer`，索引器自行决定 build / refresh / noop。主入口不判断索引新旧，索引是可重建产物，不是阶段门禁。
+
+**主入口调起场景**：
+- S0.5 baseline audit 完成后
+- S1 BRD 完成后
+- S2 页面 / foundation / PRD 产物形成或拆分后
+- S3 开发计划文件组形成或修复后
+- S5 验收文档 / 测试用例形成后
+- 用户询问文件关系、坏链、回链、孤立文件或影响范围时
 
 **边界**：
 - 只产出 `docs/index/*` 下的索引文件
@@ -419,19 +432,23 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 开发执行计划 | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 包含 Phase/Task 拆解、完成标准、完成判定、任务看板、风险等的完整执行计划 |
+| 主开发计划 | `main-delivery-plan-<slug>.md` | `<host>/docs/plans/delivery-plans/` | 包含全局方法、Phase 索引、发布闸门、风险和 PRD 反向索引 |
+| 任务看板 | `task-kanban-<slug>.md` | `<host>/docs/plans/delivery-plans/` | 汇总 Task、子开发计划链接、Owner、前置、状态、完成日期和备注 |
+| 子开发计划 | `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` | `<host>/docs/plans/delivery-plans/` | 单个 Task 的 PRD、核心逻辑、核心文件、完成标准和验证证据 |
 
 ---
 
 ## 7. coding-standards — S4 代码实装
 
-**职责**：消费 `delivery-plan-<slug>.md` 中的当前活跃 Task，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件，并回写 Task 状态。不负责需求澄清、方案设计、测试执行或发布决策。
+**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件，并回写 Task 状态。不负责需求澄清、方案设计、测试执行或发布决策。
 
 **依赖文件**：
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
-| `delivery-plan-<slug>.md` | delivery-planner | `<host>/docs/plans/` |
+| `main-delivery-plan-<slug>.md` | delivery-planner | `<host>/docs/plans/delivery-plans/` |
+| `task-kanban-<slug>.md` | delivery-planner | `<host>/docs/plans/delivery-plans/` |
+| `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` | delivery-planner | `<host>/docs/plans/delivery-plans/` |
 | Task 内 `PRD双链·读` 指向的文件 | foundation-builder / prd-writer | `<host>/docs/prd/` |
 | `coding-standards/references/<规范>.md` | 本 skill | `skills/coding-standards/references/` |
 
@@ -440,7 +457,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 实装代码文件 | 由 Task 的 `核心文件` 字段决定 | `<host>/src/` 或项目约定代码根目录 | 按 PRD 和编码规范产出的真实文件 |
-| Task 状态回写 | `delivery-plan-<slug>.md`（原地回写） | `<host>/docs/plans/` | 将已完成 Task 的状态改为 `已完成(YYYY-MM-DD)` |
+| Task 状态回写 | 对应子开发计划和任务看板 | `<host>/docs/plans/delivery-plans/` | 将已完成 Task 的状态改为 `已完成(YYYY-MM-DD)` |
 
 ---
 

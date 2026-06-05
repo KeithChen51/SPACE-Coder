@@ -14,6 +14,7 @@ import { installSuiteIntoHost } from '../tools/install-suite-into-host.mjs';
 import { devlogSync } from '../tools/devlog-sync.mjs';
 import { collectBaselineGaps } from '../skills/project-baseline-auditor/scripts/collect-baseline-gaps.mjs';
 import { collectProjectLinks } from '../skills/project-link-indexer/scripts/collect-project-links.mjs';
+import { runProjectLinkIndexer } from '../skills/project-link-indexer/scripts/run-project-link-indexer.mjs';
 import { validateProjectLinks } from '../skills/project-link-indexer/scripts/validate-project-links.mjs';
 import { buildClaudeHookBootstrap, buildOpenCodeBootstrap } from '../lib/bootstrap/index.js';
 import { verifyTask } from '../skills/coding-standards/scripts/verify-task-context.mjs';
@@ -238,8 +239,8 @@ function writeFullPrdArtifacts(hostRoot, slug = 'demo') {
     );
 }
 
-function buildValidDeliveryPlanContent() {
-    return `# Demo Delivery Plan
+function buildMainDeliveryPlanContent(slug = 'demo') {
+    return `# Demo Main Delivery Plan
 
 > **版本**：v1
 > **发布日期**：2026-06-01
@@ -253,6 +254,9 @@ function buildValidDeliveryPlanContent() {
 ### 0.4 完成前验证门禁
 完成后执行真实验证。
 
+## 环境依赖声明
+无额外环境依赖。
+
 ## 1. 差距基线
 - G1: demo gap
 
@@ -261,10 +265,51 @@ function buildValidDeliveryPlanContent() {
 
 ## 3. 执行阶段
 ### Phase 0：Demo
+| Task | 子开发计划 | 状态 |
+|---|---|---|
+| T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) | 待开发 |
+
+## 4. 任务看板
+- 看板入口：[task-kanban-${slug}.md](task-kanban-${slug}.md)
+
+## 5. 发布闸门
+- [ ] 真实验证完成
+
+## 6. 风险与应对
+- 无
+
+## 7. AI 执行示例
+- 读取任务看板，按 Task 进入对应子开发计划。
+
+## 8. PRD → 任务反向索引
+| PRD | Task | 子开发计划 |
+|---|---|---|
+| mainprd-${slug}.md §1 | T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) |
+`;
+}
+
+function buildTaskKanbanContent(slug = 'demo') {
+    return `# Demo Task Kanban
+
+| Task | 子开发计划 | Owner | 前置 | 状态 | 完成日期 | 备注 |
+|---|---|---|---|---|---|---|
+| T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) | AI | 无 | 待开发 | - | demo |
+`;
+}
+
+function buildSubDeliveryPlanContent(slug = 'demo') {
+    return `# T0.1 Demo Sub Delivery Plan
+
+## 任务来源
+- 主开发计划：[main-delivery-plan-${slug}.md](main-delivery-plan-${slug}.md)
+- 任务看板：[task-kanban-${slug}.md](task-kanban-${slug}.md)
+
 #### T0.1 实现演示任务
 
+**Requirement ID**：REQ-DEMO-001
+
 **PRD 双链·读**：
-- \`mainprd-demo.md\` §1
+- \`mainprd-${slug}.md\` §1
 
 **核心逻辑**：
 - 根据 PRD 处理演示任务。
@@ -275,29 +320,32 @@ function buildValidDeliveryPlanContent() {
 **完成标准**：
 - 运行 \`node src/demo.js\` 输出 demo-ok。
 
+**Verification Method**：
+- 执行 \`node src/demo.js\`。
+
+**Evidence**：
+- logs/demo-task.md
+
+**Failure Handling**：
+- PRD 或核心文件定位不到时阻塞。
+
 **Owner**：AI 执行 -> 人审核
 **前置**：无
 **状态**：待开发
-
-## 4. 任务看板
-| 任务 | Owner | 前置 | 状态 |
-|---|---|---|---|
-| T0.1 | AI | 无 | 待开发 |
-
-## 5. 发布闸门
-- [ ] 真实验证完成
-
-## 6. 风险与应对
-- 无
-
-## 7. AI 执行示例
-- 读取 T0.1 后执行。
-
-## 8. PRD → 任务反向索引
-| PRD | Task |
-|---|---|
-| mainprd-demo.md §1 | T0.1 |
 `;
+}
+
+function writeMultiFileDeliveryPlan(hostRoot, slug = 'demo') {
+    const planDir = path.join(hostRoot, 'docs', 'plans', 'delivery-plans');
+    const mainPath = path.join(planDir, `main-delivery-plan-${slug}.md`);
+    const kanbanPath = path.join(planDir, `task-kanban-${slug}.md`);
+    const subPath = path.join(planDir, `sub-delivery-plan-${slug}-T0.1-demo-task.md`);
+
+    writeFile(mainPath, buildMainDeliveryPlanContent(slug));
+    writeFile(kanbanPath, buildTaskKanbanContent(slug));
+    writeFile(subPath, buildSubDeliveryPlanContent(slug));
+
+    return { planDir, mainPath, kanbanPath, subPath };
 }
 
 function createHostFixture({ withRules = true, withProfile = true, withPlan = true, withDevlog = true, profileOverrides = {}, planOverrides = {}, logContent = '记录 S1 阶段推进' } = {}) {
@@ -589,10 +637,7 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
         path.join(hostRoot, 'docs', 'prd', 'subprd', '01-subprd-order.md'),
         '# 订单 subprd\n\n- mainprd回链：[mainprd-demo.md](../mainprd-demo.md)\n'
     );
-    writeFile(
-        path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'),
-        '# Demo Delivery Plan\n\n## 3. 执行阶段\n\n### T0.1 订单任务\n\n**PRD 双链·读**：\n- `mainprd-demo.md` §1\n\n## 8. PRD → 任务反向索引\n| PRD | Task |\n|---|---|\n| mainprd-demo.md §1 | T0.1 |\n'
-    );
+    writeMultiFileDeliveryPlan(hostRoot);
 
     const result = collectProjectLinks({ hostRoot, write: true });
     const nodeByPath = new Map(result.nodes.map((item) => [item.path, item]));
@@ -605,7 +650,9 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
     assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.graphMarkdown)), true);
     assert.equal(fs.existsSync(path.join(hostRoot, result.outputs.wikiSchemaJson)), true);
     assert.equal(nodeByPath.get('docs/prd/mainprd-demo.md').kind, 'mainprd');
-    assert.equal(nodeByPath.get('docs/plans/delivery-plan-demo.md').kind, 'delivery_plan');
+    assert.equal(nodeByPath.get('docs/plans/delivery-plans/main-delivery-plan-demo.md').kind, 'delivery_plan');
+    assert.equal(nodeByPath.get('docs/plans/delivery-plans/sub-delivery-plan-demo-T0.1-demo-task.md').kind, 'delivery_plan');
+    assert.equal(nodeByPath.get('docs/plans/delivery-plans/task-kanban-demo.md').kind, 'delivery_plan');
     assert.ok(
         result.edges.some(
             (edge) =>
@@ -618,7 +665,7 @@ test('collect-project-links compiles host artifacts into a rebuildable file-leve
         result.edges.some(
             (edge) =>
                 edge.relation === 'depends_on' &&
-                edge.from === 'docs/plans/delivery-plan-demo.md' &&
+                edge.from === 'docs/plans/delivery-plans/sub-delivery-plan-demo-T0.1-demo-task.md' &&
                 edge.to === 'docs/prd/mainprd-demo.md' &&
                 edge.evidence.some((item) => item.syntax === 'prd_double_link')
         )
@@ -666,6 +713,33 @@ test('project-link-indexer ignores source-code string fixtures and unresolved pl
     assert.equal(targets.some((item) => item.includes('docs/prd/*.md')), false);
 });
 
+test('project-link-indexer ignores dependency and generated directories at any depth', () => {
+    const hostRoot = createHostFixture();
+
+    writeFile(
+        path.join(hostRoot, 'word-format-checker-web', 'node_modules', 'dayjs', 'README.md'),
+        '# dayjs\n\n[missing dependency doc](docs/missing.md)\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'word-format-checker-web', 'dist', 'index.html'),
+        '<a href="missing-generated.html">generated</a>\n'
+    );
+    writeFile(
+        path.join(hostRoot, 'word-format-checker-web', 'src', 'App.vue'),
+        '<template><main>real source</main></template>\n'
+    );
+
+    const result = collectProjectLinks({ hostRoot, write: false });
+    const nodePaths = result.nodes.map((item) => item.path);
+    const issueSources = result.issues.map((item) => item.from || item.evidence?.path || '');
+
+    assert.equal(nodePaths.some((item) => item.includes('/node_modules/')), false);
+    assert.equal(nodePaths.some((item) => item.includes('/dist/')), false);
+    assert.equal(issueSources.some((item) => item.includes('/node_modules/')), false);
+    assert.equal(issueSources.some((item) => item.includes('/dist/')), false);
+    assert.ok(nodePaths.includes('word-format-checker-web/src/App.vue'));
+});
+
 test('project-link-indexer is registered as a global companion ability and file role', () => {
     assert.ok(globalCompanionAbilities.some((item) => item.skill === 'project-link-indexer'));
     assert.ok(
@@ -676,6 +750,112 @@ test('project-link-indexer is registered as a global companion ability and file 
                 item.writtenBy.includes('project-link-indexer')
         )
     );
+});
+
+test('run-project-link-indexer builds index when key artifacts exist and no index is present', () => {
+    const hostRoot = createHostFixture();
+    writeFile(path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'), '# BRD Demo\n');
+
+    const result = runProjectLinkIndexer({ hostRoot, trigger: 'artifact_files_added_or_split' });
+
+    assert.equal(result.mode, 'build');
+    assert.equal(fs.existsSync(path.join(hostRoot, 'docs', 'index', 'project-link-graph.json')), true);
+    assert.equal(result.outputs.graphJson, 'docs/index/project-link-graph.json');
+    assert.ok(result.summary.nodes > 0);
+});
+
+test('run-project-link-indexer refreshes index when current key artifact nodes are missing', () => {
+    const hostRoot = createHostFixture();
+    writeFile(path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'), '# BRD Demo\n');
+    collectProjectLinks({ hostRoot, write: true });
+    writeMultiFileDeliveryPlan(hostRoot);
+
+    const result = runProjectLinkIndexer({ hostRoot, trigger: 'artifact_files_added_or_split' });
+    const graph = JSON.parse(readFile(path.join(hostRoot, 'docs', 'index', 'project-link-graph.json')));
+    const nodePaths = graph.nodes.map((item) => item.path);
+
+    assert.equal(result.mode, 'refresh');
+    assert.ok(nodePaths.includes('docs/plans/delivery-plans/main-delivery-plan-demo.md'));
+    assert.ok(nodePaths.includes('docs/plans/delivery-plans/task-kanban-demo.md'));
+});
+
+test('run-project-link-indexer does nothing when index already covers current key artifacts', () => {
+    const hostRoot = createHostFixture();
+    writeFile(path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'), '# BRD Demo\n');
+    collectProjectLinks({ hostRoot, write: true });
+
+    const result = runProjectLinkIndexer({ hostRoot, trigger: 'artifact_files_added_or_split' });
+
+    assert.equal(result.mode, 'noop');
+    assert.equal(result.outputs.graphJson, 'docs/index/project-link-graph.json');
+    assert.ok(result.summary.nodes > 0);
+});
+
+test('run-project-link-indexer validates links without writing on diagnostic trigger', () => {
+    const hostRoot = createHostFixture();
+    writeFile(path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'), '# BRD Demo\n\n- 缺失链接：[missing](missing.md)\n');
+
+    const result = runProjectLinkIndexer({ hostRoot, trigger: 'need_broken_link_or_reverse_link_check' });
+
+    assert.equal(result.mode, 'validate-only');
+    assert.equal(fs.existsSync(path.join(hostRoot, 'docs', 'index', 'project-link-graph.json')), false);
+    assert.ok(result.issues.some((item) => item.code === 'broken_link'));
+});
+
+test('route-check asks ai-project-manager to call project-link-indexer after BRD completion', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S1',
+            recommended_stage: 'S2',
+            current_round_deliverable: 'BRD 已完成'
+        },
+        planOverrides: {
+            current_stage: 'S1',
+            current_goal: '进入页面阶段'
+        },
+        logContent: '记录 S2 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeFile(path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'), '# BRD Demo\n');
+    writeFile(path.join(hostRoot, 'docs', 'index', 'project-link-graph.json'), '{not json');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S2' });
+    const linkAction = result.companionActions.find((item) => item.skill === 'project-link-indexer');
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.blockingReasons.length, 0);
+    assert.equal(linkAction.trigger, 'artifact_files_added_or_split');
+    assert.match(linkAction.reason, /BRD/);
+    assert.equal(Object.hasOwn(linkAction, 'mode'), false);
+});
+
+test('route-check asks ai-project-manager to call project-link-indexer after delivery plan is ready', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S4',
+            current_round_deliverable: '开发计划已完成'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '进入开发执行'
+        },
+        logContent: '记录 S4 阶段切换'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeMultiFileDeliveryPlan(hostRoot);
+    writeFile(path.join(hostRoot, 'docs', 'index', 'project-link-graph.json'), '{not json');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+    const linkAction = result.companionActions.find((item) => item.skill === 'project-link-indexer');
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'coding-standards');
+    assert.equal(result.blockingReasons.length, 0);
+    assert.equal(linkAction.trigger, 'artifact_files_added_or_split');
+    assert.match(linkAction.reason, /开发计划/);
+    assert.equal(Object.hasOwn(linkAction, 'mode'), false);
 });
 
 test('route-check prefers docs/brd and src/frontend/page-preview over legacy page directories and root-level artifacts', () => {
@@ -1018,6 +1198,11 @@ test('route-check blocks S4 until delivery plan exists', () => {
     assert.equal(result.canEnter, false);
     assert.equal(result.gateChecks.developmentPlanReady.pass, false);
     assert.ok(result.blockingReasons.some((item) => item.code === 'development_plan_missing'));
+    assert.equal(result.routeTarget.skill, 'delivery-planner');
+    assert.equal(result.routeTarget.recoveryFor, 'development_plan_missing');
+    assert.match(result.nextAction, /docs\/plans\/delivery-plans/);
+    assert.match(result.nextAction, /main-delivery-plan-<slug>\.md/);
+    assert.doesNotMatch(result.nextAction, /可进入\s*S4/);
 });
 
 test('route-check enters S4 when delivery plan exists', () => {
@@ -1034,13 +1219,17 @@ test('route-check enters S4 when delivery plan exists', () => {
         logContent: '记录 S4 阶段切换'
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });
-    writeFile(path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'), buildValidDeliveryPlanContent());
+    writeMultiFileDeliveryPlan(hostRoot);
 
     const result = routeCheck({ hostRoot, targetStage: 'S4' });
 
     assert.equal(result.canEnter, true);
     assert.equal(result.routeTarget.skill, 'coding-standards');
     assert.equal(result.gateChecks.developmentPlanReady.pass, true);
+    assert.equal(
+        result.gateChecks.developmentPlanReady.evidence.deliveryPlanPath,
+        'docs/plans/delivery-plans/main-delivery-plan-demo.md'
+    );
 });
 
 test('route-check blocks S4 when delivery plan structure is invalid', () => {
@@ -1057,7 +1246,8 @@ test('route-check blocks S4 when delivery plan structure is invalid', () => {
         logContent: '记录 S4 阶段切换'
     });
     generateHostRules({ hostRoot, dryRun: false, force: false });
-    writeFile(path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md'), '# 开发执行计划\n');
+    const { mainPath } = writeMultiFileDeliveryPlan(hostRoot);
+    writeFile(mainPath, '# 开发执行计划\n');
 
     const result = routeCheck({ hostRoot, targetStage: 'S4' });
 
@@ -1065,6 +1255,11 @@ test('route-check blocks S4 when delivery plan structure is invalid', () => {
     assert.equal(result.gateChecks.developmentPlanReady.pass, false);
     assert.equal(result.gateChecks.developmentPlanReady.evidence.structureValid, false);
     assert.ok(result.blockingReasons.some((item) => item.code === 'development_plan_invalid'));
+    assert.equal(result.routeTarget.skill, 'delivery-planner');
+    assert.equal(result.routeTarget.recoveryFor, 'development_plan_invalid');
+    assert.match(result.nextAction, /修复/);
+    assert.match(result.nextAction, /docs\/plans\/delivery-plans/);
+    assert.doesNotMatch(result.nextAction, /可进入\s*S4/);
 });
 
 test('route-check blocks S6 until reviewed test cases are ready', () => {
@@ -1668,13 +1863,37 @@ test('collect-upstream-context recognizes numbered subprd files', () => {
     assert.ok(result.subprd[0].path.includes(path.join('docs', 'prd', 'subprd', '01-subprd-user-management.md')));
 });
 
-test('delivery plan template satisfies its own structure validator', () => {
-    const templatePath = path.join(
+test('validate-plan-structure accepts the multi-file delivery plan structure', () => {
+    const hostRoot = makeTempDir('pm-suite-multi-delivery-plan-');
+    const { mainPath } = writeMultiFileDeliveryPlan(hostRoot);
+    const validatorPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
         'delivery-planner',
-        'templates',
-        'delivery-plan-template.md'
+        'scripts',
+        'validate-plan-structure.mjs'
+    );
+
+    const output = execFileSync(process.execPath, [validatorPath, mainPath, '--json'], { encoding: 'utf8' });
+    const result = JSON.parse(output);
+
+    assert.equal(result.passed, true);
+    assert.equal(result.mode, 'multi-file');
+    assert.equal(result.totalTasksFound, 1);
+    assert.equal(result.kanbanPath.endsWith('task-kanban-demo.md'), true);
+});
+
+test('validate-plan-structure rejects kanban tasks that do not have matching sub delivery plans', () => {
+    const hostRoot = makeTempDir('pm-suite-missing-sub-delivery-plan-');
+    const { mainPath, kanbanPath } = writeMultiFileDeliveryPlan(hostRoot);
+    writeFile(
+        kanbanPath,
+        `# Demo Task Kanban
+
+| Task | 子开发计划 | Owner | 前置 | 状态 | 完成日期 | 备注 |
+|---|---|---|---|---|---|---|
+| T0.2 | [sub-delivery-plan-demo-T0.2-missing-task.md](sub-delivery-plan-demo-T0.2-missing-task.md) | AI | 无 | 待开发 | - | missing |
+`
     );
     const validatorPath = path.join(
         CURRENT_SUITE_ROOT,
@@ -1684,15 +1903,44 @@ test('delivery plan template satisfies its own structure validator', () => {
         'validate-plan-structure.mjs'
     );
 
-    const output = execFileSync(process.execPath, [validatorPath, templatePath, '--json'], { encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [validatorPath, mainPath, '--json'], { encoding: 'utf8' });
+    const report = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 2);
+    assert.equal(report.passed, false);
+    assert.ok(report.errors.some((item) => item.type === 'missing_sub_delivery_plan' && item.taskId === 'T0.2'));
+});
+
+test('delivery plan templates satisfy the multi-file structure validator', () => {
+    const templateDir = path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'templates');
+    const hostRoot = makeTempDir('pm-suite-delivery-template-');
+    const planDir = path.join(hostRoot, 'docs', 'plans', 'delivery-plans');
+    const mainPath = path.join(planDir, 'main-delivery-plan-demo.md');
+    const kanbanPath = path.join(planDir, 'task-kanban-demo.md');
+    const subPath = path.join(planDir, 'sub-delivery-plan-demo-T0.1-demo-task.md');
+
+    writeFile(mainPath, readFile(path.join(templateDir, 'main-delivery-plan-template.md')));
+    writeFile(kanbanPath, readFile(path.join(templateDir, 'task-kanban-template.md')));
+    writeFile(subPath, readFile(path.join(templateDir, 'sub-delivery-plan-template.md')));
+
+    const validatorPath = path.join(
+        CURRENT_SUITE_ROOT,
+        'skills',
+        'delivery-planner',
+        'scripts',
+        'validate-plan-structure.mjs'
+    );
+
+    const output = execFileSync(process.execPath, [validatorPath, mainPath, '--json'], { encoding: 'utf8' });
     const result = JSON.parse(output);
 
     assert.equal(result.passed, true);
+    assert.equal(result.mode, 'multi-file');
 });
 
 test('verify-task-context blocks tasks that declare no real PRD links', () => {
     const hostRoot = makeTempDir('pm-suite-task-context-empty-prd-');
-    const planPath = path.join(hostRoot, 'docs', 'plans', 'delivery-plan-demo.md');
+    const planPath = path.join(hostRoot, 'docs', 'plans', 'delivery-plans', 'sub-delivery-plan-demo-T0.1-empty-prd.md');
 
     writeFile(
         planPath,
@@ -1713,6 +1961,19 @@ test('verify-task-context blocks tasks that declare no real PRD links', () => {
     assert.equal(result.canExecute, false);
     assert.deepEqual(result.prdLinksFound, []);
     assert.ok(result.missingFiles.includes('PRD 双链·读'));
+});
+
+test('verify-task-context resolves a task from main delivery plan through kanban to sub delivery plan', () => {
+    const hostRoot = makeTempDir('pm-suite-task-context-main-plan-');
+    const { mainPath, subPath } = writeMultiFileDeliveryPlan(hostRoot);
+    writeFile(path.join(hostRoot, 'docs', 'prd', 'mainprd-demo.md'), '# mainprd\n\n## 1\nDemo requirement.\n');
+
+    const result = verifyTask(mainPath, 'T0.1');
+
+    assert.equal(result.canExecute, true);
+    assert.equal(result.taskTitle, '实现演示任务');
+    assert.equal(result.taskPlanPath, subPath);
+    assert.deepEqual(result.prdLinksFound, ['mainprd-demo.md']);
 });
 
 test('BRD D.5 is retriggered when locked fields change after a previous pass', () => {
@@ -1755,6 +2016,48 @@ test('skill docs avoid stale lifecycle filenames and unreachable stage names', (
     assert.match(acceptanceSkill, /S6\s*\/\s*S7/);
     assert.ok(devlogSkill.includes('logs/YYYYMMDD_refactor_log_<用户名>.md'));
     assert.match(pageDesignerSkill, /--persist[^\n]*--output-dir\s+<宿主项目>/);
+});
+
+test('ai-project-manager protocol points to multi-file delivery plans', () => {
+    const files = [
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'assets', 'global-files', 'execution-plan.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'global-files-protocol.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md')
+    ];
+    const combined = files.map((file) => readFile(file)).join('\n');
+
+    for (const file of files) {
+        const content = readFile(file);
+        assert.ok(content.includes('main-delivery-plan-<slug>.md'), `${file} must name the main delivery plan`);
+        assert.ok(content.includes('task-kanban-<slug>.md'), `${file} must name the task kanban`);
+        assert.ok(
+            content.includes('sub-delivery-plan-<slug>-<TaskID>-<short-name>.md') ||
+                content.includes('sub-delivery-plan-<slug>-T0.1-<short-name>.md'),
+            `${file} must name sub delivery plans`
+        );
+    }
+
+    assert.equal(/(^|[^a-z-])delivery-plan-<slug>\.md/.test(combined), false);
+    assert.equal(/docs\/plans\/delivery-plan-/.test(combined), false);
+});
+
+test('ai-project-manager protocol defines project-link-indexer companion dispatch', () => {
+    const runtime = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md')
+    );
+    const routing = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md')
+    );
+    const pipeline = readFile(path.join(CURRENT_SUITE_ROOT, 'PIPELINE.md'));
+    const skill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'project-link-indexer', 'SKILL.md'));
+
+    assert.ok(runtime.includes('companionActions'));
+    assert.ok(runtime.includes('主入口只判断调起场景'));
+    assert.ok(routing.includes('project-link-indexer'));
+    assert.ok(pipeline.includes('主入口按场景调起 `project-link-indexer`'));
+    assert.ok(pipeline.includes('索引器自行决定 build / refresh / noop'));
+    assert.ok(skill.includes('run-project-link-indexer.mjs'));
 });
 
 test('devlog-sync creates daily log, appends updates, and updates candidate pool', () => {

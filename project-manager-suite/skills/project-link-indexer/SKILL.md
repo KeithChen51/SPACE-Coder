@@ -11,6 +11,7 @@ description: Use when a host project needs file-level reference indexing, broken
 
 ## 什么时候使用
 
+- `ai-project-manager` 的 `route-check.mjs` 在 `companionActions` 中要求调起本 skill
 - 已有代码或已有文档接入后，需要建立 LLM wiki 风格的项目导航
 - 用户问“这些文件之间怎么关联”“改这个文件影响哪些文件”“有没有坏链/孤立文件”
 - `project-baseline-auditor` 完成后，需要给后续补档建立文件级引用图
@@ -22,6 +23,7 @@ description: Use when a host project needs file-level reference indexing, broken
 - 不替代 `delivery-planner` 拆任务
 - 不替代任何 `test-case-*` skill 编写、审查或执行测试
 - 不要求其他 skill 直接写同一个索引文件
+- 不索引第三方依赖、构建产物、缓存目录或套件自身源码；这些目录不是宿主项目知识资产
 
 ## 输出文件
 
@@ -38,20 +40,26 @@ description: Use when a host project needs file-level reference indexing, broken
 ## 标准流程
 
 1. 读取宿主根目录，确认本轮是建索引、刷新索引，还是诊断引用问题。
-2. 运行收集脚本：
+2. 若由主入口调度，优先运行调度入口；它会自行判断 build / refresh / noop / validate-only：
+
+```bash
+node <suite-path>/skills/project-link-indexer/scripts/run-project-link-indexer.mjs <hostRoot> --trigger <trigger> --json
+```
+
+3. 若明确要强制重建索引，运行收集脚本：
 
 ```bash
 node <suite-path>/skills/project-link-indexer/scripts/collect-project-links.mjs <hostRoot> --json
 ```
 
-3. 若只需要检查，不写文件，运行：
+4. 若只需要检查，不写文件，运行：
 
 ```bash
 node <suite-path>/skills/project-link-indexer/scripts/validate-project-links.mjs <hostRoot> --json
 ```
 
-4. 把诊断结果按文件级问题反馈给用户：坏链、缺回链、孤立交付物、缺必需关系。
-5. 如果用户要求刷新索引，保留原始业务文件，只重写 `docs/index/*`。
+5. 把诊断结果按文件级问题反馈给用户：坏链、缺回链、孤立交付物、缺必需关系。
+6. 如果用户要求刷新索引，保留原始业务文件，只重写 `docs/index/*`。
 
 ## 关系来源
 
@@ -63,6 +71,19 @@ node <suite-path>/skills/project-link-indexer/scripts/validate-project-links.mjs
 - 套件命名约定：识别 `project-profile.md`、`BRD-*`、`explainer-*`、`foundation-*`、`mainprd-*`、`subprd/0X-subprd-*`、`delivery-plan-*` 等文件角色
 
 每条边都必须保留证据位置：来源文件、行号、原文和抽取语法。
+
+## 索引边界
+
+索引器只扫描宿主项目的权威文档、阶段产物、业务源码、配置和测试资产。
+
+默认排除：
+
+- 依赖目录：`node_modules/`
+- 构建产物：`dist/`、`build/`
+- 缓存和工具产物：`.vite/`、`.cache/`、`.next/`、`.nuxt/`、`.turbo/`、`coverage/`
+- Git 与套件目录：`.git/`、`.agent/project-manager-suite/`、`project-manager-suite/`
+
+排除规则在任意目录层级生效。例如 `word-format-checker-web/node_modules/` 与根目录 `node_modules/` 都不进入索引。
 
 ## 诊断口径
 

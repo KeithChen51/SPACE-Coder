@@ -133,11 +133,13 @@
 
 - 它负责记录：当前跟哪份正式计划执行、当前活跃 Phase / Task、下一步动作、阻塞与完成标准摘要
 - 它不负责维护完整 Phase / Task 列表、完整发布闸门、完整风险与反向索引
-- `delivery-plan-<slug>.md` 是 S3 `delivery-planner` 产出的**正式开发计划正文权威源**，默认位于 `docs/plans/`
+- `main-delivery-plan-<slug>.md` 是 S3 `delivery-planner` 产出的正式开发计划入口，位于 `docs/plans/delivery-plans/`
+- `task-kanban-<slug>.md` 是任务看板，承接 Task 状态与子开发计划入口，位于 `docs/plans/delivery-plans/`
+- `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 是单个 Task 的执行正文，位于 `docs/plans/delivery-plans/`
 
 | 字段名 | 层级 | 来源 |
 |--------|------|------|
-| 当前正式计划文件（若未生成则写 `待生成`） / 当前阶段 / 当前目标 / 当前活跃 Phase / Task / 下一步任务 / 完成标准摘要 | **必填** | **主入口回写** |
+| 当前正式计划文件组（若未生成则写 `待生成`） / 当前阶段 / 当前目标 / 当前活跃 Phase / Task / 当前子开发计划 / 下一步任务 / 完成标准摘要 | **必填** | **主入口回写** |
 | 当前阻塞 / 前置依赖 / 待确认项 | 可选 | **主入口回写** |
 | 可并行任务 / 任务优先级 / 候选后续任务 | 自动推断 | 系统推断 |
 
@@ -166,9 +168,9 @@
 | 状态回写 | 主入口、全部子能力 | 默认由 `project-devlog` 承接；主入口或实际发生动作的执行单元负责提供输入 |
 
 补充规则：
-- `delivery-plan-<slug>.md` 不属于 3 类全局文件之一，而是 S3 阶段的正式交付产物。
-- `execution-plan.md` 不得复制整份 `delivery-plan-<slug>.md` 的正文，只保留驾驶舱摘要和入口。
-- `delivery-planner` 不得用 `execution-plan.md` 替代正式开发计划正文。
+- `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 不属于 3 类全局文件之一，而是 S3 阶段的正式交付产物。
+- `execution-plan.md` 不得复制完整开发计划文件组，只保留驾驶舱摘要和入口。
+- `delivery-planner` 不得用 `execution-plan.md` 替代正式开发计划文件组。
 
 禁止项：
 - 若宿主项目已存在同职责全局文件，禁止再额外创建一份默认模板文件并并行维护。
@@ -192,12 +194,12 @@
 6. **任一单次有效协作（分析、开发、验收等）结束后** → 默认调用 `project-devlog` 进行状态回写；优先写回已有日志文件，仅在无可映射载体时于 `logs/` 下补最小日志文件
 7. **协作大范围调整、项目阶段跃升** → 回写项目画像文件或其宿主映射文件
 8. **任务完成或目标调整** → 更新执行计划文件或其宿主映射文件
-9. **S3 正式开发计划形成或更新后** → `delivery-planner` 负责维护 `delivery-plan-<slug>.md` 正文；`ai-project-manager` 负责把“正式计划入口 + 当前活跃摘要”同步回 `execution-plan.md`
+9. **S3 正式开发计划形成或更新后** → `delivery-planner` 负责维护 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`；`ai-project-manager` 负责把“主开发计划入口 + 任务看板入口 + 当前子开发计划入口 + 当前活跃摘要”同步回 `execution-plan.md`
 
 执行计划驾驶舱同步规则：
 - 仅在以下事件发生时同步 `execution-plan.md` 摘要：首次生成正式开发计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越、S2 内部链路从页面环节切换到 PRD 环节
 - `page-chief` 判定页面环节 DONE 时，属于 S2 内部链路切换；主入口必须同步 `execution-plan.md`，把当前目标、进行中任务、下一步任务、完成标准和待确认项从 page-designer / page-explainer 页面语境更新为 `prd-chief` / `foundation-builder` 语境
-- 同步来源必须是正式计划正文中的固定“驾驶舱摘要”区块，不从整份正文自由提炼
+- 同步来源必须是主开发计划入口、任务看板当前 Task 行和当前子开发计划，不从完整开发计划文件组自由提炼
 - 若只是风险补充、说明文字修订、反向索引调整等不影响“今天怎么继续做”的变更，不同步驾驶舱
 
 若脚本可用，推荐执行顺序为：
