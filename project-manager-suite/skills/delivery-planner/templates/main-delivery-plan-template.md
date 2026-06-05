@@ -54,7 +54,7 @@
 
 | Task | 子开发计划 | 状态 |
 |---|---|---|
-| T0.1 | [sub-delivery-plan-demo-T0.1-demo-task.md](sub-delivery-plan-demo-T0.1-demo-task.md) | 待开发 |
+| T0.1 | [sub-delivery-plan-demo-T0.1-demo-task.md](sub-delivery-plan-demo-T0.1-demo-task.md) | 待审阅 |
 
 ## 4. 任务看板
 
