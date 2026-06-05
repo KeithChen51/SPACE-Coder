@@ -169,6 +169,7 @@
 
 补充规则：
 - `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 不属于 3 类全局文件之一，而是 S3 阶段的正式交付产物。
+- `docs/plans/foundation-plans/foundation-change-requests-<slug>.md` 不属于 3 类全局文件之一，而是 S4 反哺 foundation 的待改 backlog；`coding-standards` 只追加条目，`foundation-builder` 只读 `待评审` 条目，`ai-project-manager` 在消费点翻状态并报告用户裁决；条目字段口径以 `skills/coding-standards/SKILL.md` 为准。
 - `execution-plan.md` 不得复制完整开发计划文件组，只保留驾驶舱摘要和入口。
 - `delivery-planner` 不得用 `execution-plan.md` 替代正式开发计划文件组。
 

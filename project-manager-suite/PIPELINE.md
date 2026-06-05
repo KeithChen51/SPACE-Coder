@@ -105,10 +105,12 @@ S5 ──────── test-case-chief 调度 ─────────�
 │   │   └── subprd/                           # prd-writer subprd
 │   │       └── 0X-subprd-<区块英文短名>.md    # N 份，按区块拆分
 │   └── plans/                                # 开发执行计划层
-│       └── delivery-plans/                   # delivery-planner 产出的正式开发计划文件组
-│           ├── main-delivery-plan-<slug>.md  # 主开发计划入口
-│           ├── task-kanban-<slug>.md         # 独立任务看板
-│           └── sub-delivery-plan-<slug>-T0.1-<short-name>.md # 子开发计划，每个 Task 一份
+│       ├── delivery-plans/                   # delivery-planner 产出的正式开发计划文件组
+│       │   ├── main-delivery-plan-<slug>.md  # 主开发计划入口
+│       │   ├── task-kanban-<slug>.md         # 独立任务看板
+│       │   └── sub-delivery-plan-<slug>-T0.1-<short-name>.md # 子开发计划，每个 Task 一份
+│       └── foundation-plans/                 # S4 发现 foundation 漂移时创建
+│           └── foundation-change-requests-<slug>.md # S4 反哺 foundation 的待改 backlog
 ├── src/
 │   ├── ...                                   # 代码实装层（S4），coding-standards 按 Task 核心文件字段产出的实装代码
 │   └── frontend/
@@ -145,12 +147,13 @@ S5 ──────── test-case-chief 调度 ─────────�
 | `<host>/src/frontend/page-preview/` | 页面元数据层 | 页面台账、交付清单、交互语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
 | `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
+| `<host>/docs/plans/foundation-plans/` | 计划层（S4 反哺） | foundation 漂移待改 backlog，只记录需要回改 foundation 的请求 | coding-standards | foundation-builder、ai-project-manager |
 | `<host>/src/`（或项目约定代码根目录） | 实装层（S4） | 按 delivery-plan Phase/Task 产出的实际代码文件 | coding-standards | test-and-acceptance |
 | `<host>/docs/test-case/` | 测试用例层（S5） | 验收文档 + 测试用例 + TC 核查报告 | prd-acceptance-reviewer、test-case-writer、test-case-reviewer | test-case-runner |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
-**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹；各 skill SKILL.md 和下方 §1-§7 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
+**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹之一；同一 skill 可以登记多个目标文件夹，但每个落点都必须在本表显式登记。各 skill SKILL.md 和下方 §1-§7 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
 
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
@@ -164,17 +167,17 @@ S5 ──────── test-case-chief 调度 ─────────�
 | prd-writer | `<host>/docs/prd/` + `<host>/docs/prd/subprd/` | `prd-feature-list-<slug>.md`、`mainprd-<slug>.md`、`subprd/0X-subprd-<区块英文短名>.md` 及后续新增 |
 | delivery-planner | `<host>/docs/plans/delivery-plans/` | `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` |
 | coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写对应子开发计划和任务看板状态 |
+| coding-standards | `<host>/docs/plans/foundation-plans/` | `foundation-change-requests-<slug>.md`；仅在 S4 发现需要回改 foundation 的漂移时追加 |
 | prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另可对 `<host>/docs/prd/subprd/` 下 subprd 的 §X.6 验收小节做条目修订与回链追加（原地回写），不做 baseline / changelog / baseline.md 维护 |
 | test-case-writer | `<host>/docs/test-case/` | `tc-main-<slug>.md`、`<业务域>/tc-<业务域>.md`、`<业务域>/sql/*.sql` |
 | test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`；对已产出 TC 文件做原地修正 |
 
 **不变式（写 skill 时的硬约束）：**
 
-1. 一个 skill 的**所有**产出文件必须落在上表声明的目标文件夹，不允许跨目录分布（如 page-explainer 不允许一部分写 `src/frontend/page-preview/` 另一部分写 `prd/`）。例外：page-designer 的可运行代码写入 `<host>/<工程名>/`、元数据文件写入 `<host>/src/frontend/page-preview/`；project-baseline-auditor 需要与主入口共用 `<host>/project-profile.md`，同时把诊断清单写入 `<host>/docs/baseline/`。
-2. 新增 skill 前必须在本表登记目标文件夹；若现有三类目录不能覆盖，需先与 PIPELINE.md 维护者讨论扩表，再实施 skill。
-3. 重命名/拆分产物时，只改文件名，不改落地文件夹（落地文件夹由 skill 决定，与文件名无关）。
-4. 下游 skill 在依赖表中看到某上游文件名，对应查找目录 = 上表中该上游 skill 的"产出目标文件夹"；不需要每个依赖表项单独标注目录。
-5. 允许 skill 在其目标文件夹下建**同名子目录**存放拆分子文件（见下文"产物拆分约定"），子目录仍视作同一 skill 的归属，不破坏单一映射。
+1. 新增 skill 或新增既有 skill 的产物落点前，必须在本表登记目标文件夹；若现有目录不能覆盖，需先与 PIPELINE.md 维护者讨论扩表，再实施 skill。
+2. 重命名/拆分产物时，只改文件名，不改已登记的落地文件夹（落地文件夹由 skill 映射决定，与文件名无关）。
+3. 下游 skill 在依赖表中看到某上游文件名，对应查找目录 = 上表中该上游 skill 且匹配该产物模式的"产出目标文件夹"；不需要每个依赖表项单独标注目录。
+4. 允许 skill 在其目标文件夹下建**同名子目录**存放拆分子文件（见下文"产物拆分约定"），子目录仍视作同一 skill 的归属，不破坏单一映射。
 
 ### 产物拆分约定
 
@@ -356,7 +359,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ## 4. foundation-builder — 技术地基设计
 
-**职责**：消费已确认的前端页面代码，反推并设计术语表、数据库 Schema 和 API 接口。不写代码，不生成 DDL。
+**职责**：消费已确认的前端页面代码，反推并设计术语表、数据库 Schema 和 API 接口。不写代码，不生成 DDL。若 S4 已形成 foundation 漂移待改 backlog，本 skill 只读 `待评审` 条目并将其作为增量修订输入，处理结果交由 `ai-project-manager` 回写状态。
 
 **依赖文件**：
 
@@ -369,6 +372,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 | `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | 已有数据库/接口文件（可选） | 用户提供 | 用户指定路径 |
+| `foundation-change-requests-<slug>.md`（可选） | coding-standards | `<host>/docs/plans/foundation-plans/` |
 
 **产出文件**：
 
@@ -440,7 +444,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 ## 7. coding-standards — S4 代码实装
 
-**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件，并回写 Task 状态。不负责需求澄清、方案设计、测试执行或发布决策。
+**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件，并回写 Task 状态。S4 收尾时必须检查是否存在需要回改 foundation 的漂移；有则追加 `foundation-change-requests-<slug>.md`，无则在开发日志记录无漂移。不负责需求澄清、方案设计、测试执行、foundation 直接修订或发布决策。
 
 **依赖文件**：
 
@@ -458,6 +462,7 @@ S5 ──────── test-case-chief 调度 ─────────�
 |------|--------|---------|------|
 | 实装代码文件 | 由 Task 的 `核心文件` 字段决定 | `<host>/src/` 或项目约定代码根目录 | 按 PRD 和编码规范产出的真实文件 |
 | Task 状态回写 | 对应子开发计划和任务看板 | `<host>/docs/plans/delivery-plans/` | 将已完成 Task 的状态改为 `已完成(YYYY-MM-DD)` |
+| foundation 漂移待改 backlog | `foundation-change-requests-<slug>.md` | `<host>/docs/plans/foundation-plans/` | 仅在 S4 发现需要回改 foundation 的漂移时追加，状态默认 `待评审` |
 
 ---
 

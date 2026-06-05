@@ -13,6 +13,7 @@ Boundary note:
 - This skill is **not** the entry point for project kickoff, requirements clarification, stage routing, project profile maintenance, or scaffold setup.
 - If the user intent is to start a new project or determine the next project stage, route through `ai-project-manager` first.
 - Load this skill only after the main entry has determined that the current round is performing implementation work.
+- 本 skill 在 S4 中只负责记录 foundation 漂移待改请求，不直接修改 `docs/prd/foundation/` 产物；实际修订由 `foundation-builder` 承接，状态裁决由 `ai-project-manager` 回写。
 
 Current scope note:
 - The repository currently contains **11 active standards documents**: `01` to `11`.
@@ -57,6 +58,7 @@ Current scope note:
 
 5. 完成后：
    - 对照 Task 的 [完成标准] 逐项核查，全部可核查后才能回写状态
+   - 执行 foundation 漂移回捞检查：实装中若发现 Schema / API / 术语表或既有契约需要回改 foundation，按下方「Foundation 漂移回捞」追加待改请求；若无漂移，在开发日志记录“本任务无 foundation 漂移”
    - 将 Task 状态回写为 `已完成(YYYY-MM-DD)`，直接在 delivery-plan 原地修改
 ```
 
@@ -65,6 +67,39 @@ Current scope note:
 - 环境自检 envReady: false 时，禁止继续执行（即使 PRD 文件全部存在）
 - `canExecute: false` 时，禁止凭记忆假设 PRD 内容并继续执行
 - Task 的 `完成标准` 未全部核查通过前，禁止回写已完成状态
+- 发现需要回改 foundation 的漂移却未追加待改请求时，禁止回写 Task 为已完成
+
+## Foundation 漂移回捞
+
+S4 实装收尾时必须判断本 Task 是否发现 foundation 漂移。这里的 foundation 漂移只指“代码现实证明上游 Schema / API / 术语表或既有契约需要修订”的问题；如果问题能在代码层按现有契约消化，不进入 backlog。
+
+### 触发条件
+
+- 有漂移：追加到 `<host>/docs/plans/foundation-plans/foundation-change-requests-<slug>.md`；若目录或文件不存在，在首次追加时创建
+- 无漂移：不强制创建空文件，只在开发日志记录“本任务无 foundation 漂移”
+- 追加规则：只追加新条目，不直接修改 `docs/prd/foundation/`，不替 `foundation-builder` 做修订
+
+### backlog 条目字段
+
+每条待改请求必须包含：
+
+| 字段 | 口径 |
+|------|------|
+| `ID` | 建议使用 `S4-FCR-001` 递增 |
+| `来源 Task` | 当前 delivery plan 的 Task ID 与标题 |
+| `分类` | `DRIFT` 契约不符 / `GAP` foundation 缺项 / `BETTER` 更优设计 |
+| `改动项` | 需要回改的 foundation 内容 |
+| `原因` | 为什么现有代码现实或实现约束证明需要回改 |
+| `指向代码块` | `file:line`，必须指向触发判断的代码或测试 |
+| `目标 foundation 文件:章节` | 例如 `docs/prd/foundation/foundation-api-<slug>.md §2.1` |
+| `严重度` | 阻断 / 建议 / 优化 |
+| `状态` | 默认 `待评审`，后续由 `ai-project-manager` 回写为 `已采纳` / `已改` / `已驳回` |
+
+### 职责边界
+
+- `coding-standards`：每个 S4 Task 收尾检查并追加待改请求
+- `foundation-builder`：只读 `待评审` 条目，作为增量修订输入
+- `ai-project-manager`：在消费点翻条目状态，并向用户报告裁决结果
 
 
 1. Identify the main task type before editing files.

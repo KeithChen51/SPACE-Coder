@@ -40,6 +40,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引：按流程 → 产物映射快速定位本次 Schema/API 涉及的语义条目 |
 | 用户提供 | 已有数据库/接口文件（可选） | 否 | 现有表结构、接口定义 |
 | 自身前次产出 | `docs/prd/foundation/foundation-*-<slug>.md` | 否 | 增量更新时读取 |
+| coding-standards | `docs/plans/foundation-plans/foundation-change-requests-<slug>.md` | 否 | S4 发现的 foundation 漂移待改请求；只读取 `待评审` 条目 |
 
 > **注意**：Schema 和 API 直接从前端页面代码反推，确保地基与前端实际消费对齐。
 > **目录读取口径**：`BRD-<slug>-*.md` 固定从 `docs/brd/` 读取；`page-delivery-<slug>.md` 与 explainer 产物固定从 `src/frontend/page-preview/` 读取；实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取；自身 `foundation-*.md` 固定从 `docs/prd/foundation/` 读取。
@@ -94,6 +95,7 @@ Phase 6: 交付清单落盘
 |---------|---------|
 | Phase 1 检测到用户已有文件 | `references/existing-files-evaluation.md` |
 | Phase 1 检测到前次产物 | `references/incremental-update.md` |
+| Phase 1 检测到 foundation 漂移待改请求 | `references/incremental-update.md` |
 | 进入 Phase 2 | `references/phase-2-glossary.md` |
 | 进入 Phase 3 | `references/phase-3-schema.md` + `coding-standards/references/05-mysql-table.md` |
 | 进入 Phase 4 | `references/phase-4-api.md` + `coding-standards/references/09-api-design.md` |
@@ -114,7 +116,11 @@ Phase 1 逻辑简单，直接在此定义：
 8. 在 `docs/prd/foundation/` 检测 `foundation-{glossary,schema,api}-<slug>.md` 是否存在
    - 存在 → 增量模式，加载 `references/incremental-update.md`
    - 不存在 → 首次模式
-9. 询问用户是否有已有数据库/接口文件
+9. 在 `docs/plans/foundation-plans/` 检测 `foundation-change-requests-<slug>.md` 是否存在
+   - 存在且含 `状态=待评审` 条目 → 只读取待评审条目，纳入本轮增量修订范围；处理后向 `ai-project-manager` 上报待翻状态的条目 ID
+   - 不存在或无待评审条目 → 不创建文件，不影响首次/增量模式判断
+   - 本 skill 不得自行修改 backlog 状态
+10. 询问用户是否有已有数据库/接口文件
    - 有 → 读取，加载 `references/existing-files-evaluation.md`
    - 无 → 继续
 
