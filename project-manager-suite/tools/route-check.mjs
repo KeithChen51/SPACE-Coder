@@ -32,6 +32,7 @@ import {
 } from '../lib/ai-pm-protocol/index.js';
 import { validateGlobalFiles } from './validate-global-files.mjs';
 import { validatePlan } from '../skills/delivery-planner/scripts/validate-plan-structure.mjs';
+import { checkPlanConsistency } from '../skills/delivery-planner/scripts/check-plan-consistency.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -842,12 +843,50 @@ function inspectDevelopmentPlanArtifacts(hostRoot) {
     const validation = deliveryPlan
         ? validatePlan(loadMarkdownFile(deliveryPlan.filePath), { planPath: deliveryPlan.filePath })
         : null;
+    let planConsistency = null;
+    if (deliveryPlan && validation?.passed) {
+        try {
+            planConsistency = checkPlanConsistency({ planPath: deliveryPlan.filePath });
+        } catch (error) {
+            planConsistency = {
+                passed: false,
+                purpose: 's4_pre_coding_plan_consistency_check',
+                activeTaskId: null,
+                activeSubPlanPath: null,
+                errors: [
+                    {
+                        type: 'plan_consistency_check_failed',
+                        message: error.message
+                    }
+                ],
+                warnings: [],
+                sources: {
+                    mainPlan: { path: deliveryPlan.filePath },
+                    taskKanban: { path: null },
+                    subPlan: { path: null }
+                }
+            };
+        }
+    }
 
     return {
         deliveryPlanExists: Boolean(deliveryPlan),
         deliveryPlanPath: deliveryPlan?.relativePath || null,
         structureValid: validation ? validation.passed : false,
-        structureErrors: validation ? validation.errors.map((error) => error.message) : []
+        structureErrors: validation ? validation.errors.map((error) => error.message) : [],
+        planConsistency: planConsistency || {
+            passed: false,
+            purpose: 's4_pre_coding_plan_consistency_check',
+            activeTaskId: null,
+            activeSubPlanPath: null,
+            errors: [],
+            warnings: [],
+            sources: {
+                mainPlan: { path: deliveryPlan?.filePath || null },
+                taskKanban: { path: null },
+                subPlan: { path: null }
+            }
+        }
     };
 }
 
@@ -1275,12 +1314,16 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
 
     if (targetStage === STAGE_IDS.S4) {
         checks.developmentPlanReady = {
-            pass: developmentPlanArtifacts.deliveryPlanExists && developmentPlanArtifacts.structureValid,
+            pass:
+                developmentPlanArtifacts.deliveryPlanExists &&
+                developmentPlanArtifacts.structureValid &&
+                developmentPlanArtifacts.planConsistency.passed,
             evidence: {
                 deliveryPlanExists: developmentPlanArtifacts.deliveryPlanExists,
                 deliveryPlanPath: developmentPlanArtifacts.deliveryPlanPath,
                 structureValid: developmentPlanArtifacts.structureValid,
-                structureErrors: developmentPlanArtifacts.structureErrors
+                structureErrors: developmentPlanArtifacts.structureErrors,
+                planConsistency: developmentPlanArtifacts.planConsistency
             }
         };
     }
@@ -1400,8 +1443,13 @@ function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gat
 
     if (targetStage === STAGE_IDS.S4 && gateChecks.developmentPlanReady && !gateChecks.developmentPlanReady.pass) {
         const hasPlan = gateChecks.developmentPlanReady.evidence.deliveryPlanExists;
+        const structureValid = gateChecks.developmentPlanReady.evidence.structureValid;
         reasons.push({
-            code: hasPlan ? 'development_plan_invalid' : 'development_plan_missing',
+            code: !hasPlan
+                ? 'development_plan_missing'
+                : !structureValid
+                  ? 'development_plan_invalid'
+                  : 'development_plan_status_inconsistent',
             message: gatingRules.developmentPlanReady.description
         });
     }
@@ -1478,7 +1526,9 @@ function resolveRouteTarget(targetStage, gateChecks) {
 }
 
 function findDevelopmentPlanBlocker(blockers) {
-    return blockers.find((item) => item.code === 'development_plan_missing' || item.code === 'development_plan_invalid') || null;
+    return blockers.find((item) =>
+        ['development_plan_missing', 'development_plan_invalid', 'development_plan_status_inconsistent'].includes(item.code)
+    ) || null;
 }
 
 function resolveRecoveryRouteTarget({ targetStage, blockers, gateChecks }) {
@@ -1499,7 +1549,8 @@ function resolveRecoveryRouteTarget({ targetStage, blockers, gateChecks }) {
         evidence: {
             deliveryPlanPath: gateChecks.developmentPlanReady?.evidence.deliveryPlanPath || null,
             structureValid: Boolean(gateChecks.developmentPlanReady?.evidence.structureValid),
-            structureErrors: gateChecks.developmentPlanReady?.evidence.structureErrors || []
+            structureErrors: gateChecks.developmentPlanReady?.evidence.structureErrors || [],
+            planConsistency: gateChecks.developmentPlanReady?.evidence.planConsistency || null
         }
     };
 }
@@ -1622,6 +1673,10 @@ function resolveNextActionWithContext({ validationResult, targetStage, resolvedR
     if (developmentPlanBlocker) {
         if (developmentPlanBlocker.code === 'development_plan_missing') {
             return '停留开发计划修复链路，先调用 delivery-planner 生成 docs/plans/delivery-plans/ 下的 main-delivery-plan-<slug>.md、task-kanban-<slug>.md 和 sub-delivery-plan-<slug>-<TaskID>-<short-name>.md，再重新运行 S4 门禁';
+        }
+
+        if (developmentPlanBlocker.code === 'development_plan_status_inconsistent') {
+            return '当前为 S4，但正式开发计划文件组状态不一致；先调用 delivery-planner 校正 main plan / kanban / sub plan，再重新进入 coding-standards';
         }
 
         return '停留开发计划修复链路，先调用 delivery-planner 修复 docs/plans/delivery-plans/ 下的正式开发计划文件组，使 main-delivery-plan-<slug>.md、task-kanban-<slug>.md 和子开发计划通过结构校验，再重新运行 S4 门禁';

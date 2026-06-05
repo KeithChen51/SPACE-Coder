@@ -85,8 +85,8 @@ const gatingRules = {
         blockOnMissing: true
     },
     developmentPlanReady: {
-        description: '进入 S4 前，开发计划必须存在且通过结构校验',
-        evidence: ['development_plan_exists', 'development_plan_structure_valid'],
+        description: '进入 S4 前，开发计划必须存在、通过结构校验，并由 delivery-planner 完成计划状态一致性校验',
+        evidence: ['development_plan_exists', 'development_plan_structure_valid', 'development_plan_status_consistent'],
         blockOnMissing: true
     },
     buildAvailableForValidation: {

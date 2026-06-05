@@ -25,7 +25,7 @@ Current scope note:
 
 本 skill 是 `project-manager-suite` 流水线的 **S4 代码实装阶段**，在 PIPELINE.md 中的位置：
 
-- **上游**：`delivery-planner`，消费其产出的 `docs/plans/delivery-plan-<slug>.md`
+- **上游**：`delivery-planner`，消费其产出的 `docs/plans/delivery-plans/` 正式开发计划文件组：`main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
 - **下游**：`test-and-acceptance`，为其提供已完成的代码产物和 Task 状态回写
 - **相关协议**：[`../../PIPELINE.md`](../../PIPELINE.md)
 
@@ -34,17 +34,22 @@ Current scope note:
 在开始任何实装工作之前，**必须按以下顺序执行**：
 
 ```text
-0.5. 执行环境自检（在读 delivery-plan 之前）：
+0. 主入口 S4 门禁确认：
+   ai-project-manager 必须已经触发 delivery-planner 的
+   s4_pre_coding_plan_consistency_check，并确认 main plan / kanban / sub plan
+   三者一致。该校验未通过时，不得进入本 skill 写代码。
+
+0.5. 执行环境自检（在读正式开发计划文件组之前）：
    node <suite-path>/skills/coding-standards/scripts/verify-task-context.mjs \
-     <delivery-plan-path> <task-id> --env-check
+     <main-delivery-plan-path> <task-id> --env-check
    - envReady: true  → 继续读计划
    - envReady: false → 输出缺失依赖清单，停止，不得开始写代码
 
-1. 读取 docs/plans/delivery-plan-<slug>.md，定位当前活跃 Task
+1. 读取 `docs/plans/delivery-plans/main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`，并定位当前 Task 对应的 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
 
 2. 运行前置验证脚本：
    node <suite-path>/skills/coding-standards/scripts/verify-task-context.mjs \
-     <host>/docs/plans/delivery-plan-<slug>.md <task-id>
+     <host>/docs/plans/delivery-plans/main-delivery-plan-<slug>.md <task-id>
 
 3. 脚本返回 canExecute: false 时：
    - 输出缺失文件清单
@@ -59,14 +64,15 @@ Current scope note:
 5. 完成后：
    - 对照 Task 的 [完成标准] 逐项核查，全部可核查后才能回写状态
    - 执行 foundation 漂移回捞检查：实装中若发现 Schema / API / 术语表或既有契约需要回改 foundation，按下方「Foundation 漂移回捞」追加待改请求；若无漂移，在开发日志记录“本任务无 foundation 漂移”
-   - 将 Task 状态回写为 `已完成(YYYY-MM-DD)`，直接在 delivery-plan 原地修改
+   - 向 ai-project-manager 提交 Task 完成事实、验证证据、完成日期、foundation 漂移结论和建议下一 Task；正式开发计划文件组三者状态回写由 ai-project-manager 调度 delivery-planner 执行
 ```
 
 **硬禁令**：
+- 未收到 `s4_pre_coding_plan_consistency_check` 通过结论前，禁止开始写任何代码
 - 未运行 `verify-task-context.mjs` 前，禁止开始写任何代码
 - 环境自检 envReady: false 时，禁止继续执行（即使 PRD 文件全部存在）
 - `canExecute: false` 时，禁止凭记忆假设 PRD 内容并继续执行
-- Task 的 `完成标准` 未全部核查通过前，禁止回写已完成状态
+- Task 的 `完成标准` 未全部核查通过前，禁止提交已完成状态回写请求
 - 发现需要回改 foundation 的漂移却未追加待改请求时，禁止回写 Task 为已完成
 
 ## Foundation 漂移回捞

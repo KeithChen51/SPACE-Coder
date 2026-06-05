@@ -66,7 +66,9 @@ description: Use when delivery-plan 已就绪，需要调度 S5 测试用例环�
 | foundation-builder | `foundation-schema-<slug>.md`（或同名子目录） | `<host>/docs/prd/foundation/` | Schema 齐（支持拆分模式） |
 | foundation-builder | `foundation-api-<slug>.md`（或同名子目录） | `<host>/docs/prd/foundation/` | API 齐（支持拆分模式） |
 | foundation-builder | `foundation-delivery-<slug>.md` | `<host>/docs/prd/foundation/` | foundation 交付清单齐 |
-| delivery-planner | `delivery-plan-<slug>.md` | `<host>/docs/plans/` | 开发计划齐 |
+| delivery-planner | `main-delivery-plan-<slug>.md` | `<host>/docs/plans/delivery-plans/` | 主开发计划齐 |
+| delivery-planner | `task-kanban-<slug>.md` | `<host>/docs/plans/delivery-plans/` | 任务看板齐 |
+| delivery-planner | `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` | `<host>/docs/plans/delivery-plans/` | 当前 Task 子开发计划齐 |
 
 ### 运行期观察点
 

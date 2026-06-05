@@ -378,10 +378,10 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 术语表 | `foundation-glossary-<slug>.md` | `<host>/docs/prd/` | 按业务域分组的统一术语定义 |
-| 数据库 Schema | `foundation-schema-<slug>.md` | `<host>/docs/prd/` | 表结构设计，超 400 行自动拆分 |
-| API 接口设计 | `foundation-api-<slug>.md` | `<host>/docs/prd/` | 接口定义，超 400 行自动拆分 |
-| 交付清单 | `foundation-delivery-<slug>.md` | `<host>/docs/prd/` | 产物索引 + 一致性自查结果 |
+| 术语表 | `foundation-glossary-<slug>.md` | `<host>/docs/prd/foundation/` | 按业务域分组的统一术语定义 |
+| 数据库 Schema | `foundation-schema-<slug>.md` | `<host>/docs/prd/foundation/` | 表结构设计，超 400 行自动拆分 |
+| API 接口设计 | `foundation-api-<slug>.md` | `<host>/docs/prd/foundation/` | 接口定义，超 400 行自动拆分 |
+| 交付清单 | `foundation-delivery-<slug>.md` | `<host>/docs/prd/foundation/` | 产物索引 + 一致性自查结果 |
 
 ---
 

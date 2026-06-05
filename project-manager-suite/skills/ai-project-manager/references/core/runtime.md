@@ -276,7 +276,7 @@ S2 页面环节收口后的回写口径：
 | **S1 业务需求文档** | 首次必问已结束，启动最小必需字段包已齐；需要形成可评审的业务需求文档 | 业务需求文档 / BRD | 默认进入 `brd-writer` 能力，由其独占产出 BRD |
 | **S2 页面设计、技术地基与完整版 PRD** | 已有业务需求文档；需要先完成页面代码、交互语义冻结与页面环节收口，再反推术语表 / Schema / API，最后沉淀 AI 可直接编码的 PRD | 首轮：页面代码 / 页面交付清单 + 待确认项；页面环节收口后：术语表 / Schema / API / foundation 交付清单；最终：功能列表 + 主 PRD + 子 PRD | 先进入 `page-chief` 调度页面环节（`page-designer` → `page-explainer`，必要时回环）；页面环节 DONE 后进入 `prd-chief` 调度 PRD 环节（`foundation-builder` → `prd-writer`） |
 | **S3 任务拆解与开发计划** | 完整版 PRD 已形成；需要拆成开发任务并形成开发计划 | 正式开发计划文件组 + 当前执行摘要 | 进入 `delivery-planner` 能力，由其独占产出 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`；主入口回写 `execution-plan.md` 驾驶舱摘要 |
-| **S4 开发执行** | 正式开发计划文件组存在且通过结构校验；可以进入编码、联调和实现 | 当前任务的执行结果 + 任务状态更新 + 问题/决策记录 | 进入 `coding-standards` 能力，由其独占承接开发执行 |
+| **S4 开发执行** | 正式开发计划文件组存在、通过结构校验，且由 `delivery-planner` 完成 S4 前计划一致性校验；可以进入编码、联调和实现 | 当前任务的执行结果 + 任务状态更新 + 问题/决策记录 | 主入口先触发 `delivery-planner` 校验 main plan / kanban / sub plan 三者一致；通过后才进入 `coding-standards` 能力，由其独占承接开发执行 |
 | **S5 测试用例生成** | 开发执行已完成，或当前版本已具备可验证基础；需要基于 PRD 生成标准化测试用例 | 验收文档 + 单域测试用例文件 + 验收矩阵 + 版本历史 | 进入 `test-case-chief` 调度链路（`prd-acceptance-reviewer` → `test-case-writer` → `test-case-reviewer`），由其独占产出测试用例 |
 | **S6 测试执行** | 测试用例已准备好；需要执行测试并记录问题 | 验收结论 + 不符合项清单 + 补缺建议 + 阶段收口建议 | 进入 `test-case-runner` 能力，由其独占产出测试结果 |
 | **S7 完工前安全扫描** | 已进入完工 / 交付前收口；需要完成固定安全闸门扫描并给出放行结论 | 安全扫描报告 + `PASS / BLOCK / WAIVER` 结论 + 输入证据缺口说明 | 进入 `security-scan` 能力，由其独占产出完工前安全闸门报告 |
@@ -294,7 +294,8 @@ S2 页面环节收口后的回写口径：
 10. 命中 S7 时，主入口不得把"即将完工"当成口头结论直接放行；必须进入 `security-scan`，输出固定结构的安全扫描报告和 `PASS / BLOCK / WAIVER` 结论后，才算完成完工前闸门
 11. 命中 S3 并由 `delivery-planner` 产出或更新正式开发计划后，主入口必须把主开发计划入口、任务看板入口、当前子开发计划入口、当前活跃任务与下一步动作同步回 `execution-plan.md`；不得把完整开发计划文件组直接塞进执行计划驾驶舱
 12. S3 驾驶舱同步时，只能读取主开发计划入口、任务看板当前 Task 行和当前子开发计划；不得从完整开发计划文件组自由总结
-13. 命中 S4 但正式开发计划文件组缺失或结构校验失败时，主入口不得进入 `coding-standards`；必须停留开发计划修复链路，调用 `delivery-planner` 生成或修复 `docs/plans/delivery-plans/` 下的 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
+13. 命中 S4 时，主入口必须先触发 `delivery-planner/scripts/check-plan-consistency.mjs`，以 `s4_pre_coding_plan_consistency_check` 目的校验 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 三者一致；一致性通过后，才允许进入 `coding-standards`
+14. 命中 S4 但正式开发计划文件组缺失、结构校验失败或计划状态一致性失败时，主入口不得进入 `coding-standards`；必须停留开发计划修复链路，调用 `delivery-planner` 生成、修复或校正 `docs/plans/delivery-plans/` 下的正式开发计划文件组
 
 ### 2.2 S2 设计流水线协议
 

@@ -41,6 +41,7 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 - `docs/plans/delivery-plans/sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 是单个 Task 的执行正文，每个文件只承载一个 Task
 - `execution-plan.md` 是主入口维护的当前执行驾驶舱，只保留正式计划入口、当前活跃任务、下一步动作和完成标准摘要
 - 本 skill 负责生成或更新正式开发计划文件组，不负责把完整 Phase / Task 正文复制进 `execution-plan.md`
+- 本 skill 负责判断正式开发计划文件组在 S4 前是否一致：`main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 必须指向同一个当前 Task、同一个状态和同一个当前子计划
 - 当本 skill 完成新建或更新后，应由 `ai-project-manager` 把摘要同步回 `execution-plan.md`
 - 驾驶舱摘要必须来自主开发计划入口、当前任务看板行和当前子开发计划，不允许自由发挥字段名或顺序
 - 仅在以下事件发生时同步摘要：首次生成正式计划、当前活跃 Phase / Task 变化、阻塞状态实质变化、阶段跨越
@@ -61,6 +62,7 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 - 写代码实施计划
 - 按 PRD 为开发任务拆 Phase / Task
 - 更新已有开发计划的状态、依赖、完成标准、发布闸门
+- 在 `ai-project-manager` 识别当前为 S4 时，执行 `s4_pre_coding_plan_consistency_check`，校验 main plan / kanban / sub plan 三者一致后再允许进入 `coding-standards`
 - 把需求、PRD 与代码现状差距转成正式开发执行文档
 
 以下场景不要使用本 skill：
@@ -239,9 +241,16 @@ docs/plans/delivery-plans/
 - `核心逻辑`
 - `核心文件`
 - `完成标准`
+- `完成收尾：状态同步`
 - `Owner`
 - `前置`
 - `状态`
+
+每个子开发计划最后必须包含 `完成收尾：状态同步`。它是当前 Task 的完成工作之一，不是可选备注。该区块必须说明：
+- 完成实现、验证和 foundation 漂移判断后，执行者要把 Task 完成事实、验证证据、完成日期、foundation 漂移结论和建议下一 Task 提交给 `ai-project-manager`
+- `ai-project-manager` 调度 `delivery-planner` 同步主开发计划、任务看板和当前子开发计划状态
+- 同步后重新运行 `route-check.mjs <host> --target-stage S4 --json`，确认正式开发计划文件组三者一致
+- 未完成状态同步收尾前，不得标记 Task 已完成
 
 > **待审阅规则**：子开发计划初次生成后，状态默认为 `待审阅`。处于 `待审阅` 状态的 Task，AI 不得开始执行。必须由人类 Owner 明确说明“审阅通过”后，才能将状态变更为 `待开发`，此后 AI 方可进入执行。AI 不得在未获得人类明确审阅通过的情况下自行将状态从 `待审阅` 修改为 `待开发`。
 

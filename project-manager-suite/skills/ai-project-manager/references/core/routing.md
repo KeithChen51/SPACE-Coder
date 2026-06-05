@@ -200,7 +200,8 @@ tools/    # 仅在出现脚本、自动化、迁移需求时补建
 内部结构约束：
 - `routing.md` 只约束“是否需要补一个代码根目录”，不再预设其内部结构
 - 代码根目录下的真实文件组织以宿主既有工程结构、当前 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 中 Task 的 `核心文件` 字段，以及具体实现阶段读取到的编码规范为准
-- 若 S4 门禁发现 `docs/plans/delivery-plans/` 下正式开发计划文件组缺失或结构校验失败，路由目标应回到 `delivery-planner`，先生成或修复 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`，不得继续进入 `coding-standards`
+- 若 S4 门禁发现 `docs/plans/delivery-plans/` 下正式开发计划文件组缺失、结构校验失败或 main plan / kanban / sub plan 三者状态不一致，路由目标应回到 `delivery-planner`，先生成、修复或校正 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`，不得继续进入 `coding-standards`
+- 主入口识别当前为 S4 时，必须先以 `s4_pre_coding_plan_consistency_check` 为目的触发 `delivery-planner/scripts/check-plan-consistency.mjs`；只有该校验通过后，才允许把当前 Task 交给 `coding-standards`
 - 若宿主已经存在 `frontend/`、`backend/`、`server/`、`web/` 等既有工程目录，优先映射现有结构，不按协议再造一层 `<项目名>-Toc/`、`<项目名>-Config/` 之类的目录模板
 
 > **操作纪律**：先扫描，能映射的映射，识别到真缺失再补。若只是某个次要阶段还没到，其所属目录不要提前建立。在操作结束后，给出已建和延后建的总结单。

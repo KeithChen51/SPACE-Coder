@@ -12,6 +12,7 @@ import { generateHostRules } from '../tools/generate-host-rules.mjs';
 import { bootstrapHost } from '../tools/bootstrap-host.mjs';
 import { installSuiteIntoHost } from '../tools/install-suite-into-host.mjs';
 import { devlogSync } from '../tools/devlog-sync.mjs';
+import { checkPlanConsistency } from '../skills/delivery-planner/scripts/check-plan-consistency.mjs';
 import { collectBaselineGaps } from '../skills/project-baseline-auditor/scripts/collect-baseline-gaps.mjs';
 import { collectProjectLinks } from '../skills/project-link-indexer/scripts/collect-project-links.mjs';
 import { runProjectLinkIndexer } from '../skills/project-link-indexer/scripts/run-project-link-indexer.mjs';
@@ -246,6 +247,21 @@ function buildMainDeliveryPlanContent(slug = 'demo') {
 > **发布日期**：2026-06-01
 > **适用范围**：demo
 
+## 驾驶舱摘要（供 \`execution-plan.md\` 同步）
+
+| 字段 | 内容 |
+|---|---|
+| 当前正式计划文件 | \`main-delivery-plan-${slug}.md\` |
+| 当前任务看板 | \`task-kanban-${slug}.md\` |
+| 当前子开发计划 | \`sub-delivery-plan-${slug}-T0.1-demo-task.md\` |
+| 当前阶段 | \`S4 开发执行\` |
+| 当前目标 | 当前进入 T0.1 实现演示任务。 |
+| 当前活跃 Phase / Task | \`Phase 0 / T0.1 实现演示任务\` |
+| 下一步任务 | 打开 T0.1 子开发计划并执行演示任务。 |
+| 完成标准摘要 | \`node src/demo.js\` 输出 demo-ok。 |
+| 当前阻塞与前置依赖 | 无 |
+| 待确认项 | 无 |
+
 ## 0. 本计划使用指南
 ### 0.2 PRD 加载约束
 按任务读取 PRD。
@@ -267,7 +283,7 @@ function buildMainDeliveryPlanContent(slug = 'demo') {
 ### Phase 0：Demo
 | Task | 子开发计划 | 状态 |
 |---|---|---|
-| T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) | 待开发 |
+| T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) | 进行中 |
 
 ## 4. 任务看板
 - 看板入口：[task-kanban-${slug}.md](task-kanban-${slug}.md)
@@ -293,7 +309,7 @@ function buildTaskKanbanContent(slug = 'demo') {
 
 | Task | 子开发计划 | Owner | 前置 | 状态 | 完成日期 | 备注 |
 |---|---|---|---|---|---|---|
-| T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) | AI | 无 | 待开发 | - | demo |
+| T0.1 | [sub-delivery-plan-${slug}-T0.1-demo-task.md](sub-delivery-plan-${slug}-T0.1-demo-task.md) | AI | 无 | 进行中 | - | demo |
 `;
 }
 
@@ -331,7 +347,7 @@ function buildSubDeliveryPlanContent(slug = 'demo') {
 
 **Owner**：AI 执行 -> 人审核
 **前置**：无
-**状态**：待开发
+**状态**：进行中
 `;
 }
 
@@ -1232,6 +1248,39 @@ test('route-check enters S4 when delivery plan exists', () => {
     );
 });
 
+test('route-check blocks S4 when delivery plan status is inconsistent', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S4',
+            recommended_stage: 'S4',
+            current_round_deliverable: '当前任务的执行结果 + 任务状态更新'
+        },
+        planOverrides: {
+            current_stage: 'S4',
+            current_goal: '继续开发执行'
+        },
+        logContent: '记录 S4 阶段推进'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    const { mainPath } = writeMultiFileDeliveryPlan(hostRoot);
+    const driftedMain = readFile(mainPath).replace(
+        '`Phase 0 / T0.1 实现演示任务`',
+        '`Phase 0 / T0.2 已不存在任务`'
+    );
+    writeFile(mainPath, driftedMain);
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+
+    assert.equal(result.canEnter, false);
+    assert.equal(result.gateChecks.developmentPlanReady.pass, false);
+    assert.equal(result.gateChecks.developmentPlanReady.evidence.planConsistency.passed, false);
+    assert.ok(result.blockingReasons.some((item) => item.code === 'development_plan_status_inconsistent'));
+    assert.equal(result.routeTarget.skill, 'delivery-planner');
+    assert.equal(result.routeTarget.recoveryFor, 'development_plan_status_inconsistent');
+    assert.match(result.nextAction, /状态不一致/);
+    assert.notEqual(result.routeTarget.skill, 'coding-standards');
+});
+
 test('route-check blocks S4 when delivery plan structure is invalid', () => {
     const hostRoot = createHostFixture({
         profileOverrides: {
@@ -1883,6 +1932,89 @@ test('validate-plan-structure accepts the multi-file delivery plan structure', (
     assert.equal(result.kanbanPath.endsWith('task-kanban-demo.md'), true);
 });
 
+test('check-plan-consistency accepts aligned main plan, kanban and current sub plan', () => {
+    const hostRoot = makeTempDir('pm-suite-plan-consistency-valid-');
+    const { mainPath, subPath } = writeMultiFileDeliveryPlan(hostRoot);
+
+    const result = checkPlanConsistency({ planPath: mainPath });
+
+    assert.equal(result.passed, true);
+    assert.equal(result.activeTaskId, 'T0.1');
+    assert.equal(result.activeSubPlanPath, subPath);
+    assert.equal(result.sources.mainPlan.path, mainPath);
+    assert.equal(result.sources.taskKanban.path.endsWith('task-kanban-demo.md'), true);
+    assert.equal(result.sources.subPlan.path, subPath);
+});
+
+test('check-plan-consistency rejects cockpit active task drift', () => {
+    const hostRoot = makeTempDir('pm-suite-plan-consistency-cockpit-drift-');
+    const { mainPath } = writeMultiFileDeliveryPlan(hostRoot);
+    writeFile(
+        mainPath,
+        readFile(mainPath).replace('`Phase 0 / T0.1 实现演示任务`', '`Phase 0 / T0.2 已不存在任务`')
+    );
+
+    const result = checkPlanConsistency({ planPath: mainPath });
+
+    assert.equal(result.passed, false);
+    assert.equal(result.activeTaskId, 'T0.1');
+    assert.ok(result.errors.some((item) => item.type === 'cockpit_active_task_mismatch'));
+});
+
+test('check-plan-consistency rejects current sub plan status drift', () => {
+    const hostRoot = makeTempDir('pm-suite-plan-consistency-subplan-drift-');
+    const { mainPath, subPath } = writeMultiFileDeliveryPlan(hostRoot);
+    writeFile(subPath, readFile(subPath).replace('**状态**：进行中', '**状态**：待开发'));
+
+    const result = checkPlanConsistency({ planPath: mainPath });
+
+    assert.equal(result.passed, false);
+    assert.ok(result.errors.some((item) => item.type === 'current_sub_plan_status_mismatch'));
+});
+
+test('check-plan-consistency rejects multiple in-progress tasks', () => {
+    const hostRoot = makeTempDir('pm-suite-plan-consistency-multiple-current-');
+    const { mainPath, kanbanPath } = writeMultiFileDeliveryPlan(hostRoot);
+    const planDir = path.dirname(mainPath);
+    const secondSubPath = path.join(planDir, 'sub-delivery-plan-demo-T0.2-second-task.md');
+
+    writeFile(
+        mainPath,
+        readFile(mainPath).replace(
+            '| T0.1 | [sub-delivery-plan-demo-T0.1-demo-task.md](sub-delivery-plan-demo-T0.1-demo-task.md) | 进行中 |',
+            '| T0.1 | [sub-delivery-plan-demo-T0.1-demo-task.md](sub-delivery-plan-demo-T0.1-demo-task.md) | 进行中 |\n| T0.2 | [sub-delivery-plan-demo-T0.2-second-task.md](sub-delivery-plan-demo-T0.2-second-task.md) | 进行中 |'
+        )
+    );
+    writeFile(
+        kanbanPath,
+        readFile(kanbanPath) +
+            '| T0.2 | [sub-delivery-plan-demo-T0.2-second-task.md](sub-delivery-plan-demo-T0.2-second-task.md) | AI | T0.1 | 进行中 | - | second |\n'
+    );
+    writeFile(
+        secondSubPath,
+        buildSubDeliveryPlanContent('demo')
+            .replaceAll('T0.1', 'T0.2')
+            .replaceAll('实现演示任务', '实现第二任务')
+            .replaceAll('demo-task', 'second-task')
+    );
+
+    const result = checkPlanConsistency({ planPath: mainPath });
+
+    assert.equal(result.passed, false);
+    assert.ok(result.errors.some((item) => item.type === 'multiple_active_tasks'));
+});
+
+test('check-plan-consistency rejects missing current sub plan', () => {
+    const hostRoot = makeTempDir('pm-suite-plan-consistency-missing-subplan-');
+    const { mainPath, subPath } = writeMultiFileDeliveryPlan(hostRoot);
+    fs.unlinkSync(subPath);
+
+    const result = checkPlanConsistency({ planPath: mainPath });
+
+    assert.equal(result.passed, false);
+    assert.ok(result.errors.some((item) => item.type === 'missing_current_sub_plan'));
+});
+
 test('validate-plan-structure rejects kanban tasks that do not have matching sub delivery plans', () => {
     const hostRoot = makeTempDir('pm-suite-missing-sub-delivery-plan-');
     const { mainPath, kanbanPath } = writeMultiFileDeliveryPlan(hostRoot);
@@ -1936,6 +2068,18 @@ test('delivery plan templates satisfy the multi-file structure validator', () =>
 
     assert.equal(result.passed, true);
     assert.equal(result.mode, 'multi-file');
+});
+
+test('delivery-planner sub plan template includes status-sync closure as task completion work', () => {
+    const template = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'templates', 'sub-delivery-plan-template.md')
+    );
+    const skill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'SKILL.md'));
+
+    assert.ok(template.includes('完成收尾：状态同步'));
+    assert.ok(template.includes('route-check.mjs <host> --target-stage S4 --json'));
+    assert.ok(skill.includes('每个子开发计划最后必须包含'));
+    assert.ok(skill.includes('未完成状态同步收尾前，不得标记 Task 已完成'));
 });
 
 test('verify-task-context blocks tasks that declare no real PRD links', () => {
@@ -2042,6 +2186,48 @@ test('ai-project-manager protocol points to multi-file delivery plans', () => {
     assert.equal(/docs\/plans\/delivery-plan-/.test(combined), false);
 });
 
+test('implementation and test chiefs point to multi-file delivery plans', () => {
+    const files = [
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'coding-standards', 'SKILL.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'test-case-chief', 'SKILL.md')
+    ];
+    const combined = files.map((file) => readFile(file)).join('\n');
+
+    for (const file of files) {
+        const content = readFile(file);
+        assert.ok(content.includes('main-delivery-plan-<slug>.md'), `${file} must name the main delivery plan`);
+        assert.ok(content.includes('task-kanban-<slug>.md'), `${file} must name the task kanban`);
+        assert.ok(
+            content.includes('sub-delivery-plan-<slug>-<TaskID>-<short-name>.md') ||
+                content.includes('sub-delivery-plan-<slug>-T0.1-<short-name>.md'),
+            `${file} must name sub delivery plans`
+        );
+    }
+
+    assert.equal(/(^|[^a-z-])delivery-plan-<slug>\.md/.test(combined), false);
+    assert.equal(/docs\/plans\/delivery-plan-/.test(combined), false);
+});
+
+test('pipeline places foundation-builder outputs under docs/prd/foundation', () => {
+    const pipeline = readFile(path.join(CURRENT_SUITE_ROOT, 'PIPELINE.md'));
+
+    for (const artifact of ['glossary', 'schema', 'api', 'delivery']) {
+        assert.ok(
+            pipeline.includes(
+                `foundation-${artifact}-<slug>.md\` | \`<host>/docs/prd/foundation/\``
+            ),
+            `foundation-${artifact} must use docs/prd/foundation`
+        );
+        assert.equal(
+            pipeline.includes(
+                `foundation-${artifact}-<slug>.md\` | \`<host>/docs/prd/\``
+            ),
+            false,
+            `foundation-${artifact} must not use docs/prd root`
+        );
+    }
+});
+
 test('ai-project-manager protocol defines project-link-indexer companion dispatch', () => {
     const runtime = readFile(
         path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md')
@@ -2058,6 +2244,21 @@ test('ai-project-manager protocol defines project-link-indexer companion dispatc
     assert.ok(pipeline.includes('主入口按场景调起 `project-link-indexer`'));
     assert.ok(pipeline.includes('索引器自行决定 build / refresh / noop'));
     assert.ok(skill.includes('run-project-link-indexer.mjs'));
+});
+
+test('ai-project-manager protocol requires delivery-planner consistency gate before S4 coding', () => {
+    const runtime = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md'));
+    const routing = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md'));
+    const deliveryPlanner = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'SKILL.md'));
+    const codingStandards = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'coding-standards', 'SKILL.md'));
+
+    assert.ok(runtime.includes('s4_pre_coding_plan_consistency_check'));
+    assert.ok(runtime.includes('delivery-planner/scripts/check-plan-consistency.mjs'));
+    assert.ok(routing.includes('s4_pre_coding_plan_consistency_check'));
+    assert.ok(deliveryPlanner.includes('s4_pre_coding_plan_consistency_check'));
+    assert.ok(codingStandards.includes('s4_pre_coding_plan_consistency_check'));
+    assert.ok(codingStandards.includes('正式开发计划文件组三者状态回写由 ai-project-manager 调度 delivery-planner 执行'));
+    assert.equal(codingStandards.includes('直接在对应子开发计划和任务看板原地修改'), false);
 });
 
 test('devlog-sync creates daily log, appends updates, and updates candidate pool', () => {
