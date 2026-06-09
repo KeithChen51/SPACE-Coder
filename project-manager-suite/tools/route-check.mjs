@@ -749,9 +749,11 @@ function inspectBaselineAudit(hostRoot) {
     try {
         const parsed = JSON.parse(loadMarkdownFile(latest.filePath));
         const recommendedNextSkill = parsed.summary?.recommended_next_skill || null;
+        const status = parsed.summary?.status || null;
         const artifacts = Array.isArray(parsed.artifacts)
             ? parsed.artifacts.filter((artifact) => BASELINE_ROUTE_SKILLS.has(artifact.recommended_skill))
             : [];
+        const complete = status === 'ready' && recommendedNextSkill === null;
 
         return {
             exists: true,
@@ -759,12 +761,13 @@ function inspectBaselineAudit(hostRoot) {
             mode: parsed.mode || null,
             scope: parsed.scope || null,
             slug: parsed.slug || null,
+            status,
             recommendedNextSkill,
             artifacts,
             usable:
                 parsed.mode === 'existing-project-baseline' &&
                 parsed.scope === 'maintenance-docs-only' &&
-                BASELINE_NEXT_SKILLS.has(recommendedNextSkill)
+                (complete || BASELINE_NEXT_SKILLS.has(recommendedNextSkill))
         };
     } catch (error) {
         return {
@@ -774,6 +777,26 @@ function inspectBaselineAudit(hostRoot) {
             parseError: error.message
         };
     }
+}
+
+function baselineRecommendedArtifactSatisfied(recommendedSkill, { s2Artifacts, foundationArtifacts, prdArtifacts }) {
+    if (recommendedSkill === 'brd-writer') {
+        return s2Artifacts.brdExists;
+    }
+
+    if (recommendedSkill === 'page-explainer') {
+        return s2Artifacts.explainerFilesComplete;
+    }
+
+    if (recommendedSkill === 'foundation-builder') {
+        return foundationArtifacts.foundationDeliveryExists && foundationArtifacts.artifactsReady;
+    }
+
+    if (recommendedSkill === 'prd-writer') {
+        return prdArtifacts.fullPrdReady;
+    }
+
+    return false;
 }
 
 function directoryHasCodeFiles(rootDir, relativeDir, maxDepth = 4) {
@@ -1370,7 +1393,12 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
                 auditPath: baselineAudit.auditPath || null,
                 mode: baselineAudit.mode || null,
                 scope: baselineAudit.scope || null,
+                status: baselineAudit.status || null,
                 recommendedNextSkill: baselineAudit.recommendedNextSkill || null,
+                recommendedArtifactSatisfied: baselineRecommendedArtifactSatisfied(
+                    baselineAudit.recommendedNextSkill,
+                    { s2Artifacts, foundationArtifacts, prdArtifacts }
+                ),
                 parseError: baselineAudit.parseError || null
             }
         };
@@ -1484,12 +1512,33 @@ function buildBlockingReasons({ targetStage, currentStage, recommendedStage, gat
 
 function resolveRouteTarget(targetStage, gateChecks) {
     if (targetStage === STAGE_IDS.S0_5 && gateChecks.projectBaselineAuditReady?.pass) {
+        if (
+            gateChecks.projectBaselineAuditReady.evidence.status === 'ready' &&
+            gateChecks.projectBaselineAuditReady.evidence.recommendedNextSkill === null
+        ) {
+            return {
+                skill: 'ai-project-manager',
+                source: 'baseline-complete',
+                auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
+                exclusiveDeliverable: false
+            };
+        }
+
         if (gateChecks.projectBaselineAuditReady.evidence.recommendedNextSkill === 'ai-project-manager') {
             return {
                 skill: 'ai-project-manager',
                 source: 'baseline-audit',
                 auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
                 exclusiveDeliverable: false
+            };
+        }
+
+        if (gateChecks.projectBaselineAuditReady.evidence.recommendedArtifactSatisfied) {
+            return {
+                skill: 'project-baseline-auditor',
+                source: 'baseline-refresh',
+                auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
+                exclusiveDeliverable: true
             };
         }
 
@@ -1626,6 +1675,14 @@ function resolveCompanionActions({ targetStage, gateChecks, validationResult }) 
 }
 
 function resolveNextActionWithContext({ validationResult, targetStage, resolvedRouteTarget, blockers, gateChecks }) {
+    if (targetStage === STAGE_IDS.S0_5 && resolvedRouteTarget?.source === 'baseline-refresh') {
+        return `读取 ${resolvedRouteTarget.auditPath} 后发现推荐缺口已被补齐；先刷新 baseline，再按最新维护资料缺口继续路由`;
+    }
+
+    if (targetStage === STAGE_IDS.S0_5 && resolvedRouteTarget?.source === 'baseline-complete') {
+        return 'S0.5 维护知识底座已补齐；交由 ai-project-manager 收口历史项目标准化，并重新判断后续阶段';
+    }
+
     if (targetStage === STAGE_IDS.S0_5 && resolvedRouteTarget?.skill === 'project-baseline-auditor') {
         return '可进入 S0.5，默认交由 project-baseline-auditor，先扫描代码并生成/更新 project-profile.md 与 baseline-audit 清单';
     }
@@ -1789,7 +1846,10 @@ function routeCheck({ hostRoot, targetStage = '' }) {
                 ? {
                       auditPath: gateChecks.projectBaselineAuditReady.evidence.auditPath,
                       scope: gateChecks.projectBaselineAuditReady.evidence.scope,
+                      status: gateChecks.projectBaselineAuditReady.evidence.status,
                       recommendedNextSkill: gateChecks.projectBaselineAuditReady.evidence.recommendedNextSkill,
+                      recommendedArtifactSatisfied:
+                          gateChecks.projectBaselineAuditReady.evidence.recommendedArtifactSatisfied,
                       usable: gateChecks.projectBaselineAuditReady.pass
                   }
                 : null

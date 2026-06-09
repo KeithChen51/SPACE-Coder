@@ -110,7 +110,7 @@ const gatingRules = {
         blockOnMissing: true
     },
     projectBaselineAuditReady: {
-        description: '既有项目接入时，必须先读取 baseline-audit 清单再路由到补档 skill',
+        description: '既有项目接入时，必须先读取或刷新 baseline-audit 清单再路由到补档 skill',
         evidence: ['baseline_audit_json_exists'],
         blockOnMissing: true
     }

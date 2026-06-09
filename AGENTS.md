@@ -8,7 +8,9 @@
 - 工作区里有：
   - **`project-manager-suite`**（[project-manager-suite/](project-manager-suite/)）——一个宿主项目可挂载的 **AI 开发助手套件**，是推进项目用的工具。
   - **真实业务项目 / 业务代码**——用这套套件去推进和实装的实际项目（现在或后续会进工作区），是这里的主要产出。
-- **套件怎么用**：把模糊业务想法按固定流水线（S0 项目画像 → S1 BRD → S2 页面/PRD → S3 开发计划 → S4 代码实装 → S5 测试验收）推进成可执行、可回写、可验收的落地过程。
+- **套件怎么用**：支持两类入场——
+  - **(a) 绿地（从零做）**：把模糊业务想法按固定流水线（S0 需求调研 → S1 BRD → S2 页面/PRD → S3 开发计划 → S4 代码实装 → S5 测试验收）推进成可执行、可回写、可验收的落地过程。
+  - **(b) 既有项目接入（改造成标准维护模式）**：已有代码 / 文档但缺标准底座的项目，先走 **S0.5 既有项目基线诊断**（`project-baseline-auditor`）——反推项目画像、产出关键维护文件缺口清单（BRD / 页面说明 / foundation / PRD），再按缺口并入上面的流水线。
 - **运行时唯一总入口 = `ai-project-manager`**：建立全局上下文、判断阶段、路由下游能力、回写状态。**推进业务项目时从它进**；已装套件 / 宿主场景由 session-start hook 自动注入。
 - 流水线权威定义见 [PIPELINE.md](project-manager-suite/PIPELINE.md)，安装与用法见 [README.md](project-manager-suite/README.md)。
 

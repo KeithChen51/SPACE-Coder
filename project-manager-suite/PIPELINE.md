@@ -235,6 +235,8 @@ S5 ──────── test-case-chief 调度 ─────────�
 
 **职责**：S0.5 阶段用于已有代码接入套件时的维护性诊断。它基于真实代码生成或更新同一个 `project-profile.md`，并产出关键文件缺口清单，供主入口继续路由到 BRD / 页面说明 / foundation / PRD 相关 skill。
 
+baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告；补档 skill 完成正式产物后回到 `ai-project-manager`，由主入口决定是否重新调用 `project-baseline-auditor` 刷新缺口清单。
+
 **边界**：
 - 只诊断维护知识底座，不诊断测试用例
 - 不判断待开发任务，不进入 `delivery-planner`

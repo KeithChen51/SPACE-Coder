@@ -538,6 +538,54 @@ test('collect-baseline-gaps creates project profile draft and maintenance docume
     assert.equal(result.artifacts.some((item) => /delivery-planner|test-case/.test(item.recommended_skill || '')), false);
 });
 
+test('collect-baseline-gaps ignores dependency and generated directories at any depth', () => {
+    const hostRoot = makeTempDir('pm-suite-baseline-ignore-noise-');
+    writeJsonFile(path.join(hostRoot, 'package.json'), {
+        name: 'legacy-ops-console',
+        description: '标准化历史运营控制台'
+    });
+    writeFile(path.join(hostRoot, 'apps', 'admin', 'src', 'views', 'Dashboard.vue'), '<template>real page</template>\n');
+    writeFile(path.join(hostRoot, 'apps', 'admin', 'src', 'api', 'orders.js'), 'export const ordersApi = "/api/orders";\n');
+    writeFile(path.join(hostRoot, 'apps', 'admin', 'node_modules', 'vendor', 'Widget.vue'), '<template>dependency page</template>\n');
+    writeFile(path.join(hostRoot, 'apps', 'admin', 'dist', 'api-endpoints.js'), 'export const generatedApi = "/api/generated";\n');
+    writeFile(path.join(hostRoot, 'server', 'target', 'classes', 'db', 'migration', 'V1__generated.sql'), 'create table generated_noise(id int);\n');
+
+    const result = collectBaselineGaps({ hostRoot, write: false });
+    const evidencePaths = [
+        ...result.evidence.pages,
+        ...result.evidence.apis,
+        ...result.evidence.models,
+        ...result.evidence.configs
+    ];
+
+    assert.equal(evidencePaths.some((item) => item.includes('/node_modules/')), false);
+    assert.equal(evidencePaths.some((item) => item.includes('/dist/')), false);
+    assert.equal(evidencePaths.some((item) => item.includes('/target/')), false);
+    assert.ok(result.evidence.pages.includes('apps/admin/src/views/Dashboard.vue'));
+    assert.ok(result.evidence.apis.includes('apps/admin/src/api/orders.js'));
+});
+
+test('collect-baseline-gaps ignores AI tool directories when selecting project evidence', () => {
+    const hostRoot = makeTempDir('pm-suite-baseline-ignore-tooling-');
+    writeFile(path.join(hostRoot, 'src', 'views', 'Home.vue'), '<template>real host page</template>\n');
+    writeFile(path.join(hostRoot, '.claude', 'skills', 'coding-standards', 'references', 'README.md'), '# Coding standards\n');
+    writeFile(path.join(hostRoot, '.playwright-mcp', 'page-snapshot.yml'), 'url: http://localhost:3000\n');
+
+    const result = collectBaselineGaps({ hostRoot, write: false });
+    const evidencePaths = [
+        result.evidence.readme,
+        ...result.evidence.pages,
+        ...result.evidence.apis,
+        ...result.evidence.models,
+        ...result.evidence.configs
+    ].filter(Boolean);
+
+    assert.equal(result.evidence.readme, null);
+    assert.equal(evidencePaths.some((item) => item.includes('/.claude/')), false);
+    assert.equal(evidencePaths.some((item) => item.includes('/.playwright-mcp/')), false);
+    assert.ok(result.evidence.pages.includes('src/views/Home.vue'));
+});
+
 test('collect-baseline-gaps preserves user-confirmed profile fields while adding inferred evidence', () => {
     const hostRoot = makeTempDir('pm-suite-baseline-existing-profile-');
     writeFile(
@@ -616,6 +664,130 @@ test('route-check uses baseline audit JSON to route maintenance-doc gaps only to
     assert.equal(JSON.stringify(result.context.baselineAudit).includes('delivery-planner'), false);
     assert.equal(JSON.stringify(result.context.baselineAudit).includes('test-case'), false);
     assert.match(result.nextAction, /baseline-audit/);
+});
+
+test('route-check refreshes stale baseline when recommended BRD gap is already filled', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            current_round_deliverable: '既有项目关键文件诊断清单',
+            largest_uncertainty: 'BRD 缺失'
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: '补齐既有项目维护知识底座',
+            next_tasks: '读取 baseline-audit 后补 BRD'
+        },
+        logContent: '记录 S0.5 既有项目基线诊断'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeJsonFile(path.join(hostRoot, 'docs', 'baseline', 'baseline-audit-demo.json'), {
+        mode: 'existing-project-baseline',
+        scope: 'maintenance-docs-only',
+        slug: 'demo',
+        summary: {
+            status: 'missing_required_artifacts',
+            recommended_next_skill: 'brd-writer'
+        },
+        artifacts: [
+            {
+                type: 'BRD',
+                status: 'missing',
+                recommended_skill: 'brd-writer'
+            }
+        ]
+    });
+    writeFile(path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260601-1000.md'), '# BRD Demo\n');
+
+    const result = routeCheck({ hostRoot });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'project-baseline-auditor');
+    assert.equal(result.routeTarget.source, 'baseline-refresh');
+    assert.equal(result.context.baselineAudit.status, 'missing_required_artifacts');
+    assert.match(result.nextAction, /刷新 baseline/);
+    assert.doesNotMatch(result.nextAction, /交由 brd-writer/);
+});
+
+test('route-check refreshes stale baseline when recommended foundation gap is already filled', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            current_round_deliverable: '既有项目关键文件诊断清单',
+            largest_uncertainty: 'foundation 缺失'
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: '补齐既有项目维护知识底座',
+            next_tasks: '读取 baseline-audit 后补 foundation'
+        },
+        logContent: '记录 S0.5 既有项目基线诊断'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeJsonFile(path.join(hostRoot, 'docs', 'baseline', 'baseline-audit-demo.json'), {
+        mode: 'existing-project-baseline',
+        scope: 'maintenance-docs-only',
+        slug: 'demo',
+        summary: {
+            status: 'missing_required_artifacts',
+            recommended_next_skill: 'foundation-builder'
+        },
+        artifacts: [
+            {
+                type: 'FOUNDATION',
+                status: 'missing',
+                recommended_skill: 'foundation-builder'
+            }
+        ]
+    });
+    writeFoundationArtifacts(hostRoot);
+
+    const result = routeCheck({ hostRoot });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'project-baseline-auditor');
+    assert.equal(result.routeTarget.source, 'baseline-refresh');
+    assert.match(result.nextAction, /刷新 baseline/);
+    assert.doesNotMatch(result.nextAction, /交由 foundation-builder/);
+});
+
+test('route-check accepts completed baseline audit as S0.5 completion state', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            current_round_deliverable: '既有项目关键文件诊断清单',
+            largest_uncertainty: '无'
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: '补齐既有项目维护知识底座',
+            next_tasks: '主入口重新判断下一阶段'
+        },
+        logContent: '记录 S0.5 既有项目基线诊断'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeJsonFile(path.join(hostRoot, 'docs', 'baseline', 'baseline-audit-demo.json'), {
+        mode: 'existing-project-baseline',
+        scope: 'maintenance-docs-only',
+        slug: 'demo',
+        summary: {
+            status: 'ready',
+            recommended_next_skill: null
+        },
+        artifacts: []
+    });
+
+    const result = routeCheck({ hostRoot });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'ai-project-manager');
+    assert.equal(result.routeTarget.source, 'baseline-complete');
+    assert.equal(result.context.baselineAudit.status, 'ready');
+    assert.equal(result.blockingReasons.some((item) => item.code === 'baseline_audit_missing'), false);
+    assert.match(result.nextAction, /维护知识底座已补齐/);
 });
 
 test('collect-project-links compiles host artifacts into a rebuildable file-level graph', () => {
@@ -2244,6 +2416,22 @@ test('ai-project-manager protocol defines project-link-indexer companion dispatc
     assert.ok(pipeline.includes('主入口按场景调起 `project-link-indexer`'));
     assert.ok(pipeline.includes('索引器自行决定 build / refresh / noop'));
     assert.ok(skill.includes('run-project-link-indexer.mjs'));
+});
+
+test('ai-project-manager protocol owns baseline refresh orchestration', () => {
+    const runtime = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md')
+    );
+    const routing = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md')
+    );
+    const pipeline = readFile(path.join(CURRENT_SUITE_ROOT, 'PIPELINE.md'));
+
+    assert.ok(runtime.includes('历史项目标准化模式'));
+    assert.ok(runtime.includes('baseline 刷新由 `ai-project-manager` 负责'));
+    assert.ok(routing.includes('推荐缺口已被对应产物满足时，主入口先刷新 baseline'));
+    assert.ok(routing.includes('下游补档 skill 不感知 baseline'));
+    assert.ok(pipeline.includes('baseline-audit 是可反复刷新的当前缺口状态'));
 });
 
 test('ai-project-manager protocol requires delivery-planner consistency gate before S4 coding', () => {

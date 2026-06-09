@@ -9,11 +9,17 @@ const __filename = fileURLToPath(import.meta.url);
 
 const ignoredDirectories = new Set([
     '.git',
+    '.agent',
+    '.claude',
+    '.codex',
+    '.cursor',
     '.agent/project-manager-suite',
+    '.playwright-mcp',
     'project-manager-suite',
     'node_modules',
     'dist',
     'build',
+    'target',
     'coverage',
     '.next',
     '.nuxt',
@@ -69,8 +75,23 @@ function normalizePathForMatch(rootDir, targetPath) {
 }
 
 function shouldIgnoreDir(relativeDir) {
+    const normalizedRelative = relativeDir.split(path.sep).join('/');
     return [...ignoredDirectories].some((ignored) => {
-        return relativeDir === ignored || relativeDir.startsWith(`${ignored}/`);
+        const normalizedIgnored = ignored.split(path.sep).join('/');
+        const pathScopedMatch = normalizedRelative === normalizedIgnored ||
+            normalizedRelative.startsWith(`${normalizedIgnored}/`) ||
+            normalizedRelative.endsWith(`/${normalizedIgnored}`) ||
+            normalizedRelative.includes(`/${normalizedIgnored}/`);
+
+        if (pathScopedMatch) {
+            return true;
+        }
+
+        if (!normalizedIgnored.includes('/')) {
+            return normalizedRelative.split('/').includes(normalizedIgnored);
+        }
+
+        return false;
     });
 }
 

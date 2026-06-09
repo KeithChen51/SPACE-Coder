@@ -60,6 +60,7 @@
 | **缺全局规则文件，但可从现有文件推断** | 使用内存默认推断，不强行生成物理文件 | 否 | 仅在后台标记 |
 | **已有代码接入，且用户目标是补齐维护知识底座** | 进入 `project-baseline-auditor`，先基于代码生成/更新 `project-profile.md`，再输出关键文件缺口清单 | **是** | `project-profile.md` + `docs/baseline/baseline-audit-<slug>.json` |
 | **已存在 baseline-audit 清单，且仍有关键文件缺口** | 读取清单中的 `recommended_next_skill`，只在 BRD / 页面说明 / foundation / PRD 范围内路由 | **是** | 交由对应补档 skill |
+| **已存在 baseline-audit 清单，且推荐缺口已被对应产物满足时，主入口先刷新 baseline** | 回到 `project-baseline-auditor` 刷新当前缺口状态，再按最新 baseline 路由；下游补档 skill 不感知 baseline | **是** | 更新后的 `baseline-audit-<slug>.json` |
 | **画像存在，但用户意图/入口/阶段判断等有缺口** | 停留主入口澄清并补齐 | 否 | 更新后的项目画像 |
 | **当前轮目标已收敛到页面 / 原型，但"页面任务必补字段包"未补齐** | 停留主入口主动补齐 `项目覆盖对象`、`当前页面主要给谁用`、`当前页面主要用途`，并回写 `页面定位标签` | 否 | 页面任务识别信息补齐结果 |
 | **当前阶段已明确，且当前轮目标对应正式阶段交付物** | 交由该阶段默认目标 skill 独占执行；主入口只负责交接上下文与回写结果 | **是** | 当前阶段最小交付物 |

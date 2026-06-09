@@ -297,6 +297,17 @@ S2 页面环节收口后的回写口径：
 13. 命中 S4 时，主入口必须先触发 `delivery-planner/scripts/check-plan-consistency.mjs`，以 `s4_pre_coding_plan_consistency_check` 目的校验 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 三者一致；一致性通过后，才允许进入 `coding-standards`
 14. 命中 S4 但正式开发计划文件组缺失、结构校验失败或计划状态一致性失败时，主入口不得进入 `coding-standards`；必须停留开发计划修复链路，调用 `delivery-planner` 生成、修复或校正 `docs/plans/delivery-plans/` 下的正式开发计划文件组
 
+### 2.1 历史项目标准化模式
+
+当 S0.5 进入既有项目资料标准化链路后，baseline 刷新由 `ai-project-manager` 负责，`brd-writer`、`page-explainer`、`foundation-builder`、`prd-writer` 不感知 `project-baseline-auditor`。
+
+运行规则：
+1. 无 `baseline-audit-<slug>.json` 时，主入口先路由到 `project-baseline-auditor` 生成项目画像草稿与当前缺口清单。
+2. baseline 推荐某个补档 skill，且对应维护产物仍缺失时，主入口按该推荐路由给对应 skill 独占产出正式文档。
+3. 补档 skill 完成后回到主入口；若旧 baseline 推荐缺口已被对应产物满足，主入口先刷新 baseline，再按最新缺口继续路由。
+4. baseline 为 `summary.status = ready` 且 `recommended_next_skill = null` 时，视为 S0.5 维护知识底座补齐；主入口收口历史项目标准化，并重新判断后续阶段。
+5. `project-baseline-auditor` 只读宿主源码和项目资料，不修改源码、配置、迁移脚本或业务实现文件；它只写项目画像和 `docs/baseline/` 下的诊断产物。
+
 ### 2.2 S2 设计流水线协议
 
 S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → PRD 环节收口** 的联动阶段，且顺序必须固定：

@@ -19,6 +19,11 @@ Do not use it for:
 - New development planning or pending implementation tasks.
 - Replacing `brd-writer`, `page-explainer`, `foundation-builder`, or `prd-writer`.
 
+## Evidence Boundary
+
+Baseline evidence must come from host-authored source, docs, configuration, schemas, migrations, and other project-owned materials.
+Dependency trees, generated build outputs, caches, compiled artifacts, and AI tool runtime directories are noise and must be ignored at any directory depth before counting page, API, model, config, or README signals.
+
 ## Required Command
 
 Run the scanner first:
