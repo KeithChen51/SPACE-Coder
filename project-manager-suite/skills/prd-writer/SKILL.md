@@ -1,6 +1,6 @@
 ---
 name: prd-writer
-description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和技术地基，产出功能列表、mainprd 和按区块拆分的 subprd。page-designer + foundation-builder 的直接下游。
+description: 面向 AI 编程的 PRD 撰写。适用于 ai-project-manager/prd-chief 已判定进入 S2 PRD 环节、foundation-builder 已完成之后；基于已确认的页面代码和技术地基，产出功能列表、mainprd 和按区块拆分的 subprd；上游产物不全时中止并提示补齐。
 ---
 
 # PRD Writer Skill
@@ -28,6 +28,7 @@ description: 面向 AI 编程的 PRD 撰写。基于已确认的页面代码和�
 | H6 | Schema/API 信息只引用不重写 | 权威来源在 foundation-builder |
 | H7 | 每个 Phase 产出后等用户确认再继续 | 防止错误传播 |
 | H8 | 完整版 PRD 就绪必须满足：功能列表区块数 = mainprd 的 subprd 索引行数 = 真实存在的 subprd 文件数，且全部状态为 `已确认` | 防止只产出 1 份 subprd 就误进入 S3 |
+| H9 | Phase 2/3/4 每份产物落盘后必须先跑 `prd-check.mjs structure`；DONE 前必须跑 `prd-check.mjs crosscheck` | 把模板结构和机械一致性变成可修复的脚本反馈 |
 
 ## 3) 上游输入（全部直接引用）
 
@@ -83,6 +84,9 @@ subprd 命名必须满足：
 | subprd 文件 | mainprd 索引中的每个 subprd 文件都真实存在 |
 | 状态闭合 | 功能列表和 mainprd 中每个 subprd 状态均为 `已确认` |
 | 反链 | 每份 subprd 均链接回 `../mainprd-<slug>.md` |
+| 结构校验 | feature-list、mainprd、全部 subprd 均通过 `prd-check.mjs structure` |
+| 机械交叉校验 | `prd-check.mjs crosscheck --host-dir <host> --slug <slug>` 通过 |
+| Phase 5 证据 | mainprd 含 `## 一致性自查结果`，无失败项；`## 待回溯缺口` 全部 resolved |
 
 **状态值固定为三种**：
 - `待开始`：文件尚未生成。
@@ -90,6 +94,31 @@ subprd 命名必须满足：
 - `已确认`：用户已确认，可进入下一份 subprd 或 Phase 5。
 
 只要存在任一区块状态不是 `已确认`，只能视为 `prd-writer phase=4 RUNNING`，不得声明完整版 PRD 就绪，也不得交给 S3。
+
+## 4.2) 脚本化校验协议
+
+脚本路径：
+
+```bash
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs <command> [options] --json
+```
+
+命令：
+
+| 命令 | 用途 | 何时运行 |
+|------|------|----------|
+| `structure --file <path>` | 检查单个 feature-list / mainprd / subprd 的固定章节、表头、编号、反链、X.6 等结构 | Phase 2/3/4 每份产物落盘后立即运行 |
+| `crosscheck --host-dir <host> --slug <slug>` | 先对全部 PRD 产物跑 structure，再检查索引一致、状态闭合、Schema/API/交互语义引用、页面覆盖、Phase 5 证据 | DONE 前必须运行 |
+| `progress --host-dir <host> --slug <slug>` | 从功能列表和 mainprd 状态列输出当前进度和缺口 | 跨会话恢复、用户问进度时运行 |
+| `set-status --host-dir <host> --slug <slug> --block <N> --status <状态>` | 同步更新功能列表和 mainprd 指定区块状态 | 每份 subprd 用户确认后运行 |
+| `sync-index --host-dir <host> --slug <slug>` | 以功能列表为权威重渲染 mainprd 的 subprd 索引表 | 发现双表漂移或批量回填后运行 |
+
+脚本输出固定包含 `ruleId / severity / file / section / expected / actual / fixHint / nextCommand`。遇到 `fail` 必须按 `fixHint` 修复并执行 `nextCommand` 重跑；遇到 `needs_ai_review` 必须人工复核并把结论写入 mainprd 的 `## 一致性自查结果` 或 `## 待回溯缺口` 后，才能 DONE。
+
+退出码：
+- `0`：机械检查通过，且无未处理 `needs_ai_review`
+- `2`：存在机械失败，必须修复
+- `3`：机械检查通过，但仍有未复核语义项
 
 ## 5) 工作流概览（5 Phase）
 
@@ -99,21 +128,21 @@ Phase 1: 输入收集（见 §7）
   ↓
 Phase 2: 功能列表
   → 加载 templates/feature-list.md
-  → 产出功能列表 → 用户确认
+  → 产出功能列表 → 跑 prd-check structure → 修到 pass → 用户确认
   ↓
 Phase 3: mainprd
   → 加载 templates/main-prd.md
-  → 产出 mainprd → 用户确认
+  → 产出 mainprd → 跑 prd-check structure → 修到 pass → 用户确认
   ↓
 Phase 4: subprd
   → 加载 templates/sub-prd.md + references/anti-patterns.md
-  → 按功能列表中的区块逐份产出 → 每份用户确认
-  → 每份确认后回填功能列表和 mainprd 索引
+  → 按功能列表中的区块逐份产出 → 跑 prd-check structure → 修到 pass → 每份用户确认
+  → 每份确认后用 prd-check set-status + sync-index 回填功能列表和 mainprd 索引
   → 只有全部 subprd 状态为已确认，才进入 Phase 5
   ↓
 Phase 5: 一致性自查
   → 加载 references/phase-5-consistency-check.md
-  → subprd ↔ foundation 产物交叉校验 → 修正 → 用户确认
+  → 跑 prd-check crosscheck + 人工复核 needs_ai_review → 修正 → 用户确认 → DONE
 ```
 
 ## 6) Reference 加载协议
@@ -150,6 +179,12 @@ Phase 5: 一致性自查
 【Skill状态】prd-writer | phase=<N> | RUNNING
 ```
 
+Phase 4 必须带 subprd 进度：
+
+```
+【Skill状态】prd-writer | phase=4 | subprd=<已确认数>/<总数> | RUNNING
+```
+
 Phase 完成时：
 
 ```
@@ -161,6 +196,35 @@ Phase 完成时：
 ```
 【Skill状态】prd-writer | DONE
 ```
+
+DONE 后默认停机，不主动继续推进下一阶段；只有用户明确要求继续时，才交回 ai-project-manager。
+
+## 8.1) 跨会话恢复与用户口令
+
+新会话进入 prd-writer 时，先运行：
+
+```bash
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs progress --host-dir <host> --slug <slug> --json
+```
+
+恢复规则：
+- 已确认的 subprd 不重写。
+- 待确认的 subprd 重新展示确认轮，并附 `structure` 结果。
+- 待开始的 subprd 从对应区块继续产出。
+- 两张索引漂移时，先运行 `sync-index`，再继续流程。
+
+用户口令：
+- `查看进度`：运行 `progress`，只展示当前区块状态和缺口。
+- `只看缺口`：运行 `progress`，只展示非 `已确认` 或 crosscheck fail / needs_ai_review 项。
+
+## 8.2) 已确认产物变更协议
+
+修改任何已确认的 subprd 或其对应索引信息时：
+1. 运行 `set-status --block <N> --status 待确认`，同时回退功能列表和 mainprd。
+2. 修改目标文件。
+3. 重跑对应文件的 `structure`。
+4. 重跑受影响的 `crosscheck` 机械项。
+5. 重新请用户确认；确认后再 `set-status --block <N> --status 已确认`。
 
 ## 9) 禁止事项
 
