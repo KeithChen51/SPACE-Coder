@@ -3,9 +3,9 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/global-files-protocol.md
- * - skills/ai-project-manager/references/core/runtime.md
- * - skills/ai-project-manager/references/rules/devlog.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/runtime.md
+ * - skills/00-01-ai-project-manager/references/rules/devlog.md
  * Related tools:
  * - tools/validate-global-files.mjs
  */
@@ -19,11 +19,11 @@ import { validateGlobalFiles } from './validate-global-files.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const suiteRoot = path.resolve(__dirname, '..');
-const dailyTemplatePath = path.join(suiteRoot, 'skills', 'project-devlog', 'assets', 'daily.md');
+const dailyTemplatePath = path.join(suiteRoot, 'skills', '00-02-project-devlog', 'assets', 'daily.md');
 const ruleCandidatesTemplatePath = path.join(
     suiteRoot,
     'skills',
-    'ai-project-manager',
+    '00-01-ai-project-manager',
     'assets',
     'devlog',
     'rule-candidates-template.md'
@@ -274,7 +274,7 @@ function buildNewDailyLog({
         .replace('YYYY-MM-DD', isoDate)
         .replace('一句话描述今天主要做了什么', title)
         .replace('姓名（角色）', actorText)
-        .replace('skills/ai-project-manager/assets/global-files/execution-plan.md / 宿主项目计划文件', planPath)
+        .replace('skills/00-01-ai-project-manager/assets/global-files/execution-plan.md / 宿主项目计划文件', planPath)
         .replace('| 1 | 描述 | Phase/PR/BUG 编号 | ✅/⏳/❌ |', `| 1 | ${title} | ${stage || '本轮推进'} | ✅ |`)
         .replace('（可选，一句话概括今天最重要的决策或产出）', conclusion || result)
         .replace('### 任务 1：标题', `### 任务 1：${title}`)

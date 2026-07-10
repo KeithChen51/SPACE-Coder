@@ -10,7 +10,7 @@ import { routeCheck } from '../tools/route-check.mjs';
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
-const PRD_CHECK = path.join(SUITE_ROOT, 'skills', 'prd-writer', 'scripts', 'prd-check.mjs');
+const PRD_CHECK = path.join(SUITE_ROOT, 'skills', '04-03-prd-writer', 'scripts', 'prd-check.mjs');
 
 function makeTempDir(prefix) {
     return fs.mkdtempSync(path.join(os.tmpdir(), prefix));

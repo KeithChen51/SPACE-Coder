@@ -14,7 +14,7 @@ if command -v node >/dev/null 2>&1; then
 fi
 
 # Fallback: if node is unavailable, inject the raw skill body directly.
-ai_pm_content=$(cat "${PLUGIN_ROOT}/skills/ai-project-manager/SKILL.md" 2>&1 || echo "Error reading ai-project-manager skill")
+ai_pm_content=$(cat "${PLUGIN_ROOT}/skills/00-01-ai-project-manager/SKILL.md" 2>&1 || echo "Error reading ai-project-manager skill")
 
 escape_for_json() {
     local s="$1"

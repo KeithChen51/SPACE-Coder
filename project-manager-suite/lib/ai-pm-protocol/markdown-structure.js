@@ -1,7 +1,7 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/runtime.md
+ * - skills/00-01-ai-project-manager/references/core/runtime.md
  * Consumed by:
  * - tools/route-check.mjs
  */

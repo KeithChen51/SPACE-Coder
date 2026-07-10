@@ -3,8 +3,8 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/runtime.md
- * - skills/ai-project-manager/references/core/routing.md
+ * - skills/00-01-ai-project-manager/references/core/runtime.md
+ * - skills/00-01-ai-project-manager/references/core/routing.md
  * Structured config:
  * - lib/ai-pm-protocol/stages.js
  * - lib/ai-pm-protocol/routing.js
@@ -12,9 +12,9 @@
  *
  * Change impact:
  * - If stage judgment, S2 gating, or startup/page field packages change, also check:
- *   - skills/ai-project-manager/references/core/runtime.md
- *   - skills/ai-project-manager/references/core/routing.md
- *   - skills/ai-project-manager/assets/global-files/project-profile.md
+ *   - skills/00-01-ai-project-manager/references/core/runtime.md
+ *   - skills/00-01-ai-project-manager/references/core/routing.md
+ *   - skills/00-01-ai-project-manager/assets/global-files/project-profile.md
  */
 import fs from 'fs';
 import path from 'path';
@@ -31,8 +31,8 @@ import {
     validationPolicy
 } from '../lib/ai-pm-protocol/index.js';
 import { validateGlobalFiles } from './validate-global-files.mjs';
-import { validatePlan } from '../skills/delivery-planner/scripts/validate-plan-structure.mjs';
-import { checkPlanConsistency } from '../skills/delivery-planner/scripts/check-plan-consistency.mjs';
+import { validatePlan } from '../skills/05-01-delivery-planner/scripts/validate-plan-structure.mjs';
+import { checkPlanConsistency } from '../skills/05-01-delivery-planner/scripts/check-plan-consistency.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 

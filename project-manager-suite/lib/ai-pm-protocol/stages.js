@@ -1,8 +1,8 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/runtime.md
- * - skills/ai-project-manager/references/core/routing.md
+ * - skills/00-01-ai-project-manager/references/core/runtime.md
+ * - skills/00-01-ai-project-manager/references/core/routing.md
  * Consumed by:
  * - tools/route-check.mjs
  */
@@ -107,7 +107,7 @@ const globalCompanionAbilities = [
     },
     {
         skill: 'project-link-indexer',
-        // 触发词与 skills/project-link-indexer/scripts/run-project-link-indexer.mjs 的 --trigger 合法取值一致：
+        // 触发词与 skills/00-03-project-link-indexer/scripts/run-project-link-indexer.mjs 的 --trigger 合法取值一致：
         // 前两个为刷新类（会写 docs/index/*），后三个为诊断类（只检查不写文件）。
         triggers: [
             'artifact_files_added_or_split',

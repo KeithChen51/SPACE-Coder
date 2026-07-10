@@ -1,7 +1,7 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/SKILL.md
+ * - skills/00-01-ai-project-manager/SKILL.md
  * Consumed by:
  * - lib/bootstrap/index.js
  * - hooks/session-start
@@ -9,7 +9,7 @@
  */
 const bootstrapPolicy = {
     primarySkill: 'ai-project-manager',
-    primarySkillPath: 'skills/ai-project-manager/SKILL.md',
+    primarySkillPath: 'skills/00-01-ai-project-manager/SKILL.md',
     defaultEntryRole: 'project-domain-first-entry',
     sharedGenerationGoal: 'hooks_and_plugins_share_same_core_bootstrap_content',
     channels: {

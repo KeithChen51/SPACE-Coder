@@ -1,14 +1,14 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/routing.md
- * - skills/ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/routing.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
  * Consumed by:
  * - tools/generate-host-rules.mjs
  * - tools/bootstrap-host.mjs
  */
 const rulesSyncPolicy = {
-    sourceDir: 'skills/ai-project-manager/references/rules',
+    sourceDir: 'skills/00-01-ai-project-manager/references/rules',
     targetDir: 'docs/rules',
     strategy: 'create_missing_only',
     allowForceOverwrite: true,

@@ -3,10 +3,10 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/SKILL.md
- * - skills/ai-project-manager/references/core/runtime.md
- * - skills/ai-project-manager/references/core/global-files-protocol.md
- * - skills/ai-project-manager/references/core/routing.md
+ * - skills/00-01-ai-project-manager/SKILL.md
+ * - skills/00-01-ai-project-manager/references/core/runtime.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/routing.md
  * Structured config:
  * - lib/ai-pm-protocol/*.js
  * - lib/bootstrap/index.js
@@ -23,10 +23,10 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_SUITE_ROOT = path.resolve(__dirname, '..');
 
 const PROTOCOL_DOCS = [
-    'skills/ai-project-manager/SKILL.md',
-    'skills/ai-project-manager/references/core/runtime.md',
-    'skills/ai-project-manager/references/core/global-files-protocol.md',
-    'skills/ai-project-manager/references/core/routing.md'
+    'skills/00-01-ai-project-manager/SKILL.md',
+    'skills/00-01-ai-project-manager/references/core/runtime.md',
+    'skills/00-01-ai-project-manager/references/core/global-files-protocol.md',
+    'skills/00-01-ai-project-manager/references/core/routing.md'
 ];
 
 const STRUCTURED_ROOTS = ['lib/ai-pm-protocol', 'lib/bootstrap'];

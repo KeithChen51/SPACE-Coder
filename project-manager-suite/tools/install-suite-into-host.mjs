@@ -99,7 +99,7 @@ function detectTargetState(targetRoot) {
 
     const manifestPath = path.join(targetRoot, manifestFileName);
     const bootstrapPath = path.join(targetRoot, 'tools', 'bootstrap-host.mjs');
-    const aiPmSkillPath = path.join(targetRoot, 'skills', 'ai-project-manager', 'SKILL.md');
+    const aiPmSkillPath = path.join(targetRoot, 'skills', '00-01-ai-project-manager', 'SKILL.md');
 
     if (safeExists(manifestPath) || (safeExists(bootstrapPath) && safeExists(aiPmSkillPath))) {
         return 'installed_suite';

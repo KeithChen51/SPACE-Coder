@@ -1,8 +1,8 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/global-files-protocol.md
- * - skills/ai-project-manager/assets/global-files/*.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/assets/global-files/*.md
  * Consumed by:
  * - tools/validate-global-files.mjs
  */

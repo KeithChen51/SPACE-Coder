@@ -1,14 +1,14 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
  * Consumed by:
  * - tools/validate-global-files.mjs
  * - tools/route-check.mjs
  *
  * Change impact:
  * - If startupMinimum or pageTaskRequired changes, also check:
- *   - skills/ai-project-manager/assets/global-files/project-profile.md
+ *   - skills/00-01-ai-project-manager/assets/global-files/project-profile.md
  *   - tools/validate-global-files.mjs
  *   - tools/route-check.mjs
  *   - tools/bootstrap-host.mjs

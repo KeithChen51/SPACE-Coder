@@ -12,14 +12,14 @@ import { generateHostRules } from '../tools/generate-host-rules.mjs';
 import { bootstrapHost } from '../tools/bootstrap-host.mjs';
 import { installSuiteIntoHost } from '../tools/install-suite-into-host.mjs';
 import { devlogSync } from '../tools/devlog-sync.mjs';
-import { checkPlanConsistency } from '../skills/delivery-planner/scripts/check-plan-consistency.mjs';
-import { collectBaselineGaps } from '../skills/project-baseline-auditor/scripts/collect-baseline-gaps.mjs';
-import { collectProjectLinks } from '../skills/project-link-indexer/scripts/collect-project-links.mjs';
-import { runProjectLinkIndexer } from '../skills/project-link-indexer/scripts/run-project-link-indexer.mjs';
-import { validateProjectLinks } from '../skills/project-link-indexer/scripts/validate-project-links.mjs';
+import { checkPlanConsistency } from '../skills/05-01-delivery-planner/scripts/check-plan-consistency.mjs';
+import { collectBaselineGaps } from '../skills/01-01-project-baseline-auditor/scripts/collect-baseline-gaps.mjs';
+import { collectProjectLinks } from '../skills/00-03-project-link-indexer/scripts/collect-project-links.mjs';
+import { runProjectLinkIndexer } from '../skills/00-03-project-link-indexer/scripts/run-project-link-indexer.mjs';
+import { validateProjectLinks } from '../skills/00-03-project-link-indexer/scripts/validate-project-links.mjs';
 import { buildClaudeHookBootstrap, buildOpenCodeBootstrap } from '../lib/bootstrap/index.js';
-import { verifyTask } from '../skills/coding-standards/scripts/verify-task-context.mjs';
-import { createEmptyLedger, writeLedger } from '../skills/brd-writer/scripts/ledger-io.mjs';
+import { verifyTask } from '../skills/06-01-coding-standards/scripts/verify-task-context.mjs';
+import { createEmptyLedger, writeLedger } from '../skills/02-01-brd-writer/scripts/ledger-io.mjs';
 import { fileRoles, globalCompanionAbilities } from '../lib/ai-pm-protocol/index.js';
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
@@ -1634,7 +1634,7 @@ test('install-suite-into-host creates host .agent directory when it does not exi
     assert.equal(result.installMode, 'install');
     assert.ok(fs.existsSync(path.join(hostRoot, '.agent')));
     assert.ok(fs.existsSync(path.join(targetSuiteRoot, 'tools', 'bootstrap-host.mjs')));
-    assert.ok(fs.existsSync(path.join(targetSuiteRoot, 'skills', 'ai-project-manager', 'SKILL.md')));
+    assert.ok(fs.existsSync(path.join(targetSuiteRoot, 'skills', '00-01-ai-project-manager', 'SKILL.md')));
     assert.ok(fs.existsSync(manifestPath));
     assert.equal(JSON.parse(readFile(manifestPath)).install_mode, 'install');
 });
@@ -2005,7 +2005,7 @@ test('collect-upstream-context includes page-preview explainer outputs in slim f
     const collectPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
-        'delivery-planner',
+        '05-01-delivery-planner',
         'scripts',
         'collect-upstream-context.mjs'
     );
@@ -2039,7 +2039,7 @@ test('collect-upstream-context reads foundation artifacts from docs/prd/foundati
     const collectPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
-        'delivery-planner',
+        '05-01-delivery-planner',
         'scripts',
         'collect-upstream-context.mjs'
     );
@@ -2067,7 +2067,7 @@ test('collect-upstream-context recognizes numbered subprd files', () => {
     const collectPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
-        'delivery-planner',
+        '05-01-delivery-planner',
         'scripts',
         'collect-upstream-context.mjs'
     );
@@ -2093,7 +2093,7 @@ test('validate-plan-structure accepts the multi-file delivery plan structure', (
     const validatorPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
-        'delivery-planner',
+        '05-01-delivery-planner',
         'scripts',
         'validate-plan-structure.mjs'
     );
@@ -2205,7 +2205,7 @@ test('validate-plan-structure rejects kanban tasks that do not have matching sub
     const validatorPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
-        'delivery-planner',
+        '05-01-delivery-planner',
         'scripts',
         'validate-plan-structure.mjs'
     );
@@ -2219,7 +2219,7 @@ test('validate-plan-structure rejects kanban tasks that do not have matching sub
 });
 
 test('delivery plan templates satisfy the multi-file structure validator', () => {
-    const templateDir = path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'templates');
+    const templateDir = path.join(CURRENT_SUITE_ROOT, 'skills', '05-01-delivery-planner', 'templates');
     const hostRoot = makeTempDir('pm-suite-delivery-template-');
     const planDir = path.join(hostRoot, 'docs', 'plans', 'delivery-plans');
     const mainPath = path.join(planDir, 'main-delivery-plan-demo.md');
@@ -2233,7 +2233,7 @@ test('delivery plan templates satisfy the multi-file structure validator', () =>
     const validatorPath = path.join(
         CURRENT_SUITE_ROOT,
         'skills',
-        'delivery-planner',
+        '05-01-delivery-planner',
         'scripts',
         'validate-plan-structure.mjs'
     );
@@ -2247,9 +2247,9 @@ test('delivery plan templates satisfy the multi-file structure validator', () =>
 
 test('delivery-planner sub plan template includes status-sync closure as task completion work', () => {
     const template = readFile(
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'templates', 'sub-delivery-plan-template.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '05-01-delivery-planner', 'templates', 'sub-delivery-plan-template.md')
     );
-    const skill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'SKILL.md'));
+    const skill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '05-01-delivery-planner', 'SKILL.md'));
 
     assert.ok(template.includes('完成收尾：状态同步'));
     assert.ok(template.includes('route-check.mjs <host> --target-stage S4 --json'));
@@ -2298,7 +2298,7 @@ test('verify-task-context resolves a task from main delivery plan through kanban
 test('BRD D.5 is retriggered when locked fields change after a previous pass', () => {
     const hostRoot = makeTempDir('pm-suite-brd-d5-');
     const ledgerPath = path.join(hostRoot, 'ledger-state-demo.json');
-    const queryPath = path.join(CURRENT_SUITE_ROOT, 'skills', 'brd-writer', 'scripts', 'ledger-query.mjs');
+    const queryPath = path.join(CURRENT_SUITE_ROOT, 'skills', '02-01-brd-writer', 'scripts', 'ledger-query.mjs');
     const ledger = createEmptyLedger('演示项目', 'demo', 'operational');
 
     ledger.header.current_phase = 'C';
@@ -2324,10 +2324,10 @@ test('BRD D.5 is retriggered when locked fields change after a previous pass', (
 });
 
 test('skill docs avoid stale lifecycle filenames and unreachable stage names', () => {
-    const runnerSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'test-case-runner', 'SKILL.md'));
-    const acceptanceSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'test-and-acceptance', 'SKILL.md'));
-    const devlogSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'project-devlog', 'SKILL.md'));
-    const pageDesignerSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'page-designer', 'SKILL.md'));
+    const runnerSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '08-01-test-case-runner', 'SKILL.md'));
+    const acceptanceSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '08-02-test-and-acceptance', 'SKILL.md'));
+    const devlogSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '00-02-project-devlog', 'SKILL.md'));
+    const pageDesignerSkill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '03-02-page-designer', 'SKILL.md'));
 
     assert.ok(runnerSkill.includes('docs/test-case/tc-main-<slug>.md'));
     assert.ok(!runnerSkill.includes('tc-主文档.md'));
@@ -2339,10 +2339,10 @@ test('skill docs avoid stale lifecycle filenames and unreachable stage names', (
 
 test('ai-project-manager protocol points to multi-file delivery plans', () => {
     const files = [
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'assets', 'global-files', 'execution-plan.md'),
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'global-files-protocol.md'),
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md'),
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'assets', 'global-files', 'execution-plan.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'global-files-protocol.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'routing.md')
     ];
     const combined = files.map((file) => readFile(file)).join('\n');
 
@@ -2363,8 +2363,8 @@ test('ai-project-manager protocol points to multi-file delivery plans', () => {
 
 test('implementation and test chiefs point to multi-file delivery plans', () => {
     const files = [
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'coding-standards', 'SKILL.md'),
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'test-case-chief', 'SKILL.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '06-01-coding-standards', 'SKILL.md'),
+        path.join(CURRENT_SUITE_ROOT, 'skills', '07-01-test-case-chief', 'SKILL.md')
     ];
     const combined = files.map((file) => readFile(file)).join('\n');
 
@@ -2405,13 +2405,13 @@ test('pipeline places foundation-builder outputs under docs/prd/foundation', () 
 
 test('ai-project-manager protocol defines project-link-indexer companion dispatch', () => {
     const runtime = readFile(
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md')
     );
     const routing = readFile(
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'routing.md')
     );
     const pipeline = readFile(path.join(CURRENT_SUITE_ROOT, 'PIPELINE.md'));
-    const skill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'project-link-indexer', 'SKILL.md'));
+    const skill = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '00-03-project-link-indexer', 'SKILL.md'));
 
     assert.ok(runtime.includes('companionActions'));
     assert.ok(runtime.includes('主入口只判断调起场景'));
@@ -2423,10 +2423,10 @@ test('ai-project-manager protocol defines project-link-indexer companion dispatc
 
 test('ai-project-manager protocol owns baseline refresh orchestration', () => {
     const runtime = readFile(
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md')
     );
     const routing = readFile(
-        path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md')
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'routing.md')
     );
     const pipeline = readFile(path.join(CURRENT_SUITE_ROOT, 'PIPELINE.md'));
 
@@ -2438,10 +2438,10 @@ test('ai-project-manager protocol owns baseline refresh orchestration', () => {
 });
 
 test('ai-project-manager protocol requires delivery-planner consistency gate before S4 coding', () => {
-    const runtime = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'runtime.md'));
-    const routing = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'ai-project-manager', 'references', 'core', 'routing.md'));
-    const deliveryPlanner = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'delivery-planner', 'SKILL.md'));
-    const codingStandards = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', 'coding-standards', 'SKILL.md'));
+    const runtime = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md'));
+    const routing = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'routing.md'));
+    const deliveryPlanner = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '05-01-delivery-planner', 'SKILL.md'));
+    const codingStandards = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '06-01-coding-standards', 'SKILL.md'));
 
     assert.ok(runtime.includes('s4_pre_coding_plan_consistency_check'));
     assert.ok(runtime.includes('delivery-planner/scripts/check-plan-consistency.mjs'));

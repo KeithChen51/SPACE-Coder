@@ -3,7 +3,7 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
  * Structured config:
  * - lib/ai-pm-protocol/field-contracts.js
  * - lib/ai-pm-protocol/validation.js

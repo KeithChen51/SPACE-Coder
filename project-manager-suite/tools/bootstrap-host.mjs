@@ -3,8 +3,8 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/routing.md
- * - skills/ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/routing.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
  * Structured config:
  * - lib/ai-pm-protocol/routing.js
  * - lib/ai-pm-protocol/rules-sync.js
@@ -15,9 +15,9 @@
  * Change impact:
  * - If startup interview requirements, profile template fields, or scaffold rules change, also check:
  *   - lib/ai-pm-protocol/field-contracts.js
- *   - skills/ai-project-manager/assets/global-files/project-profile.md
- *   - skills/ai-project-manager/references/core/runtime.md
- *   - skills/ai-project-manager/references/core/routing.md
+ *   - skills/00-01-ai-project-manager/assets/global-files/project-profile.md
+ *   - skills/00-01-ai-project-manager/references/core/runtime.md
+ *   - skills/00-01-ai-project-manager/references/core/routing.md
  */
 import fs from 'fs';
 import path from 'path';
@@ -30,7 +30,7 @@ import { validateGlobalFiles } from './validate-global-files.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const suiteRoot = path.resolve(__dirname, '..');
-const templatesDir = path.join(suiteRoot, 'skills', 'ai-project-manager', 'assets', 'global-files');
+const templatesDir = path.join(suiteRoot, 'skills', '00-01-ai-project-manager', 'assets', 'global-files');
 
 function printUsage() {
     console.log(

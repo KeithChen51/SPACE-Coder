@@ -118,7 +118,7 @@ node project-manager-suite/tools/install-suite-into-host.mjs <host-project-root>
 
 `ai-project-manager` 的专项规则默认源位于：
 
-- `skills/ai-project-manager/references/rules/*.md`
+- `skills/00-01-ai-project-manager/references/rules/*.md`
 
 宿主项目中的专项规则权威目录位于：
 
@@ -210,11 +210,11 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 - **阶段交付型**：`project-baseline-auditor`、`brd-writer`、`page-designer`、`page-explainer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-acceptance-reviewer`、`test-case-writer`、`test-case-reviewer`、`test-case-runner`、`security-scan`，负责承接某一阶段或接入旁路的正式交付物
 - **专项执行型**：`coding-standards`、`project-devlog`、`project-link-indexer`、`doc-governance`、`test-and-acceptance`，负责研发执行规范、状态回写、文件级索引等专项工作，不承担主流程调度
 
-为了让人一眼看懂调用顺序，下表给每个 skill 编了一个「系列-序号」阅读编号：
+为了让人一眼看懂调用顺序，每个 skill 目录名带一个「系列-序号」编号前缀（如 `skills/04-03-prd-writer/`），文件管理器和 IDE 里按目录名排序即是调用顺序：
 
 - 主编号代表调用阶段顺序：`00` 为全局型（总入口与全阶段伴随能力，不属于单一阶段），`01`～`09` 按流水线从接入到安全扫描依次推进
 - 同一系列的 skill 共享主编号，副编号表示系列内的先后（如 PRD 系列：`04-01` prd-chief 调度 → `04-02` foundation-builder 打地基 → `04-03` prd-writer 写 PRD）
-- **编号只是 README 里的阅读辅助**：目录名和 skill 名都不带编号，AI 按协议自行判断调用先后，与编号无关
+- **编号是给人看的阅读辅助**：skill 的调用名（SKILL.md frontmatter 的 `name:`，如 `prd-writer`）不带编号，AI 按协议自行判断调用先后，与编号无关；文档中提到 skill 时也用不带编号的调用名
 
 | 编号 | 能力 | 主要职责 | 默认介入阶段 |
 |------|------|----------|--------------|
@@ -253,34 +253,34 @@ project-manager-suite/
 ├── lib/                           # 协议结构化实现与 bootstrap 组装层
 │   ├── ai-pm-protocol/            # 字段、阶段、路由、规则同步等协议层结构化配置
 │   └── bootstrap/                 # 平台注入与 bootstrap 组装逻辑
-├── skills/                        # 实际运行时的能力目录（[编号] 为调用顺序阅读辅助，见"能力分工"；目录名不含编号，磁盘上按字母序排列）
-│   ├── ai-project-manager/        # [00-01][核心] 唯一总入口
-│   │   ├── SKILL.md               # 入口指令
+├── skills/                            # 实际运行时的能力目录（目录名带 NN-NN 调用顺序前缀，按名排序即调用顺序；skill 调用名不含前缀）
+│   ├── 00-01-ai-project-manager/      # [核心] 唯一总入口
+│   │   ├── SKILL.md                   # 入口指令
 │   │   ├── references/
-│   │   │   ├── core/              # 运行协议、全局文件协议、路由与骨架规则
-│   │   │   ├── rules/             # 前端/后端/数据库/调试等专项规则
-│   │   │   └── defaults/          # 默认技术栈与其他默认参数
-│   │   └── assets/global-files/   # 全局文件默认骨架（画像、计划等）
-│   ├── project-devlog/            # [00-02] 日志与状态回写（全阶段伴随）
-│   ├── project-link-indexer/      # [00-03] 文件级引用索引与 LLM wiki 导航（全阶段伴随）
-│   ├── doc-governance/            # [00-04] 文档治理 advisory（按需）
-│   ├── project-baseline-auditor/  # [01-01] 既有项目画像与关键文件缺口诊断（S0.5）
-│   ├── brd-writer/                # [02-01] 业务需求文档 / BRD 收敛（S1）
-│   ├── page-chief/                # [03-01] S2 页面环节调度
-│   ├── page-designer/             # [03-02] 页面设计（内置设计知识库 + BM25 搜索）
-│   ├── page-explainer/            # [03-03] 页面交互语义与 gap 收口
-│   ├── prd-chief/                 # [04-01] S2 PRD 环节调度
-│   ├── foundation-builder/        # [04-02] 术语表 / Schema / API 技术地基设计
-│   ├── prd-writer/                # [04-03] 基于页面与 foundation 的 PRD 反推
-│   ├── delivery-planner/          # [05-01] 任务拆解与交付规划（S3）
-│   ├── coding-standards/          # [06-01] 编码规范与研发执行（S4）
-│   ├── test-case-chief/           # [07-01] S5 验收 + 测试用例环节调度
-│   ├── prd-acceptance-reviewer/   # [07-02] 验收文档拉齐
-│   ├── test-case-writer/          # [07-03] 测试用例编写
-│   ├── test-case-reviewer/        # [07-04] 测试用例核查
-│   ├── test-case-runner/          # [08-01] 测试用例执行（S6）
-│   ├── test-and-acceptance/       # [08-02] 验收收口（S6 后人工，显式调用）
-│   └── security-scan/             # [09-01] 完工前固定安全闸门扫描（S7）
+│   │   │   ├── core/                  # 运行协议、全局文件协议、路由与骨架规则
+│   │   │   ├── rules/                 # 前端/后端/数据库/调试等专项规则
+│   │   │   └── defaults/              # 默认技术栈与其他默认参数
+│   │   └── assets/global-files/       # 全局文件默认骨架（画像、计划等）
+│   ├── 00-02-project-devlog/          # 日志与状态回写（全阶段伴随）
+│   ├── 00-03-project-link-indexer/    # 文件级引用索引与 LLM wiki 导航（全阶段伴随）
+│   ├── 00-04-doc-governance/          # 文档治理 advisory（按需）
+│   ├── 01-01-project-baseline-auditor/ # 既有项目画像与关键文件缺口诊断（S0.5）
+│   ├── 02-01-brd-writer/              # 业务需求文档 / BRD 收敛（S1）
+│   ├── 03-01-page-chief/              # S2 页面环节调度
+│   ├── 03-02-page-designer/           # 页面设计（内置设计知识库 + BM25 搜索）
+│   ├── 03-03-page-explainer/          # 页面交互语义与 gap 收口
+│   ├── 04-01-prd-chief/               # S2 PRD 环节调度
+│   ├── 04-02-foundation-builder/      # 术语表 / Schema / API 技术地基设计
+│   ├── 04-03-prd-writer/              # 基于页面与 foundation 的 PRD 反推
+│   ├── 05-01-delivery-planner/        # 任务拆解与交付规划（S3）
+│   ├── 06-01-coding-standards/        # 编码规范与研发执行（S4）
+│   ├── 07-01-test-case-chief/         # S5 验收 + 测试用例环节调度
+│   ├── 07-02-prd-acceptance-reviewer/ # 验收文档拉齐
+│   ├── 07-03-test-case-writer/        # 测试用例编写
+│   ├── 07-04-test-case-reviewer/      # 测试用例核查
+│   ├── 08-01-test-case-runner/        # 测试用例执行（S6）
+│   ├── 08-02-test-and-acceptance/     # 验收收口（S6 后人工，显式调用）
+│   └── 09-01-security-scan/           # 完工前固定安全闸门扫描（S7）
 ├── tests/                         # 工具链与协议对齐测试
 └── tools/                         # 宿主初始化、校验、规则同步、日志回写、安装套件等脚本
 ```
@@ -312,7 +312,7 @@ project-manager-suite/
 - `skills/`
   - 作用：存放实际面向项目推进的能力单元，是套件的主体能力层
   - 什么时候看：要新增或修改某个 skill、调整能力边界、扩展某阶段交付流程时
-- `skills/ai-project-manager/`
+- `skills/00-01-ai-project-manager/`
   - 作用：唯一总入口，负责识别全局文件、最小访谈、阶段判断、路由和回写
   - 什么时候看：任何“项目启动 / 继续推进 / 下一步做什么 / 当前处于哪个阶段”的问题都应先看这里
 - `skills/*/references/`
@@ -331,7 +331,7 @@ project-manager-suite/
   - 作用：存放不同运行平台的安装说明或插件接入文件
   - 什么时候看：你要把套件接进对应平台，或排查平台侧为什么没有正确识别套件时
 
-其中 `skills/ai-project-manager/references/` 建议按以下三层组织：
+其中 `skills/00-01-ai-project-manager/references/` 建议按以下三层组织：
 
 - `core/`：主入口运行所依赖的核心协议层，存放运行流程、全局文件协议、路由与骨架规则等上位约束
 - `rules/`：面向具体任务类型的专项执行规则，存放前端、后端、数据库、文档、调试、日志等下位规则包
@@ -350,8 +350,8 @@ project-manager-suite/
 ## 使用提醒
 
 - `project-manager-suite` 应作为完整目录整体复制使用，不建议拆散单个 skill
-- 主入口行为以 `skills/ai-project-manager/references/core/runtime.md` 为准
-- 路由映射和骨架补齐规则以 `skills/ai-project-manager/references/core/routing.md` 为准
+- 主入口行为以 `skills/00-01-ai-project-manager/references/core/runtime.md` 为准
+- 路由映射和骨架补齐规则以 `skills/00-01-ai-project-manager/references/core/routing.md` 为准
 - 若修改了阶段流转、技能职责或默认交付链路，应该同步更新本 README，避免使用者读到过期说明
 - 本套件默认**单项目宿主**假设：一个宿主项目只维护一套 slug 文件族（一份 BRD、一套页面台账、一套 PRD 等，slug 由 brd-writer 在 Phase A 固化）。若同一目录下出现多套 slug 产物，各 skill 的"按文件名找上游"逻辑会产生歧义；要并行推进多个项目，请为每个项目单独建目录、各自挂载套件走完整流水线
 - 版本控制建议（宿主项目侧）：

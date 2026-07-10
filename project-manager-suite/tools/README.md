@@ -46,7 +46,7 @@
 
 作用：
 
-- 将套件默认规则源 `skills/ai-project-manager/references/rules/*.md` 同步到宿主 `docs/rules/`
+- 将套件默认规则源 `skills/00-01-ai-project-manager/references/rules/*.md` 同步到宿主 `docs/rules/`
 
 特点：
 

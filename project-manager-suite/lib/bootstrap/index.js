@@ -1,7 +1,7 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/SKILL.md
+ * - skills/00-01-ai-project-manager/SKILL.md
  * - lib/ai-pm-protocol/bootstrap.js
  * Platform adapters:
  * - hooks/session-start
@@ -12,7 +12,7 @@ import path from 'path';
 import { extractAndStripFrontmatter } from '../skills-core.js';
 
 function getAiProjectManagerSkillPath(suiteRoot) {
-    return path.join(suiteRoot, 'skills', 'ai-project-manager', 'SKILL.md');
+    return path.join(suiteRoot, 'skills', '00-01-ai-project-manager', 'SKILL.md');
 }
 
 function readAiProjectManagerSkillBody(suiteRoot) {

@@ -98,32 +98,60 @@ function findSkillsInDir(dir, sourceType, maxDepth = 3) {
  * @param {string} projectSkillsDir - Path to project-level skills directory (optional)
  * @returns {{skillFile: string, sourceType: string, skillPath: string} | null}
  */
+/**
+ * Locate a skill directory inside `dir` by name.
+ * Suite skill directories carry a `NN-NN-` reading-order prefix (e.g.
+ * `04-03-prd-writer`), while callers keep using the bare skill name
+ * (`prd-writer`), so an exact match is tried first and the prefixed
+ * form second.
+ *
+ * @param {string} dir - Directory containing skill folders
+ * @param {string} skillName - Bare skill name without number prefix
+ * @returns {string | null} Matching folder name, or null
+ */
+function findSkillDirName(dir, skillName) {
+    if (fs.existsSync(path.join(dir, skillName, 'SKILL.md'))) {
+        return skillName;
+    }
+    try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            if (entry.name.replace(/^\d{2}-\d{2}-/, '') !== skillName) continue;
+            if (fs.existsSync(path.join(dir, entry.name, 'SKILL.md'))) {
+                return entry.name;
+            }
+        }
+    } catch (error) {
+        return null;
+    }
+    return null;
+}
+
 function resolveSkillPath(skillName, suiteSkillsDir, projectSkillsDir) {
     const forceSuite = skillName.startsWith('project-manager-suite:');
     const actualSkillName = forceSuite ? skillName.replace(/^project-manager-suite:/, '') : skillName;
 
     // Try project-level skills first (unless explicitly prefixed)
     if (!forceSuite && projectSkillsDir) {
-        const projectPath = path.join(projectSkillsDir, actualSkillName);
-        const projectSkillFile = path.join(projectPath, 'SKILL.md');
-        if (fs.existsSync(projectSkillFile)) {
+        const projectDirName = findSkillDirName(projectSkillsDir, actualSkillName);
+        if (projectDirName) {
             return {
-                skillFile: projectSkillFile,
+                skillFile: path.join(projectSkillsDir, projectDirName, 'SKILL.md'),
                 sourceType: 'project',
-                skillPath: actualSkillName
+                skillPath: projectDirName
             };
         }
     }
 
     // Try suite skills
     if (suiteSkillsDir) {
-        const suitePath = path.join(suiteSkillsDir, actualSkillName);
-        const suiteSkillFile = path.join(suitePath, 'SKILL.md');
-        if (fs.existsSync(suiteSkillFile)) {
+        const suiteDirName = findSkillDirName(suiteSkillsDir, actualSkillName);
+        if (suiteDirName) {
             return {
-                skillFile: suiteSkillFile,
+                skillFile: path.join(suiteSkillsDir, suiteDirName, 'SKILL.md'),
                 sourceType: 'project-manager-suite',
-                skillPath: actualSkillName
+                skillPath: suiteDirName
             };
         }
     }

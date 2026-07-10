@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
-const PAGE_DESIGNER_SCRIPTS_DIR = path.join(SUITE_ROOT, 'skills', 'page-designer', 'scripts');
+const PAGE_DESIGNER_SCRIPTS_DIR = path.join(SUITE_ROOT, 'skills', '03-02-page-designer', 'scripts');
 
 function makeTempDir(prefix) {
     return fs.mkdtempSync(path.join(os.tmpdir(), prefix));

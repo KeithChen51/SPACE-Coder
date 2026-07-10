@@ -17,7 +17,7 @@
 ## 开场第一步（每次对话）
 
 1. **先查 skill**：扫当前 skill 列表，有匹配就 `Skill` 载入（详见首要要求 1）。
-2. **推进 / 实装业务项目时，从套件总入口 `ai-project-manager` 进**：按它的阶段判断与路由推进（已装套件场景由 hook 自动注入；否则先 `Read` [`skills/ai-project-manager/SKILL.md`](project-manager-suite/skills/ai-project-manager/SKILL.md)，按其协议走，必要时再读 `references/core/runtime.md`、`routing.md`）。
+2. **推进 / 实装业务项目时，从套件总入口 `ai-project-manager` 进**：按它的阶段判断与路由推进（已装套件场景由 hook 自动注入；否则先 `Read` [`skills/00-01-ai-project-manager/SKILL.md`](project-manager-suite/skills/00-01-ai-project-manager/SKILL.md)，按其协议走，必要时再读 `references/core/runtime.md`、`routing.md`）。
 
 ## 首要要求（每次对话强制）
 

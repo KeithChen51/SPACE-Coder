@@ -3,8 +3,8 @@
 本文件描述从项目画像到 PRD、开发执行计划、代码实装、测试用例与测试执行、直到完工前安全扫描（S0 → S7）的完整流水线，同时包含既有代码接入时的基线诊断旁路。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
 
 相关协议：
-- 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/ai-project-manager/references/core/routing.md`](skills/ai-project-manager/references/core/routing.md)
-- 主入口执行顺序与阶段判断：[`skills/ai-project-manager/references/core/runtime.md`](skills/ai-project-manager/references/core/runtime.md)
+- 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/00-01-ai-project-manager/references/core/routing.md`](skills/00-01-ai-project-manager/references/core/routing.md)
+- 主入口执行顺序与阶段判断：[`skills/00-01-ai-project-manager/references/core/runtime.md`](skills/00-01-ai-project-manager/references/core/runtime.md)
 
 ## 流水线总览
 
@@ -449,7 +449,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 **职责**：基于上游 PRD 规格和技术地基产物，产出面向 AI 执行、人类 review 的开发计划文档（Phase/Task 拆解、完成标准、完成判定）。不直接执行代码开发。前置运行 `collect-upstream-context.mjs` 脚本程序化发现上游产物，产出后运行 `validate-plan-structure.mjs` 脚本做结构化校验。
 
-计划形成后，本 skill 还承担计划文件组的状态回写与修复：Task 状态每次翻转（`待开发` → `进行中` → `已完成(YYYY-MM-DD)`）都由 `ai-project-manager` 调度本 skill 在任务看板、主计划执行阶段表、当前子开发计划**三处同步**执行（同一时刻有且仅有一个 Task「进行中」）；S4 开工前由本 skill 的 `check-plan-consistency.mjs` 脚本校验这三处状态一致，未通过不得进入 S4 写代码（详见 `skills/delivery-planner/SKILL.md` 的「S4 开工前一致性校验」）。
+计划形成后，本 skill 还承担计划文件组的状态回写与修复：Task 状态每次翻转（`待开发` → `进行中` → `已完成(YYYY-MM-DD)`）都由 `ai-project-manager` 调度本 skill 在任务看板、主计划执行阶段表、当前子开发计划**三处同步**执行（同一时刻有且仅有一个 Task「进行中」）；S4 开工前由本 skill 的 `check-plan-consistency.mjs` 脚本校验这三处状态一致，未通过不得进入 S4 写代码（详见 `skills/05-01-delivery-planner/SKILL.md` 的「S4 开工前一致性校验」）。
 
 **依赖文件**：
 
@@ -477,7 +477,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 ## 7. coding-standards — S4 代码实装
 
-**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件。开工的 Task 状态置「进行中」和完成后的状态回写都不由本 skill 直接改计划文件：开工前由 `ai-project-manager` 调度 delivery-planner 置「进行中」；Task 完成标准全部核查通过后，本 skill 向 `ai-project-manager` 提交完成事实（完成日期、验证证据），三处计划文件的状态回写由 `ai-project-manager` 调度 delivery-planner 执行。S4 收尾时必须检查是否存在需要回改 foundation 的漂移；有则追加 `foundation-change-requests-<slug>.md`，无则在开发日志记录无漂移。不负责需求澄清、方案设计、测试执行、foundation 直接修订或发布决策。
+**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/06-01-coding-standards/references/` 中匹配的编码规范，产出真实代码文件。开工的 Task 状态置「进行中」和完成后的状态回写都不由本 skill 直接改计划文件：开工前由 `ai-project-manager` 调度 delivery-planner 置「进行中」；Task 完成标准全部核查通过后，本 skill 向 `ai-project-manager` 提交完成事实（完成日期、验证证据），三处计划文件的状态回写由 `ai-project-manager` 调度 delivery-planner 执行。S4 收尾时必须检查是否存在需要回改 foundation 的漂移；有则追加 `foundation-change-requests-<slug>.md`，无则在开发日志记录无漂移。不负责需求澄清、方案设计、测试执行、foundation 直接修订或发布决策。
 
 **依赖文件**：
 
@@ -487,7 +487,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 | `task-kanban-<slug>.md` | delivery-planner | `<host>/docs/plans/delivery-plans/` |
 | `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` | delivery-planner | `<host>/docs/plans/delivery-plans/` |
 | Task 内 `PRD双链·读` 指向的文件 | foundation-builder / prd-writer | `<host>/docs/prd/` |
-| `coding-standards/references/<规范>.md` | 本 skill | `skills/coding-standards/references/` |
+| `coding-standards/references/<规范>.md` | 本 skill | `skills/06-01-coding-standards/references/` |
 
 **产出文件**：
 
@@ -623,8 +623,8 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 安全扫描报告 | 固定结构报告（模板见 `skills/security-scan/references/report-template.md`） | `<host>/docs/security/` | 含扫描范围、输入证据、发现项、风险分级、阻断项和 `PASS / BLOCK / WAIVER` 结论；目录不存在则先创建 |
-| 豁免记录（如有） | 按 `skills/security-scan/references/waiver-template.md` | `<host>/docs/security/` | 记录责任人、理由、失效日期、临时缓解措施 |
+| 安全扫描报告 | 固定结构报告（模板见 `skills/09-01-security-scan/references/report-template.md`） | `<host>/docs/security/` | 含扫描范围、输入证据、发现项、风险分级、阻断项和 `PASS / BLOCK / WAIVER` 结论；目录不存在则先创建 |
+| 豁免记录（如有） | 按 `skills/09-01-security-scan/references/waiver-template.md` | `<host>/docs/security/` | 记录责任人、理由、失效日期、临时缓解措施 |
 
 ---
 

@@ -122,7 +122,7 @@ node tools/check-protocol-alignment.mjs
 
 ```bash
 cd project-manager-suite
-node tools/check-protocol-alignment.mjs --changed skills/ai-project-manager/references/core/runtime.md
+node tools/check-protocol-alignment.mjs --changed skills/00-01-ai-project-manager/references/core/runtime.md
 ```
 
 如果你不传 `--changed`，脚本会优先尝试从当前 git 工作区自动识别变更文件，并输出同样的关联检查建议。

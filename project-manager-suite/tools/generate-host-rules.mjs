@@ -3,9 +3,9 @@
 /**
  * Traceability:
  * Rule sources:
- * - skills/ai-project-manager/references/core/global-files-protocol.md
- * - skills/ai-project-manager/references/core/routing.md
- * - skills/ai-project-manager/references/rules/*.md
+ * - skills/00-01-ai-project-manager/references/core/global-files-protocol.md
+ * - skills/00-01-ai-project-manager/references/core/routing.md
+ * - skills/00-01-ai-project-manager/references/rules/*.md
  * Structured config:
  * - lib/ai-pm-protocol/rules-sync.js
  * Related tools:
@@ -22,7 +22,7 @@ const suiteRoot = path.resolve(__dirname, '..');
 const sourceDir = path.join(
     suiteRoot,
     'skills',
-    'ai-project-manager',
+    '00-01-ai-project-manager',
     'references',
     'rules'
 );
@@ -72,7 +72,7 @@ function buildGeneratedContent(sourceFileName, sourceContent) {
     const normalized = sourceContent.endsWith('\n') ? sourceContent : `${sourceContent}\n`;
     return [
         '<!-- generated-by: ai-project-manager -->',
-        `<!-- source: skills/ai-project-manager/references/rules/${sourceFileName} -->`,
+        `<!-- source: skills/00-01-ai-project-manager/references/rules/${sourceFileName} -->`,
         '',
         normalized
     ].join('\n');
