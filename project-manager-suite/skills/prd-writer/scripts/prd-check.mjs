@@ -17,11 +17,12 @@
  *   command to run after repair.
  *
  * Usage:
- *   node skills/prd-writer/scripts/prd-check.mjs structure --file <path> [--json]
- *   node skills/prd-writer/scripts/prd-check.mjs crosscheck --host-dir <path> --slug <slug> [--json]
- *   node skills/prd-writer/scripts/prd-check.mjs progress --host-dir <path> --slug <slug> [--json]
- *   node skills/prd-writer/scripts/prd-check.mjs sync-index --host-dir <path> --slug <slug> [--json]
- *   node skills/prd-writer/scripts/prd-check.mjs set-status --host-dir <path> --slug <slug> --block <N> --status <状态> [--json]
+ *   <suite-path> = suite root: project-manager-suite/ in-repo, .agent/project-manager-suite/ in a host project.
+ *   node <suite-path>/skills/prd-writer/scripts/prd-check.mjs structure --file <path> [--json]
+ *   node <suite-path>/skills/prd-writer/scripts/prd-check.mjs crosscheck --host-dir <path> --slug <slug> [--json]
+ *   node <suite-path>/skills/prd-writer/scripts/prd-check.mjs progress --host-dir <path> --slug <slug> [--json]
+ *   node <suite-path>/skills/prd-writer/scripts/prd-check.mjs sync-index --host-dir <path> --slug <slug> [--json]
+ *   node <suite-path>/skills/prd-writer/scripts/prd-check.mjs set-status --host-dir <path> --slug <slug> --block <N> --status <状态> [--json]
  *
  * Exit codes:
  *   0 - pass
@@ -601,12 +602,19 @@ function validateSubprd(filePath, content) {
     for (const section of sections) {
         const number = Number(section.titleMatch[1]);
         const title = section.titleMatch[2];
-        if (number <= 3 || /异常与兜底策略|接口契约/.test(title)) continue;
-        const hasUx = section.content.includes(`### ${number}.1 用户体验`);
-        if (!hasUx) continue;
+        if (/异常与兜底策略|接口契约/.test(title)) continue;
+        if (!isFunctionalSection(section.content, number)) continue;
         validateFunctionalSection(filePath, section, number, issues);
     }
     return report('structure', issues, { fileType: 'subprd' });
+}
+
+// 功能子区域按结构特征识别：含任一固定子节（X.1 用户体验 / X.3 数据链路 / X.4 异常与兜底 / X.6 验收）
+// 即按功能子区域校验。不能按章节号硬排除：模板允许省略 §3 信息架构，省略后首个功能子区域就是 §3。
+// §1 文档范围 / §2 页面整体布局 / §3 信息架构（3.1 模式切换规则等）都没有这些固定子节，天然不会命中。
+function isFunctionalSection(content, number) {
+    const labels = [`${number}.1 用户体验`, `${number}.3 数据链路`, `${number}.4 异常与兜底`, `${number}.6 验收`];
+    return labels.some((label) => new RegExp(`^### ${escapeRegExp(label)}\\s*$`, 'm').test(content));
 }
 
 function validateFunctionalSection(filePath, section, number, issues) {
@@ -904,10 +912,32 @@ function validatePhase5Evidence(mainPath, content, hostDir, slug) {
     return issues;
 }
 
+// 支持 PIPELINE §"产物拆分约定"的拆分模式：主文件同名子目录存在时，主文件只是索引，
+// 字段/接口的权威来源是子目录下全部 *.md。返回主文件 + 子目录子文件的路径列表。
+function foundationDocFiles(mainPath) {
+    const files = [mainPath];
+    const splitDir = mainPath.replace(/\.md$/, '');
+    if (fs.existsSync(splitDir) && fs.statSync(splitDir).isDirectory()) {
+        for (const name of fs.readdirSync(splitDir).sort()) {
+            if (name.endsWith('.md')) files.push(path.join(splitDir, name));
+        }
+    }
+    return files;
+}
+
+// 逐文件提取再合并（不做整体拼接），避免子文件内容被误归到索引文件的相邻小节名下。
+function extractFoundationRefs(mainPath, extractor) {
+    const refs = new Set();
+    for (const filePath of foundationDocFiles(mainPath)) {
+        for (const ref of extractor(readFile(filePath))) refs.add(ref);
+    }
+    return refs;
+}
+
 function validateSchemaReferences(paths, subprdTargets) {
     const schemaPath = path.join(paths.hostDir, 'docs', 'prd', 'foundation', `foundation-schema-${paths.slug}.md`);
     if (!fs.existsSync(schemaPath)) return [];
-    const schemaRefs = extractSchemaFieldRefs(readFile(schemaPath));
+    const schemaRefs = extractFoundationRefs(schemaPath, extractSchemaFieldRefs);
     const issues = [];
     for (const target of subprdTargets) {
         const subprdPath = path.resolve(paths.prdDir, target);
@@ -936,7 +966,7 @@ function validateSchemaReferences(paths, subprdTargets) {
 function validateApiReferences(paths, subprdTargets) {
     const apiPath = path.join(paths.hostDir, 'docs', 'prd', 'foundation', `foundation-api-${paths.slug}.md`);
     if (!fs.existsSync(apiPath)) return [];
-    const apiRefs = extractApiRefs(readFile(apiPath));
+    const apiRefs = extractFoundationRefs(apiPath, extractApiRefs);
     const issues = [];
     for (const target of subprdTargets) {
         const subprdPath = path.resolve(paths.prdDir, target);
@@ -1036,11 +1066,42 @@ function validatePageCoverage(paths, fRows) {
 
 function progress({ hostDir, slug }) {
     const paths = resolvePrdPaths(hostDir, slug);
-    const fRows = fs.existsSync(paths.featureList) ? featureRows(readFile(paths.featureList)) : [];
+    // 功能列表不存在时不能伪装成 phase 4：要么 --host-dir/--slug 写错，要么 Phase 2 还没开始。
+    if (!fs.existsSync(paths.featureList)) {
+        return report('progress', [
+            makeIssue(
+                'progress.feature-list-missing',
+                'fail',
+                paths.featureList,
+                'file',
+                `Existing ${path.basename(paths.featureList)} (prd-writer Phase 2 artifact)`,
+                'Missing',
+                '功能列表不存在：先核对 --host-dir 与 --slug 是否拼写正确；确认无误则说明 PRD 尚未开始（not-started），从 Phase 2 产出功能列表。',
+                `node ${__filename} progress --host-dir ${quote(hostDir)} --slug ${slug} --json`
+            )
+        ], { phase: null, state: 'not-started', blocks: [], mainprdBlocks: [], pending: [] });
+    }
+    const fRows = featureRows(readFile(paths.featureList));
     const mRows = fs.existsSync(paths.mainprd) ? mainRows(readFile(paths.mainprd)) : [];
+    // 文件在但功能总表解析不出任何区块行，同样不能报 "phase 4 无待办"。
+    if (fRows.length === 0) {
+        return report('progress', [
+            makeIssue(
+                'progress.feature-table-empty',
+                'fail',
+                paths.featureList,
+                '## 功能总表',
+                'At least one block row under the fixed header',
+                '0 rows',
+                '功能总表没有可解析的区块行：先跑 structure 校验并按 feature-list 模板补齐功能总表。',
+                `node ${__filename} structure --file ${quote(paths.featureList)} --json`
+            )
+        ], { phase: null, state: 'feature-list-empty', blocks: [], mainprdBlocks: mRows.map((row) => ({ index: row.index, page: row.page, block: row.block, status: row.status })), pending: [] });
+    }
     const pending = fRows.filter((row) => row.status !== '已确认');
     return report('progress', [], {
-        phase: pending.length === 0 && fRows.length > 0 ? 5 : 4,
+        phase: pending.length === 0 ? 5 : 4,
+        state: 'in-progress',
         blocks: fRows.map((row) => ({ index: row.index, page: row.page, block: row.block, status: row.status })),
         mainprdBlocks: mRows.map((row) => ({ index: row.index, page: row.page, block: row.block, status: row.status })),
         pending
@@ -1063,9 +1124,44 @@ function setStatus({ hostDir, slug, block, status }) {
         ]);
     }
     const paths = resolvePrdPaths(hostDir, slug);
+    // 先只读检查两张表都有目标区块行，再统一写入：
+    // 1) 区块号打错时必须显式 fail（匹配 0 行静默返回 ok 会造成索引漂移假象）；
+    // 2) 避免只写成功一张表、加剧双表漂移。
+    const targets = [
+        { filePath: paths.featureList, headers: FEATURE_HEADERS, section: '## 功能总表' },
+        { filePath: paths.mainprd, headers: MAIN_HEADERS, section: '## subprd索引' }
+    ];
+    const issues = [];
+    for (const target of targets) {
+        const blocks = listTableBlocks(target.filePath, target.headers);
+        if (!blocks.includes(String(block))) {
+            issues.push(
+                makeIssue(
+                    'set-status.block-not-found',
+                    'fail',
+                    target.filePath,
+                    target.section,
+                    `--block matches an existing row id: ${blocks.length > 0 ? blocks.join(', ') : '(table has no rows)'}`,
+                    String(block),
+                    '用表中已有的区块号重跑 set-status；若该区块行本就缺失，先按模板补齐功能总表 / mainprd 索引行。',
+                    `node ${__filename} progress --host-dir ${quote(hostDir)} --slug ${slug} --json`,
+                    { block, availableBlocks: blocks }
+                )
+            );
+        }
+    }
+    if (issues.length > 0) {
+        return report('set-status', issues, { block, status });
+    }
     updateTableStatus(paths.featureList, FEATURE_HEADERS, block, status);
     updateTableStatus(paths.mainprd, MAIN_HEADERS, block, status);
     return report('set-status', [], { block, status });
+}
+
+function listTableBlocks(filePath, headers) {
+    const table = findTable(readFile(filePath), headers);
+    if (!table) throw new Error(`Cannot find table in ${filePath}: ${headers.join(' | ')}`);
+    return table.rows.map((row) => row.cells[0]);
 }
 
 function syncIndex({ hostDir, slug }) {
@@ -1431,8 +1527,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
                     'cli',
                     'Valid command and readable files',
                     error.message,
-                    '检查命令参数和文件路径。',
-                    `node ${__filename} --help`
+                    '检查命令参数和文件路径。可用命令：structure --file <path> / crosscheck|progress|sync-index --host-dir <host> --slug <slug> / set-status --host-dir <host> --slug <slug> --block <N> --status <状态>。',
+                    `node ${__filename} structure --file <path> --json`
                 )
             ]
         };

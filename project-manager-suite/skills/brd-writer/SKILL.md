@@ -49,50 +49,54 @@ brd-writer 的唯一硬依赖是 `project-profile.md`（或宿主映射后的项
 
 Phase A 定性完成后，brd-writer 的收敛状态持久化在 **BRD 决策台账** 中，文件名 `brd-ledger-<slug>.md`，固定落在宿主项目的 `docs/brd/` 中，与 BRD 终稿同目录。
 
-台账模板见 `templates/brd-ledger.md`。
+台账的渲染结构示例见 `templates/brd-ledger.md`（台账由 `init` 自动生成，勿按示例手工创建）。
 
 #### 台账定位
 - 台账是 brd-writer 的 **过程产物**，不是 skill 私有状态——它和 BRD 终稿一样落在宿主项目的 `docs/brd/` 中，需求方可随时查看。
 - 台账是 P0 字段的确认状态权威源。`展开状态`、`只看缺口`、`回滚到上一轮`、`终稿前确认摘要` 这些命令的数据来源是台账，不是对话上下文。
 - 台账在 BRD 终稿落盘后保留，不删除——它是终稿的决策追溯记录。
 - **数据层变更**：台账的权威数据源为 `ledger-state-<slug>.json`，`brd-ledger-<slug>.md` 是由 JSON 自动渲染的只读展示层。所有读写操作通过 `scripts/` 下的脚本执行，不直接编辑 Markdown。
-- **覆盖范围**：台账覆盖 Phase B 起的全部收敛状态。Phase A（项目定性）在台账创建之前完成，不依赖台账持久化——Phase A 中断时，通过重新读取 `project-profile.md` 和向需求方确认三个元字段来恢复，成本极低（最多 3 个问题）。
+- **覆盖范围**：台账覆盖 Phase B 起的全部收敛状态。Phase A（项目定性）在台账创建之前完成，不依赖台账持久化——Phase A 中断时，通过重新读取 `project-profile.md` 和向需求方确认元字段（项目类型）来恢复，成本极低（通常 1-2 个问题）。
 
 #### 台账生命周期
-1. **创建时机**：Phase A 元字段（项目类型）锁定后，立即创建台账文件。根据项目类型从 `references/p0-fields.md` 加载对应的 P0 字段集，**只展开实际适用的字段**——页面定位字段（§1.3）由派生函数 `deriveHasPages` 决定是否展开（运营型恒展开、集成型恒不展开、其他类型默认展开）。台账头部 `当前阶段` 初始为 `B`。
+1. **创建时机**：Phase A 元字段（项目类型）锁定后，立即创建台账文件。根据项目类型从 `references/p0-fields.md` 加载对应的 P0 字段集，**只展开实际适用的字段**——页面定位字段是否出现在 §1 字段表中由派生函数 `deriveHasPages` 决定（运营型恒展开、集成型恒不展开、其他类型默认展开）。台账头部 `当前阶段` 初始为 `B`。
 2. **更新时机**：每轮 Phase D 锁定决策后，必须同步更新台账——将对应字段的值、状态改为 `locked`、记录锁定轮次，并在 §3 轮次变更日志中追加本轮记录。
 3. **冲突记录**：Phase D 检测到冲突时，写入台账 §2；冲突解决后标记 `resolved`。
 4. **充分性快照**：Phase E 每次执行后，更新台账 §4 的门槛状态。
-5. **终稿落盘后**：台账 `当前阶段` 改为 `DONE`，之后不再更新。
-6. **阶段标记更新**：每次 Phase 切换时，必须同步更新台账头部的 `当前阶段` 和 `当前轮次`。取值见台账模板中的注释。
+5. **终稿落盘后**：台账 `当前阶段` 改为 `DONE`，之后默认不再更新。脚本层面 `DONE` 态会拒绝 `lock` 和 `rollback`（报错 `phase_done`），防止误操作破坏终稿的决策追溯链。需求方明确要求继续迭代时，先执行 `set-phase --phase C --round <n>` 显式重开（reopen，脚本会累计重开次数并在 §3 变更日志中记录），再重新收敛。
+6. **阶段标记更新**：每次 Phase 切换时，必须通过 `set-phase` 更新台账头部的 `当前阶段` 和 `当前轮次`。`当前轮次` 由脚本在 `lock` / `set-phase` / `rollback` 成功时自动回写为 `max(当前值, 本次 --round)`（只增不减），不需要也不允许手工编辑。`当前阶段` 的取值清单见 `templates/brd-ledger.md` 顶部注释。
 
 #### 台账章节索引
 
+渲染出的 `brd-ledger-<slug>.md` 头部用 `Phase` / `Round` 标签展示当前阶段和当前轮次，对应 JSON 中的 `current_phase` / `current_round`。
+
 | 台账位置 | 内容 | 读写场景 |
 |---------|------|---------|
-| 头部 `当前阶段` / `当前轮次` | Phase 标记和轮次号 | 每次 Phase 切换时更新、跨会话恢复时直接读取 |
-| §1（含 §1.1/§1.2/§1.3） | P0 字段确认状态 | 展开状态、只看缺口、终稿前摘要、跨会话恢复、Phase D 锁定更新 |
-| §2 | 冲突记录 | Phase D 冲突检测、跨会话恢复 |
-| §3 | 轮次变更日志 | Phase D 锁定追加、Phase B 批量锁定、回滚操作、跨会话恢复 |
-| §4 | 充分性门槛快照 | Phase E 执行后更新、跨会话恢复 |
+| 头部 `Phase` / `Round` | Phase 标记和轮次号 | 每次 Phase 切换时更新、跨会话恢复时直接读取 |
+| §1 P0 字段总览（单张扁平表，通用 / 类型追加 / 页面定位字段按序排列） | P0 字段确认状态 | 展开状态、只看缺口、终稿前摘要、跨会话恢复、Phase D 锁定更新 |
+| §2 冲突记录 | 冲突记录 | Phase D 冲突检测、跨会话恢复 |
+| §3 变更日志 | 轮次变更日志 | Phase D 锁定追加、Phase B 批量锁定、回滚操作、跨会话恢复 |
+| §4 质量门 | 充分性门槛快照 | Phase E 执行后更新、跨会话恢复 |
 
 #### 跨会话恢复
-新会话开始时，先检查宿主项目的 `docs/brd/` 中是否存在 `brd-ledger-<slug>.md`：
+新会话开始时 slug 尚未确定（slug 在 Phase A 末尾才定），因此不要按精确文件名找台账，而是用通配符在宿主项目的 `docs/brd/` 中查找台账数据文件：`docs/brd/ledger-state-*.json`。匹配到多个时，向需求方确认本次继续哪个项目。
 
-**台账存在**（`ledger-state-<slug>.json` 存在）：
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
+
+**台账存在**（找到 `ledger-state-<slug>.json`）：
 ```bash
-node scripts/ledger-query.mjs progress --ledger <ledger-state-<slug>.json 路径>
+node <suite-path>/skills/brd-writer/scripts/ledger-query.mjs progress --ledger <ledger-state-<slug>.json 路径>
 ```
-从输出的 `current_phase` 和 `current_round` 直接确定应从哪个 Phase 继续。若 Markdown 缺失或过时：`node scripts/ledger-render.mjs markdown --ledger <path>`。
+从输出的 `current_phase` 和 `current_round` 直接确定应从哪个 Phase 继续。`current_round` 由脚本在 `lock` / `set-phase` / `rollback` 成功时自动回写（取历史最大轮次号，不小于 §3 变更日志末条的轮次），新一轮编号从 `current_round + 1` 续编。若 Markdown 缺失或过时：`node <suite-path>/skills/brd-writer/scripts/ledger-render.mjs markdown --ledger <path>`。
 
-**台账不存在**（Phase A 未完成或从未启动）：从 `project-profile.md` 读取已有上下文，重新进入 Phase A 确认三个元字段。Phase A 最多 3 个问题，恢复成本极低。
+**台账不存在**（Phase A 未完成或从未启动）：从 `project-profile.md` 读取已有上下文，重新进入 Phase A 确认元字段（项目类型）。Phase A 通常 1-2 个问题，恢复成本极低。
 
 #### 回滚机制
 需求方说 `回滚到上一轮` 时：
 ```bash
-node scripts/ledger-mutate.mjs rollback --ledger <path>
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs rollback --ledger <path>
 ```
-脚本自动读取台账 §3 最后一条非回滚记录，逆转字段状态，追加回滚记录，并重算派生状态。
+脚本自动定位台账 §3 中**最近一条尚未被回滚过的锁定记录**（连续说两次"回滚到上一轮"会依次撤销最后一轮、倒数第二轮），逆转字段状态，追加回滚记录，并重算派生状态。没有可回滚的锁定记录时报错 `nothing_to_rollback`；终稿落盘（`DONE`）后禁止回滚，报错 `phase_done`。
 
 ### 5.2 状态来源与读写边界
 
@@ -105,11 +109,20 @@ node scripts/ledger-mutate.mjs rollback --ledger <path>
 执行规则：
 1. 每轮开始先读取台账确认当前状态，再读取宿主项目画像和需求材料。
 2. 每轮 Phase D 锁定后，必须同步更新台账。不更新台账的锁定不算完成。
-3. 需求方说 `展开状态` 时：`node scripts/ledger-query.mjs status --ledger <path>`
-4. 需求方说 `只看缺口` 时：`node scripts/ledger-query.mjs gaps --ledger <path>`
+3. 需求方说 `展开状态` 时：`node <suite-path>/skills/brd-writer/scripts/ledger-query.mjs status --ledger <path>`
+4. 需求方说 `只看缺口` 时：`node <suite-path>/skills/brd-writer/scripts/ledger-query.mjs gaps --ledger <path>`
 5. 需求方说 `回滚到上一轮` 时：按回滚机制执行。
-6. 需求方说 `生成终稿前摘要` 时：`node scripts/ledger-query.mjs summary --ledger <path>`
-7. 若出现冲突决策，先写入台账 §2，再指出冲突并要求需求方确认，不得静默覆盖。
+6. 需求方说 `生成终稿前摘要` 时：`node <suite-path>/skills/brd-writer/scripts/ledger-query.mjs summary --ledger <path>`
+7. 若出现冲突决策（AI 在对话中检测到本轮选择与已锁定字段矛盾），先用 `add-conflict` 写入台账 §2，再指出冲突并要求需求方确认，不得静默覆盖：
+   ```bash
+   node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs add-conflict --ledger <path> \
+     --fields "字段id1,字段id2" --description "一句话冲突描述"
+   ```
+   需求方确认解决方式后标记解决（`--conflict-id` 用 add-conflict 返回的冲突编号）：
+   ```bash
+   node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs resolve-conflict --ledger <path> \
+     --conflict-id <冲突编号> --resolution "解决方式" --round <n>
+   ```
 8. 终稿前必须先生成"终稿前确认摘要"（基于台账），经需求方确认后再出 BRD。
 
 ### 5.3 调用可观测性与停机标记（强制）
@@ -155,15 +168,29 @@ Phase 是逻辑阶段，轮次（round）是一次用户交互。一个 Phase �
 
 **台账动作**：元字段和 slug 全部确定后，执行：
 ```bash
-node scripts/ledger-mutate.mjs init \
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs init \
   --project-type <type> \
   --slug <slug> --project-name <"项目名称"> --output-dir <宿主项目/docs/brd>
 ```
-脚本自动完成：根据项目类型加载 P0 字段集、条件过滤、在 `docs/brd/` 中创建 `ledger-state-<slug>.json` + 渲染 `brd-ledger-<slug>.md`。元字段自动锁定（round=0）。
+
+`--project-type` 的合法取值（六选一，传英文 token；传对话中使用的中文类型名也接受，脚本会归一成英文键；其余取值报错 `invalid_project_type` 并列出合法值）：
+
+| 中文类型名（对话中使用） | `--project-type` 英文 token |
+|------------------------|---------------------------|
+| 创新型 | `innovation` |
+| 改造型 | `transformation` |
+| 扩展型 | `extension` |
+| 集成型 | `integration` |
+| 运营型 | `operational` |
+| 合规型 | `compliance` |
+
+脚本自动完成：根据项目类型加载 P0 字段集、条件过滤、在 `docs/brd/` 中创建 `ledger-state-<slug>.json` + 渲染 `brd-ledger-<slug>.md`（输出目录不存在时自动创建）。元字段自动锁定（round=0）。
+
+**重入护栏**：同 slug 的台账已存在时，`init` 报错 `already_exists` 且不覆盖——已有台账里的锁定决策和变更日志是唯一追溯记录。只有需求方明确要求推倒重建（并知晓会清空全部已锁定字段与日志）时，才加 `--force` 重建；恢复中断会话请走"跨会话恢复"，不要重跑 `init`。
 
 ### Phase B 诊断与需求真伪鉴别
 
-Phase B 通常需要 2-3 轮完成。每轮仍遵守单焦点原则。本阶段结束时批量锁定三个事实型字段：**项目背景、利益相关角色、核心痛点**（P0 通用 #4-#6）——它们的信息已在 project-profile.md 中就绪，Phase B 在诊断/角色识别过程中与需求方对齐后统一入账，不再在 Phase C 逐题追问。
+Phase B 通常需要 2-3 轮完成。每轮仍遵守单焦点原则。本阶段结束时批量锁定三个事实型字段：**项目背景、利益相关角色、核心痛点**（P0 通用 #2-#4，编号见 `references/p0-fields.md`）——它们的信息已在 project-profile.md 中就绪，Phase B 在诊断/角色识别过程中与需求方对齐后统一入账，不再在 Phase C 逐题追问。
 
 **第 1 轮（诊断轮）**：
 1. 用一句非常苛刻的话指出当前方案最致命问题。
@@ -183,16 +210,16 @@ Phase B 结束条件：项目背景已与需求方对齐 + 角色识别完成 + 
 
 **台账动作（批量锁定）**：Phase B 结束时批量锁定项目背景、利益相关角色、核心痛点：
 ```bash
-node scripts/ledger-mutate.mjs lock \
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs lock \
   --ledger <ledger-state-<slug>.json 路径> \
   --fields '[{"id":"project_background","value":"...","methodology":"来源: project-profile"},{"id":"stakeholder_roles","value":"...","methodology":"来源: ..."},{"id":"core_pain_points","value":"...","methodology":"来源: ..."}]' \
   --round <n> --requester-quote "需求方原话摘要"
 ```
-若返回 `rule_conflict`，先向需求方指出冲突，确认解决方式后调用 `resolve-conflict`，再重试 `lock`。
+若返回 `rule_conflict`（静态规则冲突，目前只有一条：无页面项目试图锁定 `page_` 开头的页面字段），说明锁定内容与项目类型矛盾——**原样重试同一条 `lock` 必然再次触发，不要重试**。正确处理：先向需求方指出矛盾，按确认结果修改锁定内容（换字段或改值）后再 `lock`；脚本已把该冲突自动写入台账 §2，处理方式确定后用 `resolve-conflict` 标记解决（命令见 §5.2 第 7 条）。
 
-之后更新台账 `当前阶段` 为 `C`：
+之后更新台账 `当前阶段` 为 `C`（`set-phase` 的 `--ledger` `--phase` `--round` 三个参数均必填）：
 ```bash
-node scripts/ledger-mutate.mjs set-phase --ledger <path> --phase C --round <n>
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs set-phase --ledger <path> --phase C --round <n>
 ```
 
 ### Phase C 单题选项追问
@@ -209,15 +236,19 @@ node scripts/ledger-mutate.mjs set-phase --ledger <path> --phase C --round <n>
 
 **台账动作**：每轮锁定后执行：
 ```bash
-node scripts/ledger-mutate.mjs lock --ledger <path> --fields '[...]' --round <n> --requester-quote "..."
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs lock --ledger <path> --fields '[...]' --round <n> --requester-quote "..."
 ```
-若返回 `rule_conflict`，先向需求方指出冲突，确认解决方式后调用 `resolve-conflict`，再重试。
+若返回 `rule_conflict`，按 Phase B 台账动作中的说明处理：修改锁定内容后再 `lock`，不要原样重试。
 
 锁定后查询进度：
 ```bash
-node scripts/ledger-query.mjs progress --ledger <path>
+node <suite-path>/skills/brd-writer/scripts/ledger-query.mjs progress --ledger <path>
 ```
-若 `should_trigger_d5 === true`：`set-phase --phase D.5`。若 100% 且 `should_trigger_d5 === false`（D.5 已通过）：`set-phase --phase E`。
+若 `should_trigger_d5 === true`，切到 D.5：
+```bash
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs set-phase --ledger <path> --phase D.5 --round <n>
+```
+若 100% 且 `should_trigger_d5 === false`（D.5 已通过），同一命令改传 `--phase E`。
 
 ### Phase D.5 前提挑战
 当 Phase D 锁定后台账 §1 显示 P0 字段确认率达到 100% 时，更新台账 `当前阶段` 为 `D.5`，不直接进入充分性判定，而是先触发前提挑战。读取 `references/interrogation-patterns.md` 中的"前提挑战"部分。
@@ -239,13 +270,30 @@ Phase D.5 前提挑战全部通过后，更新台账 `当前阶段` 为 `E`，�
 
 **台账动作**：先执行结构校验：
 ```bash
-node scripts/ledger-query.mjs lint --ledger <path>
+node <suite-path>/skills/brd-writer/scripts/ledger-query.mjs lint --ledger <path>
 ```
-lint 输出 `pass`/`fail`/`needs_ai_review`。AI 对 `needs_ai_review` 的门槛做语义判断后，汇总所有门槛结果：
+lint 把各门槛分入 `pass`/`fail`/`needs_ai_review` 三个清单（`needs_ai_review` 表示结构检查通过、质量需 AI 语义判断）。AI 对 `needs_ai_review` 的门槛做语义判断后，汇总所有门槛结果写回台账：
 ```bash
-node scripts/ledger-mutate.mjs update-gates --ledger <path> --gates '[...]'
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs update-gates --ledger <path> \
+  --gates '[{"gate":"field_completeness","status":"pass","remarks":"P0 确认率 100%"},{"gate":"measurement","status":"fail","remarks":"效率目标缺基线值"}]'
 ```
-全部通过：`set-phase --phase E.5`。否则继续提问。
+`--gates` 载荷是 JSON 数组，每项的键固定为：`gate`（门槛 id，取值见下表，传其他键名会报 `gate_not_found`）、`status`（`pass` 或 `fail`）、`remarks`（判定依据，可省略）。
+
+| `gate` 键取值（门槛 id） | 对应上文门槛 |
+|------------------------|-------------|
+| `field_completeness` | 1. 字段完备门 |
+| `consistency` | 2. 一致性门 |
+| `measurement` | 3. 度量门 |
+| `scope` | 4. 范围门 |
+| `methodology` | 5. 方法论门 |
+| `role` | 6. 角色门 |
+| `page` | 7. 页面门 |
+
+全部通过后切到 E.5：
+```bash
+node <suite-path>/skills/brd-writer/scripts/ledger-mutate.mjs set-phase --ledger <path> --phase E.5 --round <n>
+```
+否则继续提问。
 
 ### Phase E.5 终稿前确认
 Phase E 全部门槛通过后，从台账 §1 输出全量 locked 字段的值（即「终稿前确认摘要」），供需求方逐条确认。
@@ -255,18 +303,18 @@ Phase E 全部门槛通过后，从台账 §1 输出全量 locked 字段的值�
 
 ### Phase F 终稿输出
 
-1. 获取章节裁剪计划：`node scripts/ledger-render.mjs chapters plan --ledger <path>`
+1. 获取章节裁剪计划：`node <suite-path>/skills/brd-writer/scripts/ledger-render.mjs chapters plan --ledger <path>`
 2. 根据 conditional 章节在对话中的收敛情况，确定最终保留列表
-3. 生成最终编号和附录：`node scripts/ledger-render.mjs chapters finalize --ledger <path> --include "1,2,3,..."`
+3. 生成最终编号和附录：`node <suite-path>/skills/brd-writer/scripts/ledger-render.mjs chapters finalize --ledger <path> --include "1,2,3,..."`（`--include` 传保留章节的**模板编号**；输出的 `heading_outline` 会把保留章节从 1 开始连续重编号，终稿以它为准）
 4. AI 按 `heading_outline` 骨架撰写 BRD 正文，附录直接使用脚本输出的 `appendix`
 5. 将 BRD 写入临时文件 `<宿主项目/docs/brd>/.brd-draft-<slug>.md`
 
 ### Phase G 文件落盘（强制）
 
 ```bash
-node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件路径> --output-dir <宿主项目/docs/brd>
+node <suite-path>/skills/brd-writer/scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件路径> --output-dir <宿主项目/docs/brd>
 ```
-脚本自动校验 BRD 结构（章节完备、编号连续、附录引用、头部一致性），通过后落盘并标记 DONE。落盘完成后回报绝对路径。
+脚本自动校验 BRD 结构（章节完备、编号与 `chapters finalize` 输出的连续编号一致、附录存在），通过后落盘并标记 DONE。落盘完成后回报绝对路径。
 
 ## 7) 每轮输出格式
 
@@ -350,7 +398,7 @@ node scripts/ledger-render.mjs save-brd --ledger <path> --content <临时文件�
 
 | 文件 | 内容 | 何时读取 |
 |------|------|---------|
-| `templates/brd-ledger.md` | BRD 决策台账模板 | Phase A 定性完成后创建台账时 |
+| `templates/brd-ledger.md` | 台账展示层（`brd-ledger-<slug>.md`）的结构示例——台账由 `init` 自动生成并随每次脚本写操作重渲染，勿按模板手工创建 | 需要理解台账结构或核对渲染输出时 |
 | `references/methodology.md` | 5 种方法论详解（第一性原理、JTBD、RICE、Pre-mortem、Kano）+ 输出格式 | 需要体现方法论依据时 |
 | `references/interrogation-patterns.md` | 反奉承规则、需求真伪鉴别、追问范式库、前提挑战 | Phase B/C/D.5 执行时 |
 | `references/project-types.md` | 六类项目类型的定义、判定标准与易混边界 | Phase A 定性、选类型前 |

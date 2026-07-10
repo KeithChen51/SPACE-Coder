@@ -1,6 +1,6 @@
 ---
 name: test-case-writer
-description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.md` 和 `acceptance-<slug>/<区块名>.md` 生成测试用例 mainprd、业务域 TC 文件和 SQL 数据准备。只写 TC，不改 PRD、不改验收文档、不做 TC 核查。
+description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.md` 和 `acceptance-<slug>/<区块名>.md` 生成 TC 主索引 `tc-main-<slug>.md`、业务域 TC 文件和 SQL 数据准备。只写 TC，不改 PRD、不改验收文档、不做 TC 核查。
 ---
 
 # Test Case Writer Skill
@@ -26,10 +26,10 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 |------|------|------|------|
 | `acceptance-<slug>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/` | 验收文档主索引；确定区块列表与统计 |
 | `acceptance-<slug>/<区块名>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/acceptance-<slug>/` | 唯一验收权威源；每条验收条目都要被 TC 覆盖 |
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` | 术语、实体名、枚举辅助理解 |
-| `foundation-schema-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/` | SQL 数据准备、字段合法性、枚举取值 |
-| `foundation-api-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/` | API 调用、响应字段、状态码 |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` | 交付范围辅助确认 |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` | 术语、实体名、枚举辅助理解 |
+| `foundation-schema-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/foundation/` | SQL 数据准备、字段合法性、枚举取值 |
+| `foundation-api-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/foundation/` | API 调用、响应字段、状态码 |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` | 交付范围辅助确认 |
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` | 业务背景辅助理解 |
 | `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` | 区块 / 功能索引辅助定位 |
 | `mainprd-<slug>.md` | prd-writer | `<host>/docs/prd/` | mainprd 辅助上下文 |
@@ -46,7 +46,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | 文件 | 位置 | 用途 |
 |------|------|------|
 | `methodology.md` | `../test-case-chief/knowledge/methodology.md` | 测试设计方法论 + BCDE 覆盖 |
-| `templates-shared.md` | `../test-case-chief/knowledge/templates-shared.md` | 文件头、验收矩阵、mainprd、版本历史模板 |
+| `templates-shared.md` | `../test-case-chief/knowledge/templates-shared.md` | 文件头、验收矩阵、TC 主索引（tc-main）、版本历史模板 |
 
 ## 3) 产出
 
@@ -55,8 +55,9 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | TC 主索引 | `tc-main-<slug>.md` | `<host>/docs/test-case/` | 全局 TC 入口，按业务域索引所有域 TC 文件，汇总覆盖率和 `[待确认]` |
-| 域 TC 文件 | `<业务域>/tc-<业务域>.md` | `<host>/docs/test-case/<业务域>/` | 单个业务域下的完整测试用例；可按行数拆为索引层 + 详情层 |
-| 测试数据 SQL | `<业务域>/sql/<编号>-<场景>.sql` | `<host>/docs/test-case/<业务域>/sql/` | 本域测试数据准备与清理脚本 |
+| 域 TC 文件 | `<业务域>/tc-<业务域>.md` | `<host>/docs/test-case/<业务域>/` | 单个业务域下的完整测试用例；可按行数拆为索引层 + 详情层（详情层命名 `tc-<业务域>-用例详情.md`） |
+| 场景数据 SQL | `<业务域>/sql/<PREFIX>-<NN>.sql` | `<host>/docs/test-case/<业务域>/sql/` | 与用例编号一一对应的数据准备与清理脚本；`<PREFIX>` 为该域编号前缀（形如 `TC-<域简称>`），命名规则见 `references/project-conventions.md` §4 |
+| 种子数据 SQL | `<业务域>/sql/<PREFIX>-SEED.sql` | `<host>/docs/test-case/<业务域>/sql/` | 该域多条用例共用的配置 / 种子数据，必须自包含 |
 
 ## 4) 工作流
 
@@ -91,6 +92,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 2. 汇总验收条目覆盖率
 3. 汇总 `[待确认]` 条目与无法生成唯一预期的点
 4. 写入 `tc-main-<slug>.md`
+5. **若本次运行是响应 test-case-reviewer 某份 issues 文件（`tc-reviews/<日期>-issues.md`）进行的续改**：修正完成后，必须在 `tc-main-<slug>.md` 的版本历史中追加一条 `响应 <issues 文件名>` 的记录（例如 `响应 2026-07-07-issues-2.md`）。这条记录是调度层 test-case-chief 判定"writer 已完成修正、可以让 reviewer 复查"的唯一文件事实，漏写会导致回环停在 writer 这一步
 
 ### Phase 5：自检
 
@@ -117,7 +119,7 @@ description: Use when acceptance 文档已产出，需要从 `acceptance-<slug>.
 | 文件 | 内容 | 何时读取 |
 |------|------|---------|
 | `../test-case-chief/knowledge/methodology.md` | 方法论 + BCDE 覆盖维度 | Phase 1 / 3 设计用例时 |
-| `../test-case-chief/knowledge/templates-shared.md` | mainprd、验收矩阵、文件头模板 | Phase 2-4 生成文档时 |
+| `../test-case-chief/knowledge/templates-shared.md` | TC 主索引（tc-main）、验收矩阵、文件头模板 | Phase 2-4 生成文档时 |
 | `references/self-check.md` | 生成期自检清单、陷阱速查 | Phase 5 自检时 |
 | `references/type-domain.md` | 业务域 TC：API / UI 验证策略 | 生成业务域文件时 |
 | `references/type-regression.md` | 缺陷回归测试策略 | 输入有已知缺陷记录时 |

@@ -21,14 +21,17 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
 
 1. 启动时先执行：
    ```bash
-   node skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
+   node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
    ```
+   > `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 2. `boot` 的职责：
    - 优先在 `<host>/src/frontend/page-preview/` 搜索 `page-ledger-<slug>.json`
    - 找到 1 个台账：恢复当前状态，返回 `action: "resumed"`
+   - 新旧目录（`src/frontend/page-preview/` 与根级 `page-preview/`、`可操作页面/`）同时存在台账：自动使用新目录中的台账，并在 stderr（标准错误输出）打印 notice 说明忽略了哪些旧文件，不中止
+   - 同一目录内出现多份台账：**中止执行**，报错列出冲突文件，请用户清理到只剩一份
    - 没找到台账：自动在 `docs/brd/` 搜索 `BRD-*.md`，旧项目兼容时才兜底搜根目录；若找到则创建台账并返回 `action: "created"`
+   - BRD 选取规则：同一 slug 有多个时间戳版本时，取文件名时间戳最新的一份；出现多个不同 slug 的 BRD 时**中止执行**，报错列出候选文件，请用户只保留一个项目的 BRD 再运行
    - 若 BRD 不存在：**中止执行**，提示用户先完成 brd-writer
-   - 若找到多个台账：**中止执行**，提示用户先清理异常状态
 3. 台账创建时，脚本会同时创建 `<host>/src/frontend/page-preview/screenshots/` 目录，供参考截图长期复用。
 
 从 BRD 中读取以下字段：
@@ -44,7 +47,7 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
 
 ### 2b) 技术栈参考
 
-1. 读取 `skills/ai-project-manager/references/defaults/tech-stack.md`。
+1. 读取 `<suite-path>/skills/ai-project-manager/references/defaults/tech-stack.md`。
 2. 若宿主项目根目录有覆盖信息（如 `package.json`），以宿主项目为准。
 3. 从中提取：
    - **前端框架 + UI 组件库**（如 Vue 3 + Ant Design Vue 4.x）→ 决定页面实现方式
@@ -70,7 +73,7 @@ description: 基于 BRD 产出可交互的前端页面。内置设计知识库�
 **启动时必须读取**技术栈参考文件：
 
 ```
-skills/ai-project-manager/references/defaults/tech-stack.md
+<suite-path>/skills/ai-project-manager/references/defaults/tech-stack.md
 ```
 
 读取规则：
@@ -88,20 +91,25 @@ skills/ai-project-manager/references/defaults/tech-stack.md
 
 ```bash
 # 生成完整设计系统（Phase 2 必用）
-python3 skills/page-designer/scripts/search.py "<关键词>" --design-system -p "<项目名称>"
+python3 <suite-path>/skills/page-designer/scripts/search.py "<英文关键词>" --design-system -p "<project-slug>"
 
 # 持久化设计系统
-python3 skills/page-designer/scripts/search.py "<关键词>" --design-system --persist -p "<项目名称>" --output-dir <宿主项目>
+python3 <suite-path>/skills/page-designer/scripts/search.py "<英文关键词>" --design-system --persist -p "<project-slug>" --output-dir <宿主项目>
 
 # 带页面级覆盖的持久化
-python3 skills/page-designer/scripts/search.py "<关键词>" --design-system --persist -p "<项目名称>" --page "<页面名>" --output-dir <宿主项目>
+python3 <suite-path>/skills/page-designer/scripts/search.py "<英文关键词>" --design-system --persist -p "<project-slug>" --page "<页面名>" --output-dir <宿主项目>
 
 # 单域搜索（补充细节）
-python3 skills/page-designer/scripts/search.py "<关键词>" --domain <域>
+python3 <suite-path>/skills/page-designer/scripts/search.py "<英文关键词>" --domain <域>
 
 # 技术栈特定指南
-python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
+python3 <suite-path>/skills/page-designer/scripts/search.py "<英文关键词>" --stack <栈>
 ```
+
+两条使用约束：
+
+1. **检索关键词必须用英文**。design-db 知识库内容全部是英文，中文关键词一条都搜不到。脚本在 0 命中时会向 stderr（标准错误输出）打 `warning: no ... match`，看到该告警必须换英文关键词重搜，不得把兜底默认值当成知识库推荐。中文需求 → 英文检索词的转换方法见 Phase 2。
+2. **`-p` 参数传 project slug**（与 BRD 文件名 `BRD-<slug>-<时间戳>.md` 中的 slug 一致），不要传中文显示名。脚本会用该值直接派生目录名 `design-system/<project-slug>/`（仅做小写化、空格转 `-`）；传显示名会生成与承诺路径不一致的目录，下游按 slug 找不到 MASTER.md。
 
 ### 4.2 可用搜索域
 
@@ -135,7 +143,7 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 
 1. 运行：
    ```bash
-   node skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
+   node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/
    ```
 2. 若返回 `action: "resumed"`，按台账 phase 进入断点恢复流程；若返回 `action: "created"`，继续执行下面步骤。
 3. 读取 BRD 关键字段（见第 2 节）。
@@ -148,29 +156,34 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
    - 无 → 跳过，完全基于 BRD 信息。
 6. 运行：
    ```bash
-   node skills/page-designer/scripts/page-ledger-mutate.mjs mark-asked --host-dir <host>/ --field screenshot
+   node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs mark-asked --host-dir <host>/ --field screenshot
    ```
 7. 完成入口门禁后，运行：
    ```bash
-   node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 1
+   node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 1
    ```
 
 ### Phase 2: 设计系统确定
 
-1. 基于 BRD 中的使用者画像、业务模型和页面定位，组装搜索关键词。
-2. 若有参考截图，将提取的视觉风格约束加入关键词。
+> 本 Phase 不单独推进台账：台账 phase 只有 0 / 1 / 3 / 4 四个取值，设计系统与页面设计的工作都发生在 phase 1 → 3 之间，不要执行 `advance --to 2`（会报 `invalid_transition`）。
+
+1. 基于 BRD 中的使用者画像、业务模型和页面定位，组装**英文**搜索关键词：
+   - BRD 全流程是中文，但 design-db 知识库是英文，必须先把中文需求翻成英文领域词再搜。例如：「库存管理后台」→ `inventory management admin dashboard`、「医疗预约小程序」→ `healthcare appointment booking mobile`、「数据仪表盘」→ `analytics dashboard`。
+   - 若脚本在 stderr 输出 `warning: no ... match`（表示知识库 0 命中、输出只是通用兜底值），必须换英文关键词重搜，不得把兜底值当作知识库推荐继续往下走。
+2. 若有参考截图，将提取的视觉风格约束（英文关键词，如 `glassmorphism`、`dark mode`）加入搜索词。
 3. 执行设计系统生成并持久化：
    ```bash
-   python3 skills/page-designer/scripts/search.py "<关键词>" --design-system --persist -p "<项目名称>" --output-dir <宿主项目>
+   python3 <suite-path>/skills/page-designer/scripts/search.py "<英文关键词>" --design-system --persist -p "<project-slug>" --output-dir <宿主项目>
    ```
+   > `-p` 传与 BRD 一致的 project slug，见 4.1 的使用约束。
 4. 按需补充单域搜索获取更多细节：
    ```bash
    # 示例：补充 UX 指南
-   python3 skills/page-designer/scripts/search.py "animation accessibility" --domain ux
+   python3 <suite-path>/skills/page-designer/scripts/search.py "animation accessibility" --domain ux
    ```
 5. 获取技术栈实现指南：
    ```bash
-   python3 skills/page-designer/scripts/search.py "layout responsive form" --stack <tech-stack.md 对应的 stack>
+   python3 <suite-path>/skills/page-designer/scripts/search.py "layout responsive form" --stack <tech-stack.md 对应的 stack>
    ```
    > stack 参数映射：Vue 3 → `vue`，React → `react`，Next.js → `nextjs`，Svelte → `svelte`，等。
 
@@ -186,7 +199,7 @@ python3 skills/page-designer/scripts/search.py "<关键词>" --stack <栈>
 用户确认全部页面后，推进台账：
 
 ```bash
-node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 3
+node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 3
 ```
 
 ### Phase 4: 交付清单落盘
@@ -196,7 +209,7 @@ node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <hos
 交付清单落盘后，推进台账：
 
 ```bash
-node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 4
+node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <host>/ --to 4
 ```
 
 ### 回环场景
@@ -204,12 +217,13 @@ node skills/page-designer/scripts/page-ledger-mutate.mjs advance --host-dir <hos
 page-chief 判定需要回环时，只做自然语言指示："下一步请重新执行 page-designer"。page-chief 不修改 page-designer 的台账。
 
 page-designer 重新启动时：
-1. 先执行 `page-ledger-mutate.mjs boot --host-dir <host>/`
+1. 先执行 `node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs boot --host-dir <host>/`
 2. 若台账 phase 已处于交付态（phase 4），检查 `src/frontend/page-preview/` 下 gap 文件是否存在未解决的 `design_gap` 或 `logic_conflict`
 3. 若存在未解决条目，则运行：
    ```bash
-   node skills/page-designer/scripts/page-ledger-mutate.mjs start-loop --host-dir <host>/ --gap-files <file1,file2>
+   node <suite-path>/skills/page-designer/scripts/page-ledger-mutate.mjs start-loop --host-dir <host>/ --gap-files <file1,file2>
    ```
+   > `--gap-files` 中的文件必须真实存在，脚本会逐个校验，缺失时报 `gap_file_not_found` 并中止。
 4. `start-loop` 会将：
    - `loopRound + 1`
    - `gapFilesConsumed` 记录为本轮消费的 gap 文件
@@ -267,6 +281,11 @@ page-designer 重新启动时：
 ## 工程目录
 - 前端工程: <工程绝对路径>
 
+## 本地预览
+- 启动命令: <在工程目录下启动本地预览的完整命令，如 cd <工程绝对路径> && npm install && npm run dev>
+- 访问地址: <启动后的本地地址和端口，如 http://localhost:5173/>
+- mock 说明: <页面数据的 mock 范围，如「全部数据为前端 mock，无需后端」；有特殊预置状态也在此说明>
+
 ## 交付产物
 
 | 页面 | 路由 | 文件路径 | 状态 |
@@ -281,7 +300,7 @@ page-designer 重新启动时：
 ## 下游可消费信息
 | 下游 Skill | 建议读取 | 用途 |
 |-----------|---------|------|
-| page-explainer | 本清单 + 页面文件路径 | 沉淀交互语义、回环判断 |
+| page-explainer | 本清单（含本地预览段）+ 页面文件路径 | 沉淀交互语义、回环判断 |
 | foundation-builder | 本清单中的页面路由表 | 反推数据模型与 API |
 | prd-writer | 本清单 | 基于已确认页面反推 PRD |
 ```
@@ -291,7 +310,7 @@ page-designer 重新启动时：
 每轮回复前，先执行：
 
 ```bash
-node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
+node <suite-path>/skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
 ```
 
 状态标记由台账派生，而非 AI 自行声明。
@@ -327,7 +346,8 @@ node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>
 1. 每个页面必须可在浏览器中点击操作。
 2. mock 数据必须贴近真实场景，不用 Lorem ipsum。
 3. 交付清单中的文件路径必须是真实存在的绝对路径。
-4. 设计系统必须基于内置工具库的搜索结果生成，通过 `--persist --output-dir <宿主项目>` 写入 `<宿主项目>/design-system/<project-slug>/MASTER.md`。
+4. 设计系统必须基于内置工具库的搜索结果生成（英文关键词、无 0 命中告警），通过 `--persist --output-dir <宿主项目>` 写入 `<宿主项目>/design-system/<project-slug>/MASTER.md`。
+5. 交付清单必须填写「本地预览」段（启动命令、访问地址、mock 说明），且启动命令经过实际验证可用——下游 page-explainer 依赖它启动运行页面做浏览器验证。
 
 ## 11) Pre-Delivery Checklist
 
@@ -362,3 +382,6 @@ node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>
 - [ ] 表单输入有 label
 - [ ] 颜色不是唯一的信息指示手段
 - [ ] 尊重 `prefers-reduced-motion`
+
+### 交付清单
+- [ ] 「本地预览」段已填写完整（启动命令、访问地址、mock 说明），且启动命令在工程目录实际跑通、访问地址可打开页面——通过标准：按清单命令启动后浏览器能看到页面

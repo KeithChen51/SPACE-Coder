@@ -115,11 +115,18 @@ function verifyEnv(planFile) {
     }
     const content = fs.readFileSync(planPath, 'utf8');
     const declarations = extractEnvDeclarations(content);
-    
-    // If no declarations found, we treat it as gracefully passing, or we can enforce it.
-    // For minimal invasion, if not found, we just return true.
+
+    // If no declarations found, still pass (envReady: true) but emit a warning:
+    // "0 条声明" 可能是计划确实无环境依赖，也可能是表格格式不符合可解析约定，
+    // 静默放行会把"格式没写对"伪装成"环境已就绪"。
     if (declarations.cmds.length === 0 && declarations.dirs.length === 0) {
-        return { envReady: true, missingEnv: [], reason: 'No environment declarations found.' };
+        return {
+            envReady: true,
+            missingEnv: [],
+            warnings: [
+                '主开发计划中没有解析到任何环境依赖声明（0 条）。若计划写了「环境依赖声明」章节，请核对表格格式是否符合 delivery-planner/references/plan-anatomy.md 的可解析示例；确无环境依赖时可忽略本警告。',
+            ],
+        };
     }
 
     const missingEnv = [];
@@ -145,6 +152,7 @@ function verifyEnv(planFile) {
     return {
         envReady: missingEnv.length === 0,
         missingEnv,
+        warnings: [],
     };
 }
 
@@ -408,7 +416,9 @@ function formatEnvReport(result) {
     const lines = ['=== check-env-context ===', ''];
     if (result.envReady) {
         lines.push('✅ 环境验证通过 — envReady: true');
-        if (result.reason) lines.push(`   ${result.reason}`);
+        for (const warning of result.warnings || []) {
+            lines.push(`⚠️  ${warning}`);
+        }
         return lines.join('\n');
     }
     
@@ -437,8 +447,14 @@ function formatReport(result) {
     lines.push('❌ 验证失败 — canExecute: false');
     lines.push('');
 
+    // Task 本身没找到时只报这一条定位错误，不再往下罗列字段级错误
+    // （字段检查以 Task 存在为前提，叠加输出会误导排查方向）。
     if (!result.taskTitle) {
         lines.push(`  • Task ${result.taskId} 在开发计划文件组中不存在`);
+        if (result.reason) lines.push(`    ${result.reason}`);
+        lines.push('');
+        lines.push('请先核对 Task ID 与任务看板中的条目是否一致，再重新运行本脚本。');
+        return lines.join('\n');
     }
 
     if (result.prdLinksDeclared === false) {

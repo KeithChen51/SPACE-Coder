@@ -84,8 +84,18 @@ Phase 5: 一致性自查
 Phase 6: 交付清单落盘
   → 加载 references/delivery-template.md
   → 产出 foundation-delivery
-  → 用 route-check 校验 foundationReadyForPrd.pass=true
+  → 跑 route-check 校验（命令见下方说明），确认 gateChecks.foundationReadyForPrd.pass = true
 ```
+
+Phase 6 的收口校验命令（route-check 是套件的主入口路由检查脚本，按阶段门禁判断产物是否齐备）：
+
+```bash
+node <suite-path>/tools/route-check.mjs <host-root> --target-stage S2 --json
+```
+
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。`<host-root>` 是宿主项目根目录（在宿主根执行时写 `.`）。
+
+怎么读结果：在 JSON 输出的 `gateChecks.foundationReadyForPrd` 里看 `pass` 字段，为 `true` 即通过。注意 `--target-stage S2` 不能省略——该检查项只在 S2 门禁下生成，漏加或写错阶段时输出里根本没有这一项。
 
 ## 6) Reference 加载协议
 

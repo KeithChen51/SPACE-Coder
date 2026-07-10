@@ -43,7 +43,7 @@
 
 ## 安装与使用
 
-由于套件各组件存在强关联，对外分发时必须作为 **整体标准交付单位**。如果要在新项目中使用本套件，请将完整 `project-manager-suite` 安装到目标项目的 `.agent/project-manager-suite` 目录中，不可单独抽取某个字能力，例如只复制 `ai-project-manager` 目录。
+由于套件各组件存在强关联，对外分发时必须作为 **整体标准交付单位**。如果要在新项目中使用本套件，请将完整 `project-manager-suite` 安装到目标项目的 `.agent/project-manager-suite` 目录中，不可单独抽取某个子能力，例如只复制 `ai-project-manager` 目录。
 
 推荐安装方式有两种：
 
@@ -60,6 +60,49 @@ node project-manager-suite/tools/install-suite-into-host.mjs <host-project-root>
 - 安装脚本只管理 `.agent/project-manager-suite/`，不会覆盖宿主 `.agent/` 下其他插件或配置
 - 推荐先通过 `bootstrap-host.mjs` 完成宿主骨架补齐，再安装或同步套件到宿主内路径
 - 安装完成后，后续命令应优先使用宿主内套件路径，例如 `node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`
+
+### 命令路径统一约定（`<suite-path>`）
+
+套件内所有文档给出脚本命令时，统一写成 `node <suite-path>/skills/<skill 名>/scripts/<脚本名>.mjs` 或 `node <suite-path>/tools/<脚本名>.mjs` 的形式。`<suite-path>` 指套件根目录，按所处环境取值：
+
+| 所处环境 | `<suite-path>` 取值 | 示例 |
+|---------|--------------------|------|
+| 在套件源码仓库内联调 | `project-manager-suite/` | `node project-manager-suite/tools/route-check.mjs <host-project-root>` |
+| 套件已安装到宿主项目 | `.agent/project-manager-suite/` | `node .agent/project-manager-suite/tools/route-check.mjs <host-project-root>` |
+
+命令默认在**宿主项目根目录**执行。若按替换后的路径找不到脚本，应先核对套件的实际安装位置并修正路径，而不是跳过脚本改为纯文字判断——脚本门禁是流水线质量的兜底。
+
+### 会话启动自动注入（Claude Code hooks 注册）
+
+套件自带一个 session-start hook（`hooks/session-start`，会话启动时运行的脚本），作用是在每次会话开始时自动把 `ai-project-manager` 主入口内容注入到上下文，让"项目启动 / 推进"类请求默认走主入口。**这是"已装套件场景由 hook 自动注入"真正生效的前提：不完成本节注册，自动注入不会发生**，需要手动 `Read` 主入口 SKILL.md。
+
+注册方式（Claude Code）：在宿主项目的 `.claude/settings.json`（项目级配置文件）中加入以下片段：
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.agent/project-manager-suite/hooks/session-start\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+注意事项：
+
+- `$CLAUDE_PROJECT_DIR` 是 Claude Code 在运行 hook 时提供的宿主项目根目录变量；command 整体用引号包裹，避免路径含空格时解析失败
+- `hooks/session-start` 与 `hooks/run-hook.cmd`（Windows 下的转发入口）需要有可执行权限；仓库内已带执行位，若复制安装后丢失，执行 `chmod +x .agent/project-manager-suite/hooks/session-start .agent/project-manager-suite/hooks/run-hook.cmd` 补上
+- Windows 下将 command 换成 `"%CLAUDE_PROJECT_DIR%\\.agent\\project-manager-suite\\hooks\\run-hook.cmd" session-start`，由它转发给 Git Bash 执行
+- `hooks/hooks.json` 是套件作为 Claude Code 插件分发时的 hook 声明（依赖插件机制提供的 `${CLAUDE_PLUGIN_ROOT}` 变量），只在插件安装形态下自动生效；普通复制 / 脚本安装到 `.agent/` 的场景必须按上面的方式手动注册
+- 验证方式：注册后重启会话，若启动时上下文里出现 ai-project-manager 主入口内容（或宿主终端运行 `bash .agent/project-manager-suite/hooks/session-start` 能输出一段 JSON），说明链路已通
 
 接入宿主项目时，优先做的是 **角色映射**，不是强制重命名现有文档：
 
@@ -90,7 +133,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 - 默认策略是“只补缺失文件，不覆盖宿主已有同名规则文件”
 - 若需要强制覆盖，可追加 `--force`
 - 运行时读取顺序应始终保持“宿主 `docs/rules/` 优先，套件默认规则源兜底”
-- 验收样例可参考 `docs/host-rules-generation-example.md`
+- 该脚本的参数与行为细节见 `tools/README.md`
 - 若你当前就在套件源码仓库中联调，也可直接使用仓库路径：`node project-manager-suite/tools/generate-host-rules.mjs <host-project-root>`
 
 </details>
@@ -133,10 +176,10 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 → 功能列表 / mainprd / subprd
 → 开发计划
 → 开发执行
-→ 测试用例
-→ 测试执行
-→ 安全扫描
-→ 验收收口
+→ 测试用例（S5，test-case-chief 调度）
+→ 测试执行（S6，test-case-runner）
+→ 安全扫描（S7，security-scan）
+→ 验收收口（test-and-acceptance：S6 测试报告产出后由用户显式调用承接，不在主入口自动路由内）
 ```
 
 其中 **S2 页面设计、技术地基与完整版 PRD** 阶段有一条硬约束：
@@ -186,7 +229,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 | `test-case-reviewer` | 核查 TC 质量，原地修正或写入待裁定问题清单 | S5 TC 核查 |
 | `test-case-runner` | 按测试用例文档执行 API / UI 测试并生成报告 | S6 |
 | `security-scan` | 在完工前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
-| `test-and-acceptance` | 承接人工点检准备、验收判断和阶段收口 | 验收阶段 |
+| `test-and-acceptance` | 人工点检准备与验收收口支撑（用户显式调用，不在主入口自动路由内） | S6 测试执行后按需 |
 | `doc-governance` | 文档治理 advisory（不强制载入流水线） | 按需 |
 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
 | `project-link-indexer` | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物 | 全阶段伴随 |
@@ -199,8 +242,7 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 project-manager-suite/
 ├── package.json                   # Node 运行入口与测试脚本定义
 ├── README.md                      # 套件使用指南
-├── docs/design/                   # （可选阅读）产品设计图纸与分层理念
-├── docs/tooling/                  # 工具脚本使用与维护说明
+├── PIPELINE.md                    # 流水线与产物路径的权威定义
 ├── hooks/                         # 会话启动时的注入与平台 hook 入口
 ├── lib/                           # 协议结构化实现与 bootstrap 组装层
 │   ├── ai-pm-protocol/            # 字段、阶段、路由、规则同步等协议层结构化配置
@@ -246,12 +288,9 @@ project-manager-suite/
 - `package.json`
   - 作用：定义 Node 侧的最小工程入口，例如测试脚本和模块类型配置
   - 什么时候看：要运行 `npm run test:ai-pm`、补充新的工具脚本命令、调整 Node 模块行为时
-- `docs/design/`
-  - 作用：沉淀产品设计图纸、架构分层和为什么这么设计
-  - 什么时候看：要理解整套机制的设计意图、准备重构主流程、需要做架构层讨论时
-- `docs/tooling/`
-  - 作用：记录工具脚本的使用说明、维护方法和边界
-  - 什么时候看：要跑脚本、排查脚本行为、维护工具链或补充自动化能力时
+- `PIPELINE.md`
+  - 作用：定义 S0 → S7 各阶段 skill 的职责、依赖和产物落点，是路径约定的权威来源
+  - 什么时候看：要确认某个产物该放哪、上下游怎么衔接、新增 skill 要登记落点时
 - `hooks/`
   - 作用：提供平台侧会话启动注入入口，例如 session start hook
   - 什么时候看：要接 Claude/OpenCode/Codex 等平台、排查“为什么启动时自动注入 ai-project-manager”时
@@ -308,11 +347,23 @@ project-manager-suite/
 - 主入口行为以 `skills/ai-project-manager/references/core/runtime.md` 为准
 - 路由映射和骨架补齐规则以 `skills/ai-project-manager/references/core/routing.md` 为准
 - 若修改了阶段流转、技能职责或默认交付链路，应该同步更新本 README，避免使用者读到过期说明
+- 本套件默认**单项目宿主**假设：一个宿主项目只维护一套 slug 文件族（一份 BRD、一套页面台账、一套 PRD 等，slug 由 brd-writer 在 Phase A 固化）。若同一目录下出现多套 slug 产物，各 skill 的"按文件名找上游"逻辑会产生歧义；要并行推进多个项目，请为每个项目单独建目录、各自挂载套件走完整流水线
+- 版本控制建议（宿主项目侧）：
+  - `.agent/project-manager-suite/`（套件拷贝）建议提交进宿主仓库，团队成员拉取即得同版本套件；若选择不提交，则每位成员需自行安装同版本套件，并在 `.gitignore` 中忽略该目录
+  - `docs/`（BRD / PRD / 计划 / 测试用例 / 测试报告 / 安全报告）和 `logs/`（开发日志）下的流水线产物是项目资产，建议提交
+  - `.gitignore` 参考片段（按团队选择保留或删除注释行）：
+
+    ```gitignore
+    # 若选择不提交套件拷贝，取消下一行注释
+    # .agent/project-manager-suite/
+    ```
 
 ## 延伸阅读
 
-- 如果你希望了解为何如此设计，例如能力边界、闭环机制和分层策略，参阅 `docs/design/project-manager-suite-product-design.md`
-- 如果你需要维护脚本化能力，而不是只使用它们，继续阅读 `docs/tooling/ai-pm-tools-usage.md` 和 `docs/tooling/ai-pm-maintenance-guide.md`
+- 流水线各阶段职责、依赖与产物落点的权威定义，参阅 `PIPELINE.md`
+- 协议层结构化实现（字段合同、阶段定义、路由规则）的维护说明，参阅 `lib/ai-pm-protocol/README.md`
+- 工具脚本的使用与维护说明，参阅 `tools/README.md`
+- 测试链路的覆盖范围与运行方式，参阅 `tests/README.md`
 
 ## 后续产品升级路径
 

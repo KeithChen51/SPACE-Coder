@@ -26,7 +26,10 @@ const __dirname = path.dirname(__filename);
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/validate-global-files.mjs <host-project-root> [--json]'
+        'Usage: node <suite-path>/tools/validate-global-files.mjs <host-project-root> [--json]'
+    );
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
     );
 }
 

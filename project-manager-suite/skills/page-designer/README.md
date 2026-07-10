@@ -45,8 +45,8 @@ page-designer/
 │   ├── page-ledger-io.mjs       # 台账数据结构 + advance check
 │   ├── page-ledger-mutate.mjs   # boot / mark-asked / advance / start-loop
 │   └── page-ledger-query.mjs    # status / can-advance
-├── design-db/      # 通用设计知识库 (CSV, BM25 可搜索)
+├── design-db/      # 通用设计知识库 (CSV, BM25 可搜索；内容全英文，搜索用英文关键词)
 │   ├── styles.csv, colors.csv, typography.csv, products.csv, charts.csv, ...
 │   └── stacks/     # 13 个技术栈指南
-└── docs/           # 历史设计稿
+└── docs/           # 预留目录，当前为空
 ```

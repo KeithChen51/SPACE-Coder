@@ -215,10 +215,12 @@ Use `scripts/scan-authority-overlap.mjs` when:
 Default usage:
 
 ```bash
-node project-manager-suite/skills/doc-governance/scripts/scan-authority-overlap.mjs \
+node <suite-path>/skills/doc-governance/scripts/scan-authority-overlap.mjs \
   --files file-a.md,file-b.md,file-c.md \
   --patterns "docs/rules,S2 页面先行协议,project-status\\.md"
 ```
+
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 
 What the script does:
 

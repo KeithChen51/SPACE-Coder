@@ -366,14 +366,21 @@ function classifyFiles(files, docsPath, options = {}) {
 }
 
 /**
- * Check whether pipeline mode found at least one PRD-related file.
+ * Check whether pipeline mode found at least one PIPELINE-named artifact.
+ * Hits in the foundation/ and subprd/ subdirectories also count: a host that
+ * only has foundation docs must stay in pipeline mode so that detectMissing
+ * can report the missing mainprd/subprd instead of silently falling back.
  * If yes → pipeline mode is valid; if no → should fallback.
  */
 function hasPipelineHits(classified) {
     return !!(
         classified.mainprd ||
         classified.prdFeatureList ||
-        classified.subprd.length > 0
+        classified.subprd.length > 0 ||
+        classified.foundationGlossary ||
+        classified.foundationSchema.length > 0 ||
+        classified.foundationApi.length > 0 ||
+        classified.foundationDelivery
     );
 }
 
@@ -898,8 +905,15 @@ function main() {
             console.log(formatPipelineReport(output, options.verbose));
         }
     } else {
-        // Fallback mode – keyword-based fuzzy classification
-        const buckets = fallbackClassify(files, docsPath);
+        // Fallback mode – keyword-based fuzzy classification.
+        // foundation/ 与 subprd/ 子目录同样纳入扫描（以相对路径参与分类），
+        // 避免子目录里的文档在兜底清单中凭空消失。
+        const fallbackFiles = [
+            ...files,
+            ...foundationFiles.map((name) => path.join(FOUNDATION_SUBDIR, name)),
+            ...subprdFiles.map((name) => path.join(SUBPRD_SUBDIR, name)),
+        ];
+        const buckets = fallbackClassify(fallbackFiles, docsPath);
         const warnings = collectFallbackWarnings(buckets);
         const output = buildFallbackOutput({ hostRoot, docsPath, buckets, warnings });
 

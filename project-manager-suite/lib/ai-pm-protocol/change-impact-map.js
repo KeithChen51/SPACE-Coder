@@ -1,7 +1,9 @@
 /**
  * Traceability:
  * Rule sources:
- * - docs/ai-project-manager-scriptification-plan.md
+ * - skills/ai-project-manager/references/core/runtime.md
+ * - skills/ai-project-manager/references/core/routing.md
+ * - skills/ai-project-manager/references/core/global-files-protocol.md
  * Consumed by:
  * - tools/check-protocol-alignment.mjs
  */
@@ -22,9 +24,8 @@ const changeImpactMap = {
     startupInterview: {
         description: '首轮访谈的必问字段、追问条件、展示顺序与停机条件',
         currentAuthority: ['skills/ai-project-manager/references/core/runtime.md'],
-        targetAuthority: ['lib/ai-pm-protocol/interview.js'],
+        targetAuthority: ['lib/ai-pm-protocol/field-contracts.js'],
         checkAlso: [
-            'lib/ai-pm-protocol/field-contracts.js',
             'skills/ai-project-manager/assets/global-files/project-profile.md',
             'tools/bootstrap-host.mjs',
             'tools/validate-global-files.mjs'
@@ -33,15 +34,14 @@ const changeImpactMap = {
     runtimeFlow: {
         description: '主入口 Step 0 到 Step 5 的执行顺序、脚本优先和回退条件',
         currentAuthority: ['skills/ai-project-manager/references/core/runtime.md'],
-        targetAuthority: ['lib/ai-pm-protocol/runtime-flow.js'],
+        targetAuthority: ['tools/route-check.mjs'],
         checkAlso: [
-            'tools/route-check.mjs',
             'tools/devlog-sync.mjs',
             'hooks/session-start'
         ]
     },
     stageDefinitions: {
-        description: '阶段定义、最小交付物、默认 owner skill 与 gatekeeping 入口',
+        description: '阶段定义、最小交付物与默认 owner skill（阶段门禁判定以 tools/route-check.mjs 为准）',
         currentAuthority: [
             'skills/ai-project-manager/references/core/runtime.md',
             'skills/ai-project-manager/references/core/routing.md'
@@ -66,9 +66,8 @@ const changeImpactMap = {
     scaffoldPolicy: {
         description: '宿主根目录判定、基础骨架、阶段触发目录与安装迁移策略',
         currentAuthority: ['skills/ai-project-manager/references/core/routing.md'],
-        targetAuthority: ['lib/ai-pm-protocol/scaffold.js'],
+        targetAuthority: ['tools/bootstrap-host.mjs'],
         checkAlso: [
-            'tools/bootstrap-host.mjs',
             'tools/generate-host-rules.mjs',
             'tools/install-suite-into-host.mjs'
         ]

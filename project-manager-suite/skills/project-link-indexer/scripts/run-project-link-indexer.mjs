@@ -15,6 +15,11 @@ const DIAGNOSTIC_TRIGGERS = new Set([
     'need_impact_lookup'
 ]);
 
+const REFRESH_TRIGGERS = new Set([
+    'after_existing_project_baseline_audit',
+    'artifact_files_added_or_split'
+]);
+
 const KEY_ARTIFACT_KINDS = new Set([
     'baseline_audit',
     'brd',
@@ -136,6 +141,10 @@ function runProjectLinkIndexer({ hostRoot, trigger } = {}) {
     }
     if (!trigger) {
         throw new Error('trigger is required.');
+    }
+
+    if (!DIAGNOSTIC_TRIGGERS.has(trigger) && !REFRESH_TRIGGERS.has(trigger)) {
+        console.warn(`Warning: unknown trigger "${trigger}"; treating it as a refresh trigger, index files under docs/index/ may be rewritten.`);
     }
 
     const resolvedHostRoot = path.resolve(hostRoot);
@@ -263,6 +272,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
 export {
     DIAGNOSTIC_TRIGGERS,
     KEY_ARTIFACT_KINDS,
+    REFRESH_TRIGGERS,
     formatRunReport,
     runProjectLinkIndexer
 };

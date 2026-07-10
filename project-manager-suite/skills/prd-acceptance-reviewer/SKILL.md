@@ -31,10 +31,10 @@ description: Use when subprd 每个功能子区域都带 X.6 验收小节（P2 �
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
-| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
-| `foundation-schema-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/` |
-| `foundation-api-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/` |
-| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/` |
+| `foundation-glossary-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-schema-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-api-<slug>.md`（或同名子目录） | foundation-builder | `<host>/docs/prd/foundation/` |
+| `foundation-delivery-<slug>.md` | foundation-builder | `<host>/docs/prd/foundation/` |
 | `prd-feature-list-<slug>.md` | prd-writer | `<host>/docs/prd/` |
 | `mainprd-<slug>.md` | prd-writer | `<host>/docs/prd/` |
 | `0X-subprd-<区块英文短名>.md`（N 份） | prd-writer | `<host>/docs/prd/subprd/` |
@@ -128,13 +128,14 @@ description: Use when subprd 每个功能子区域都带 X.6 验收小节（P2 �
 3. **只动** §X.6 小节末尾这一行；其它位置一字不动
 4. N 份 subprd × 每份 K 个功能子区域 = 共 N×K 条正向回链，全部追加完成后进入 Phase 5
 
-### Phase 5：自检（5 项）
+### Phase 5：自检（6 项）
 
 1. **区块数对齐**：主索引的区块数 = subprd 数
 2. **§X 数对齐**：每个区块子文件的 §X 数 = 对应 subprd 的功能子区域数
 3. **反向回链齐全**：每个验收子文件的 §X 子节头部都有反向回链到对应 §X.6
 4. **正向回链齐全**：每个 subprd 的每个 §X.6 末尾都有正向回链到对应验收子文件
 5. **`[待确认]` 归档**：在各 §X.6 内部或验收子文件里出现的 `[待确认]` 标记条目，已在主索引汇总段计入
+6. **回链可解析**：逐个点开主索引的子文件链接、subprd 里的正向回链、验收子文件里的反向回链，确认按相对路径都能打开目标文件（目标文件真实存在、相对层级没写错）。这一项是人工核对，不依赖脚本
 
 ## 5) 写入边界（硬约束）
 
@@ -159,10 +160,12 @@ description: Use when subprd 每个功能子区域都带 X.6 验收小节（P2 �
 写在每份 subprd 的每个 §X.6 小节**末尾**一行：
 
 ```markdown
-> 验收标准详见：[acceptance-<slug>/<区块名>.md](../test-case/acceptance-<slug>/<区块名>.md)
+> 验收标准详见：[acceptance-<slug>/<区块名>.md](../../test-case/acceptance-<slug>/<区块名>.md)
 ```
 
 粒度说明：指向整个区块子文件（不到 §X anchor）——避免 anchor 契约脆性。
+
+路径说明：subprd 在 `docs/prd/subprd/`，验收子文件在 `docs/test-case/acceptance-<slug>/`，所以需要向上两级（`../../`）回到 `docs/` 再进入 `test-case/`。
 
 ### 反向（验收子文件 §X → subprd §X.6）
 

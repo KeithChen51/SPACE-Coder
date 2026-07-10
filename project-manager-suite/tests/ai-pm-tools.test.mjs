@@ -345,6 +345,9 @@ function buildSubDeliveryPlanContent(slug = 'demo') {
 **Failure Handling**：
 - PRD 或核心文件定位不到时阻塞。
 
+**完成收尾：状态同步**：
+- 完成实现与验证后，把完成事实、验证证据和完成日期提交给 \`ai-project-manager\`，同步主计划、看板和本子计划状态。
+
 **Owner**：AI 执行 -> 人审核
 **前置**：无
 **状态**：进行中

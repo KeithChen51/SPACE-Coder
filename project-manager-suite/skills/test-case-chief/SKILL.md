@@ -72,14 +72,15 @@ description: Use when delivery-plan 已就绪，需要调度 S5 测试用例环�
 
 ### 运行期观察点
 
-chief 每次被调用时扫一遍以判定下一步。这四个位置覆盖了三子 skill 的全部产出入口——acceptance 文档组、TC 主索引、tc-reviews 目录。chief 只关心"这些路径是否存在、最新 issues 文件的结论字段是什么"，不做内容层面的二次判断。
+chief 每次被调用时扫一遍以判定下一步。这些观察点覆盖了三子 skill 的全部产出入口——acceptance 文档组、TC 主索引（含其版本历史）、tc-reviews 目录。chief 只关心"这些路径是否存在、最新 issues 文件的结论字段是什么、tc-main 版本历史里有没有对应的响应条目"，不做内容层面的二次判断。
 
 | 来源子 skill | 文件 / 目录 | 位置 | 观察意图 |
 |-------------|-----------|------|---------|
 | prd-acceptance-reviewer | `acceptance-<slug>.md` | `<host>/docs/test-case/` | 验收文档主索引是否已产出 |
 | prd-acceptance-reviewer | `acceptance-<slug>/<区块名>.md` | `<host>/docs/test-case/acceptance-<slug>/` | 区块验收子文件是否齐 |
 | test-case-writer | `tc-main-<slug>.md` | `<host>/docs/test-case/` | TC 主索引是否产出 |
-| test-case-reviewer | `tc-reviews/*-issues.md` | `<host>/docs/test-case/tc-reviews/` | 读最新一份以获知本轮核查结论（按文件名字典序末尾一份为"最新"） |
+| test-case-reviewer | `tc-reviews/*-issues.md` | `<host>/docs/test-case/tc-reviews/` | 读最新一份以获知本轮核查结论（"最新"的取法见第 5 节定义） |
+| test-case-writer | `tc-main-<slug>.md` 的版本历史 | `<host>/docs/test-case/` | 是否已有"响应 <最新 issues 文件名>"条目——判定 writer 是否已完成对最新 issues 的续改 |
 
 ## 4) 出口检查清单
 
@@ -110,8 +111,8 @@ START
   │
   ▼
 ┌──────────────────────┐
-│ 校验前置门禁七项齐全  │── 任一缺失 → 中止，提示先完成上游
-└──────────┬───────────┘
+│ 校验前置门禁文件齐全  │── 第 3 节门禁表所列文件全部齐全才继续；
+└──────────┬───────────┘   任一缺失 → 中止，提示先完成上游
            ▼
 ┌──────────────────────┐
 │ prd-acceptance-      │── 观察 acceptance-<slug>.md
@@ -143,9 +144,13 @@ START
    │         │                │
    │         ▼                ▼
    │    回 test-case-writer   递 issues 文件路径给用户
-   │    修正后回到            停止自动回环
-   │    test-case-reviewer
-   │    复查（回到上一格）
+   │    修正；writer 完成后    停止自动回环
+   │    在 tc-main 版本历史
+   │    追加"响应 <issues
+   │    文件名>"条目，chief
+   │    据此转 test-case-
+   │    reviewer 复查（回到
+   │    上一格，产出新 issues）
    ▼
 【Skill状态】test-case-chief | DONE
 ```
@@ -154,7 +159,7 @@ START
 
 本表是 chief 的唯一决策依据。每次被调用时，从上到下匹配第一条命中的"当前状态"，按对应"下一步动作"指示。匹配不到任何一行意味着文件状态自相矛盾（例如有 TC 主索引但 acceptance 缺失），此时把已观察到的文件现状原样展示给用户，请用户决定如何处理，不自行修复。
 
-"最新一份 issues 文件"的定义：`<host>/docs/test-case/tc-reviews/` 目录下按文件名字典序排列、位于末尾的那一份 `*-issues.md`；chief 只读这一份来拿结论，历史 issues 文件只作为审计线索存在，不参与决策。
+"最新一份 issues 文件"的定义：`<host>/docs/test-case/tc-reviews/` 目录下的 `*-issues.md` 中，**日期最大、且同日内数字后缀最大**的那一份。issues 命名规则是：某日第 1 轮为 `YYYY-MM-DD-issues.md`（不带后缀），同日第 2 轮起为 `YYYY-MM-DD-issues-2.md`、`-3.md`…，无后缀视为第 1 轮。注意**不能**按整个文件名的字典序排序取末尾——带 `-2` / `-3` 后缀的文件名在字典序里反而排在同日无后缀文件之前，按字典序取会拿到旧一轮结论。chief 只读最新这一份来拿结论，历史 issues 文件只作为审计线索存在，不参与决策。
 
 这三种结论是唯一合法的终态表达——"已完工"、"需 writer 续改"、"需用户接手"。若最新一份 issues 文件的结论字段不属于这三种之一，视为 reviewer 尚未把文件写完，继续等 reviewer 收尾，不替它推断。
 
@@ -166,8 +171,11 @@ START
 | acceptance 主索引 + 区块子文件齐 + `tc-main-<slug>.md` 不存在 | 启 **test-case-writer** |
 | `tc-main-<slug>.md` 存在 + `tc-reviews/` 不存在或为空 | 启 **test-case-reviewer**（首轮核查） |
 | `tc-reviews/` 最新一份 issues 结论 = 已完工 | **DONE**，回到主入口路由 |
-| `tc-reviews/` 最新一份 issues 结论 = 需 writer 续改 | 回 **test-case-writer** 修正 |
+| `tc-reviews/` 最新一份 issues 结论 = 需 writer 续改，且 `tc-main-<slug>.md` 版本历史中**没有**"响应 <该 issues 文件名>"条目 | 回 **test-case-writer** 修正（writer 完成修正时会在 tc-main 版本历史追加该条目） |
+| `tc-reviews/` 最新一份 issues 结论 = 需 writer 续改，且 `tc-main-<slug>.md` 版本历史中**已有**"响应 <该 issues 文件名>"条目 | 启 **test-case-reviewer** 复查（新一轮核查，产出新一份 issues 文件） |
 | `tc-reviews/` 最新一份 issues 结论 = 需用户接手 | 把该 issues 文件路径递给用户，停止自动回环 |
+
+**回环轮次上限**（与 PIPELINE 的"上限 3 轮"口径对齐）：回环轮次同样只看文件事实——`tc-reviews/` 目录下 issues 文件的总份数，1 份 issues = 1 轮核查。当 issues 文件已达 **3 份**且最新一份的结论仍不是"已完工"时，chief 每次要指示回环（回 writer 修正或转 reviewer 复查）之前，都必须先把各轮 issues 文件路径与结论列给用户、说明回环仍未收敛，取得用户确认后才能继续；用户不确认则按"需用户接手"处理，停止自动回环。
 
 ## 6) 写入声明
 

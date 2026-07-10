@@ -38,7 +38,7 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
-- `page-ledger-<slug>.json` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`；不存在不是异常，只表示 page-designer 尚未启动。
+- `page-ledger-<slug>.json` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`；不存在不是异常，只表示 page-designer 尚未启动。新旧目录同时存在台账时，台账脚本自动使用新目录中的一份并在 stderr（标准错误输出）打印 notice；同一目录内出现多份台账才会报错，需提示用户清理。
 - `page-delivery-<slug>.md`、`explainer-*.md` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件。
 - 页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列和工程目录段读取；仅旧项目才回退检查 `page-preview/<工程名>/` 或 `可操作页面/`。
 
@@ -52,7 +52,7 @@ page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在
 | page-designer | `page-delivery-<slug>.md` | 存在 |
 | page-designer | delivery 中列出的页面代码文件（位于项目根级工程目录） | 全部存在 |
 | page-explainer | `explainer-flow-<slug>.md` | 存在 |
-| page-explainer | `explainer-b-interaction-<slug>.md` | 存在，所有语义条目 status = locked |
+| page-explainer | `explainer-b-interaction-<slug>.md` | 存在，所有语义条目 status = locked（以各模块「机读表（下游消费）」中的 status 列为权威判定源） |
 | page-explainer | `explainer-b-gap-<slug>.md`（若存在） | 无 design_gap / logic_conflict 未解决条目 |
 | page-explainer | `explainer-delivery-<slug>.md` | 存在，一致性自查全部 ✓ |
 
@@ -118,10 +118,12 @@ START
 2. 观察产物状态：
    - 先执行：
      ```bash
-     node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
+     node <suite-path>/skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/
      ```
+     > `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
    - 若返回 `{ exists: false }`：说明 page-designer 尚未启动，继续指示用户执行 page-designer
    - 若返回 `{ exists: true }`：读取 `phase`、`loopRound`
+   - 若命令报错退出（退出码非 0，stderr 返回 JSON error，如同一目录内发现多份台账 `multiple page ledgers found in the same directory`）：向用户展示错误信息并提示先清理冲突文件，不进入下一步。注意：新旧目录并存台账只会产生 stderr notice 提示（脚本自动用新目录），不算报错
    - `src/frontend/page-preview/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查根级 `page-preview/`、`可操作页面/` 或根目录同名文件）
    - delivery 中列出的页面代码文件是否均存在
 3. 判定规则：
@@ -139,7 +141,7 @@ START
    - `src/frontend/page-preview/` 中的 `explainer-delivery-<slug>.md`
 3. 任一必需文件缺失 → page-explainer 尚未完成，继续等待
 4. 全部存在后，逐文件检查：
-   - interaction 文件中的语义条目 status 是否全部为 `locked`
+   - interaction 文件中的语义条目 status 是否全部为 `locked`。同一条目的 status 在卡片行和「机读表（下游消费）」里各写一次，**以机读表中的 status 列为权威判定源**；两处不一致时按机读表判定，并提示 page-explainer 修正卡片行
    - 是否存在 gap 文件（`explainer-b-gap-<slug>.md`）
    - `explainer-delivery-<slug>.md` 一致性自查是否全部 ✓
 5. 判断结果：
@@ -151,7 +153,7 @@ START
 
 1. 读取 gap 文件，统计未解决的 `design_gap` 和 `logic_conflict` 条目数
 2. 读取 page-designer 台账中的 `loopRound`
-   - 通过 `node skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/` 获取
+   - 通过 `node <suite-path>/skills/page-designer/scripts/page-ledger-query.mjs status --host-dir <host>/` 获取
    - `loopRound` 的唯一写入方是 page-designer 的 `start-loop` 命令，page-chief 不写台账
 3. 检查 `loopRound`：
    - **< 3 轮**：向用户展示未解决 gap 摘要，判定：`需要回环，下一步请重新执行 page-designer`
@@ -190,6 +192,8 @@ START
 ```
 【Skill状态】page-chief | stage=3a | 回环#<N> | RUNNING
 ```
+
+> `回环#<N>` 的 N 以 page-designer 台账的 `loopRound` 为准：判定回环、page-designer 尚未执行 `start-loop` 时为「当前 loopRound + 1」（即将进行的轮次）；`start-loop` 执行后台账 `loopRound` 与 N 一致。
 
 全部完成：
 ```

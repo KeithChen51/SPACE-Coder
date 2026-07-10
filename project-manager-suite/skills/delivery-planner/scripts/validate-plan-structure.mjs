@@ -16,7 +16,7 @@
  *   Validate a delivery plan file group through its main delivery plan:
  *     - 13 required main-plan sections
  *     - 1:1 Task mapping across main plan, task kanban, and sub plans
- *     - 7 required Task fields per sub-plan task block
+ *     - 8 required Task fields per sub-plan task block
  *     - High-risk vague words detection
  *
  *   Outputs a structured validation report (JSON or human-readable).
@@ -60,7 +60,7 @@ const REQUIRED_SECTIONS = [
 ];
 
 /**
- * The 7 required Task fields.
+ * The 8 required Task fields.
  * We look for these as bold labels within task blocks.
  */
 const REQUIRED_TASK_FIELDS = [
@@ -68,6 +68,7 @@ const REQUIRED_TASK_FIELDS = [
     { id: 'core-logic',  label: '核心逻辑',     pattern: /\*\*核心逻辑\*\*/ },
     { id: 'core-files',  label: '核心文件',     pattern: /\*\*核心文件\*\*/ },
     { id: 'done-criteria',label: '完成标准',    pattern: /\*\*完成标准\*\*/ },
+    { id: 'closing-sync', label: '完成收尾：状态同步', pattern: /\*\*完成收尾[：:]\s*状态同步\*\*/ },
     { id: 'owner',       label: 'Owner',       pattern: /\*\*Owner\*\*/ },
     { id: 'dependency',  label: '前置',        pattern: /\*\*前置\*\*/ },
     { id: 'status',      label: '状态',        pattern: /\*\*状态\*\*/ },

@@ -37,7 +37,7 @@ function parseArgs(argv) {
 function usage() {
   return [
     "Usage:",
-    "  node scripts/scan-authority-overlap.mjs --files a.md,b.md --patterns \"docs/rules,S2 页面先行协议\"",
+    "  node <suite-path>/skills/doc-governance/scripts/scan-authority-overlap.mjs --files a.md,b.md --patterns \"docs/rules,S2 页面先行协议\"",
     "",
     "Options:",
     "  --files      Comma-separated file paths",

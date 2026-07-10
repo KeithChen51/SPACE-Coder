@@ -22,7 +22,9 @@
 ### 2. 日志文件按天分离
 
 宿主项目已有日志目录时，优先沿用宿主项目位置。默认建议文件位置：
-- `logs/YYYYMMDD_refactor_log.md`
+- `logs/YYYYMMDD_refactor_log_<用户名>.md`
+
+`<用户名>` 是当前操作者标识（默认取 git 配置里的 `user.name`）；该命名与套件日志回写脚本 `tools/devlog-sync.mjs` 实际生成的文件名一致，同一天同一操作者只应存在一份日志文件。
 
 ### 3. 追加而非覆盖
 

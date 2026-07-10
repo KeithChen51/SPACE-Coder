@@ -23,7 +23,7 @@ import fs from 'fs';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
-import { FILE_ROLE_IDS, STAGE_IDS, fieldPackages, fileContracts } from '../lib/ai-pm-protocol/index.js';
+import { FILE_ROLE_IDS, fieldPackages, fileContracts } from '../lib/ai-pm-protocol/index.js';
 import { generateHostRules } from './generate-host-rules.mjs';
 import { validateGlobalFiles } from './validate-global-files.mjs';
 
@@ -34,7 +34,10 @@ const templatesDir = path.join(suiteRoot, 'skills', 'ai-project-manager', 'asset
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--target-stage S0|S1|S2|S3|S4|S5|S6|S7] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
+        'Usage: node <suite-path>/tools/bootstrap-host.mjs <host-project-root> [--project-name NAME] [--container-root] [--dry-run] [--json] [--force-rules] [--interview-complete] [--interview-json FILE] [--create-profile-file] [--create-rules-file]'
+    );
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
     );
 }
 
@@ -43,7 +46,6 @@ function parseArgs(argv) {
     const options = {
         hostRoot: '',
         projectName: '',
-        targetStage: '',
         containerRoot: false,
         dryRun: false,
         json: false,
@@ -51,8 +53,7 @@ function parseArgs(argv) {
         interviewComplete: false,
         interviewJsonPath: '',
         createProfileFile: false,
-        createRulesFile: false,
-        createPlanFile: false
+        createRulesFile: false
     };
 
     for (let i = 0; i < args.length; i += 1) {
@@ -102,24 +103,10 @@ function parseArgs(argv) {
             continue;
         }
 
-        if (arg === '--create-plan-file') {
-            options.createPlanFile = true;
-            continue;
-        }
-
         if (arg === '--project-name') {
             options.projectName = args[i + 1] || '';
             if (!options.projectName) {
                 throw new Error('Missing value for --project-name');
-            }
-            i += 1;
-            continue;
-        }
-
-        if (arg === '--target-stage') {
-            options.targetStage = (args[i + 1] || '').toUpperCase();
-            if (!options.targetStage) {
-                throw new Error('Missing value for --target-stage');
             }
             i += 1;
             continue;
@@ -135,10 +122,6 @@ function parseArgs(argv) {
 
     if (!options.hostRoot) {
         throw new Error('Missing host project root.');
-    }
-
-    if (options.targetStage && !Object.values(STAGE_IDS).includes(options.targetStage)) {
-        throw new Error(`Unsupported target stage: ${options.targetStage}`);
     }
 
     return options;
@@ -353,10 +336,6 @@ function copyTemplateIfNeeded({ effectiveRoot, relativePath, templateName, optio
     results.files.created.push(targetPath);
 }
 
-function shouldCreatePlanFile(options) {
-    return true;
-}
-
 function fillProfileTemplate(templateContent, interviewInput) {
     const replacements = [
         ['项目名称', interviewInput.answers.project_name],
@@ -493,22 +472,15 @@ function bootstrapHost(options) {
     }
 
     if (!validationBefore.authority.execution_plan) {
-        if (shouldCreatePlanFile(options)) {
-            copyTemplateIfNeeded(
-                {
-                    effectiveRoot,
-                    relativePath: 'docs/plans/execution-plan.md',
-                    templateName: 'execution-plan.md',
-                    options,
-                    results
-                }
-            );
-        } else {
-            results.files.deferred.push({
-                path: path.join(effectiveRoot, 'docs/plans/execution-plan.md'),
-                reason: 'plan_creation_requires_s3_or_s4_or_explicit_flag'
-            });
-        }
+        copyTemplateIfNeeded(
+            {
+                effectiveRoot,
+                relativePath: 'docs/plans/execution-plan.md',
+                templateName: 'execution-plan.md',
+                options,
+                results
+            }
+        );
     }
 
     results.rulesSync = generateHostRules({
@@ -577,6 +549,10 @@ function formatTextReport(result) {
             '',
             `Post validation: errors=${result.postValidation.summary.errors}, warnings=${result.postValidation.summary.warnings}, infos=${result.postValidation.summary.infos}`
         );
+
+        for (const issue of result.postValidation.issues) {
+            lines.push(`- [${issue.severity}] ${issue.code}: ${issue.message}`);
+        }
     }
 
     return lines.join('\n');

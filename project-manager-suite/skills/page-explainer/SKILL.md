@@ -41,14 +41,14 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 |------|------|------|---------|
 | brd-writer | `BRD-<slug>-*.md` | 是 | 业务背景、利益相关角色、核心场景 |
 | page-designer | `page-delivery-<slug>.md` | 是 | 页面路由表、文件路径 |
-| page-designer | 运行页面 / 浏览器验证证据 | 是 | 使用 page-delivery 中的本地预览地址，或按工程目录启动页面；按 H10 优先使用 Playwright / Browser 确认用户实际看到的模块与可操作元素 |
-| page-designer | 实际页面代码文件（Vue 3 组件） | 是 | 从 delivery 中的文件路径读取，用来佐证点击行为、状态联动、禁用条件和 mock 数据流 |
+| page-designer | 运行页面 / 浏览器验证证据 | 是 | 使用 page-delivery「本地预览」段中的启动命令与访问地址；旧交付清单缺该段时按工程目录启动页面。按 H10 优先使用 Playwright / Browser 确认用户实际看到的模块与可操作元素 |
+| page-designer | 实际页面代码文件（技术栈以 page-delivery 交付清单声明为准，默认见 tech-stack.md） | 是 | 从 delivery 中的文件路径读取，用来佐证点击行为、状态联动、禁用条件和 mock 数据流 |
 
 目录读取口径：
 - `BRD-<slug>-*.md` 优先从 `docs/brd/` 读取；仅旧项目尚未迁移时，才回退读取根目录同名文件。
 - `page-delivery-<slug>.md` 优先从 `src/frontend/page-preview/` 读取；仅旧项目尚未迁移时，才回退读取根级 `page-preview/`、`可操作页面/` 或根目录同名文件。
 - 实际页面代码文件位于 `<host>/<工程名>/`（项目根级），具体路径从 `page-delivery-<slug>.md` 中的文件路径列读取；仅旧项目尚未迁移时，才回退读取 `page-preview/<工程名>/` 或 `可操作页面/`。
-- 若 page-delivery 提供本地预览地址，优先打开该地址；若没有地址但有工程目录，先按工程技术栈启动本地预览，再按 H10 做浏览器运行验证。验证工具优先级：Playwright / Browser 自动化 > 可控制的 Chrome 可见窗口 > 用户明确批准的等价方案。缺少前两类能力时，不得自行降级；先 BLOCKED 并请用户安装或授权可用工具。
+- 若 page-delivery 的「本地预览」段提供启动命令和访问地址，优先按其启动并打开；旧交付清单缺该段但有工程目录时，先按工程技术栈启动本地预览，再按 H10 做浏览器运行验证。验证工具优先级：Playwright / Browser 自动化 > 可控制的 Chrome 可见窗口 > 用户明确批准的等价方案。缺少前两类能力时，不得自行降级；先 BLOCKED 并请用户安装或授权可用工具。
 
 ## 4) 产物
 
@@ -87,6 +87,8 @@ description: Use when page-designer 页面已确认，需要在进入 foundation
 | `evidence_source` | 证据来源，说明来自运行页面、页面代码、用户确认或 page-delivery |
 | `prototype_note` | 原型 / mock 说明；无则填 `none` |
 | `status` | `locked`（已确认冻结）或 `open`（待确认） |
+
+> 每条语义在交互文件里出现两次：人读的卡片行和模块末尾的「机读表（下游消费）」。**机读表是权威数据源**——page-chief 与下游 skill 按机读表判定 status；更新任一条目时必须同步两处，发现不一致以机读表为准并立即修正卡片行。
 
 #### 业务态边界
 
@@ -233,7 +235,7 @@ Phase 1 逻辑简单，直接在此定义：
 1. 优先在 `docs/brd/` 搜索 `BRD-<slug>-*.md`；仅旧项目尚未迁移时，才回退搜索根目录同名文件；仍不存在则**中止**，提示用户先完成 brd-writer
 2. 优先在 `src/frontend/page-preview/` 搜索 `page-delivery-<slug>.md`；仅旧项目尚未迁移时，才回退搜索根级 `page-preview/`、`可操作页面/` 或根目录同名文件；仍不存在则**中止**，提示用户先完成 page-designer
 3. 从 delivery 中提取页面文件路径列表，逐个验证文件存在
-4. 从 delivery 中读取本地预览地址或工程目录；若可运行，按 H10 打开页面并保留截图、可见元素、可点击状态等运行验证证据；缺少真实浏览器控制能力时先 BLOCKED，不得自行降级
+4. 从 delivery「本地预览」段读取启动命令、访问地址和 mock 说明（旧交付清单缺该段时读工程目录，按技术栈启动）；若可运行，按 H10 打开页面并保留截图、可见元素、可点击状态等运行验证证据；缺少真实浏览器控制能力时先 BLOCKED，不得自行降级
 5. 从 BRD 读取：项目类型、利益相关角色、核心场景
 6. 从 delivery 读取：页面路由表
 

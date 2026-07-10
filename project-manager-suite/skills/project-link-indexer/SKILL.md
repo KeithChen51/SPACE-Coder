@@ -23,7 +23,7 @@ description: Use when a host project needs file-level reference indexing, broken
 - 不替代 `delivery-planner` 拆任务
 - 不替代任何 `test-case-*` skill 编写、审查或执行测试
 - 不要求其他 skill 直接写同一个索引文件
-- 不索引第三方依赖、构建产物、缓存目录或套件自身源码；这些目录不是宿主项目知识资产
+- 不索引第三方依赖、构建产物、缓存目录、AI 工具运行目录或套件自身源码；这些目录不是宿主项目知识资产
 
 ## 输出文件
 
@@ -46,6 +46,8 @@ description: Use when a host project needs file-level reference indexing, broken
 node <suite-path>/skills/project-link-indexer/scripts/run-project-link-indexer.mjs <hostRoot> --trigger <trigger> --json
 ```
 
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
+
 3. 若明确要强制重建索引，运行收集脚本：
 
 ```bash
@@ -60,6 +62,29 @@ node <suite-path>/skills/project-link-indexer/scripts/validate-project-links.mjs
 
 5. 把诊断结果按文件级问题反馈给用户：坏链、缺回链、孤立交付物、缺必需关系。
 6. 如果用户要求刷新索引，保留原始业务文件，只重写 `docs/index/*`。
+
+## `--trigger` 合法取值
+
+`--trigger` 告诉调度入口本次为什么被调起，并决定"只检查"还是"允许写索引文件"：
+
+| 取值 | 类别 | 行为 |
+|---|---|---|
+| `after_existing_project_baseline_audit` | 刷新类 | S0.5 baseline 诊断完成后调起；按需 build / refresh / noop，会写 `docs/index/*` |
+| `artifact_files_added_or_split` | 刷新类 | BRD / 页面 / foundation / PRD / 计划 / 测试等阶段产物新增或拆分后调起；按需 build / refresh / noop，会写 `docs/index/*` |
+| `need_broken_link_or_reverse_link_check` | 诊断类 | 只检查坏链 / 缺回链，返回 validate-only，不写任何文件 |
+| `need_file_relationship_diagnosis` | 诊断类 | 只回答"文件之间怎么关联"，返回 validate-only，不写任何文件 |
+| `need_impact_lookup` | 诊断类 | 只查"改这个文件影响哪些文件"，返回 validate-only，不写任何文件 |
+
+传入表外取值时，脚本会在标准错误输出（stderr）打印警告，并按刷新类处理（可能重写 `docs/index/*`）。想"只诊断不写文件"，必须用上表的诊断类取值。
+
+## 脚本清单
+
+| 脚本 | 用途 |
+|---|---|
+| `scripts/run-project-link-indexer.mjs` | 调度入口，按 `--trigger` 自行判断 build / refresh / noop / validate-only；主入口调起时用它 |
+| `scripts/collect-project-links.mjs` | 收集与重建脚本，扫描宿主并默认写出三个索引文件；`--dry-run` 只算不写 |
+| `scripts/validate-project-links.mjs` | 只读检查脚本，输出坏链等诊断结果，不写文件 |
+| `scripts/render-project-links.mjs` | `collect-project-links.mjs` 的兼容别名，行为与其完全一致（默认同样写出三个索引文件，并把人读索引打印到终端）；日常流程用上面三个脚本即可，无需单独调用它 |
 
 ## 关系来源
 
@@ -79,9 +104,12 @@ node <suite-path>/skills/project-link-indexer/scripts/validate-project-links.mjs
 默认排除：
 
 - 依赖目录：`node_modules/`
-- 构建产物：`dist/`、`build/`
+- 构建产物：`dist/`、`build/`、`target/`
 - 缓存和工具产物：`.vite/`、`.cache/`、`.next/`、`.nuxt/`、`.turbo/`、`coverage/`
-- Git 与套件目录：`.git/`、`.agent/project-manager-suite/`、`project-manager-suite/`
+- AI 工具运行目录：`.claude/`、`.codex/`、`.cursor/`、`.playwright-mcp/`
+- Git 与套件目录：`.git/`、`.agent/`、`project-manager-suite/`
+
+该清单与 `project-baseline-auditor` 的忽略清单保持一致。
 
 排除规则在任意目录层级生效。例如 `word-format-checker-web/node_modules/` 与根目录 `node_modules/` 都不进入索引。
 

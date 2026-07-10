@@ -7,7 +7,7 @@
 
 ### GAP-001: <简述>
 
-- **分类**: `design_gap` / `logic_conflict` / `clarification` / `out_of_scope`
+- **分类**: `design_gap` / `logic_conflict` / `clarification` / `out_of_scope` / `resolved`
 - **所在页面**: <页面名> (<路由>)
 - **所在模块**: <模块名>
 - **所在元素**: <元素名>
@@ -16,6 +16,7 @@
 - **现状**: <当前页面是什么情况>
 - **预期**: <合理的交互预期是什么>
 - **修改建议**: <具体建议 page-designer 怎么改>
+- **解决记录**: <分类改为 `resolved` 时必填闭环方式：回环修复（回环#N）/ 提问已澄清 / 用户拒绝回环（reason: user-declined）；未解决填 none>
 
 ### GAP-002: <简述>
 <!-- 同上 -->

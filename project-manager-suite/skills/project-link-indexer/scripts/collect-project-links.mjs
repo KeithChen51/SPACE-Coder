@@ -15,11 +15,17 @@ const OUTPUTS = {
 
 const ignoredDirectories = new Set([
     '.git',
+    '.agent',
+    '.claude',
+    '.codex',
+    '.cursor',
     '.agent/project-manager-suite',
+    '.playwright-mcp',
     'project-manager-suite',
     'node_modules',
     'dist',
     'build',
+    'target',
     'coverage',
     '.next',
     '.nuxt',
@@ -363,7 +369,7 @@ function classifyFile(relativePath) {
     if (/^src\/frontend\/page-preview\/page-delivery-.+\.md$/.test(relativePath)) return 'page_delivery';
     if (/^src\/frontend\/page-preview\/page-ledger-.+\.json$/.test(relativePath)) return 'page_ledger';
     if (/^src\/frontend\/page-preview\/explainer-.+\.md$/.test(relativePath)) return 'page_explainer';
-    if (/^docs\/prd\/foundation-.+\.md$/.test(relativePath)) return 'foundation';
+    if (/^docs\/prd\/(?:foundation\/)?foundation-.+\.md$/.test(relativePath)) return 'foundation';
     if (/^docs\/prd\/prd-feature-list-.+\.md$/.test(relativePath)) return 'prd_feature_list';
     if (/^docs\/prd\/mainprd-.+\.md$/.test(relativePath)) return 'mainprd';
     if (/^docs\/prd\/subprd\/\d{2}-subprd-.+\.md$/.test(relativePath)) return 'subprd';

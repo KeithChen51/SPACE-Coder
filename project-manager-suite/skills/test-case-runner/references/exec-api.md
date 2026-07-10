@@ -7,7 +7,7 @@
 1. **读取用例文档步骤** — 打开用例详情文档，找到当前编号对应的"步骤"段，逐步照做
 2. **执行 curl** — 按文档中的 curl 命令执行，替换 `${API_BASE_URL}` 为实际值：
    ```bash
-   curl -s "${API_BASE_URL}/api/basic-info?phone=13800001001&vin=LVTEST..." | python3 -m json.tool
+   curl -s "${API_BASE_URL}<用例文档指定的接口路径与参数>" | python3 -m json.tool
    ```
 3. **逐字段比对** — 按用例文档的"预期结果"表格，逐行比对每个检查项：
    - HTTP 状态码

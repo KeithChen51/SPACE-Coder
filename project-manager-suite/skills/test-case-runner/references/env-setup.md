@@ -6,6 +6,33 @@
 
 不要硬编码任何值。
 
+## 配置文件从哪来
+
+这两个文件**不是流水线上游 skill 的产物**：由测试执行者（或宿主项目维护者）在首次执行测试前，按宿主项目的实际环境在项目根目录手工创建；已存在时直接复用，不要覆盖。可从下面的最小示例复制后填入真实值。
+
+### `application.yml` 最小示例
+
+```yaml
+urls:
+  api-base: http://127.0.0.1:8080   # API 基础地址，按宿主实际填写
+  app: http://127.0.0.1:5173        # 系统页面地址，按宿主实际填写
+server:
+  host: 127.0.0.1                   # 应用服务主机；本地运行填 127.0.0.1
+database:
+  host: 127.0.0.1                   # 数据库主机
+  port: 3306                        # 数据库端口
+  name: <数据库名>                   # 按宿主实际填写
+```
+
+### `.env` 最小示例
+
+```
+DB_USERNAME=<数据库用户名>
+DB_PASSWORD=<数据库密码>
+# 仅在需要 SSH 隧道连数据库时配置：
+SERVER_SSH_PASSWORD=<应用服务主机的 SSH 密码>
+```
+
 ## 必需的配置项
 
 ### 来自 `application.yml`
@@ -76,12 +103,14 @@ ssh_pass = env_vars.get('SERVER_SSH_PASSWORD')
 
 ## 二、API 验证
 
+从 `foundation-api-<slug>.md`（foundation-builder 产出的 API 清单，位于 `<host>/docs/prd/foundation/`）中任选一个已知可用的 GET 接口做连通性检查；该接口需要参数时按 foundation-api 里的示例带上：
+
 ```bash
-curl -s -o /dev/null -w "%{http_code}" "${API_BASE_URL}/api/vehicles?phone=13800138000"
-# 应返回 200
+curl -s -o /dev/null -w "%{http_code}" "${API_BASE_URL}<从 foundation-api 选定的 GET 接口路径>"
+# 应返回 200，表示应用服务可达；404/5xx 或连接失败都算未通过
 ```
 
-其中 `${API_BASE_URL}` 替换为从 `application.yml` 的 `urls.api-base` 读到的实际值。
+其中 `${API_BASE_URL}` 替换为从 `application.yml` 的 `urls.api-base` 读到的实际值。宿主没有 foundation-api 文档时，向用户要一个已知可用的 GET 接口，不要凭空猜路径。
 
 ## 三、数据库连接
 

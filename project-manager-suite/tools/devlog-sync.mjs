@@ -31,7 +31,10 @@ const ruleCandidatesTemplatePath = path.join(
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/devlog-sync.mjs <host-project-root> --title <title> --goal <goal> --action <action> --result <result> [--actor <actor>] [--date YYYY-MM-DD] [--time HH:MM] [--files path1,path2] [--stage <stage>] [--conclusion <text>] [--next <text>] [--plan-path <path>] [--reflection <text>] [--rule-scope <scope>] [--rule-target <path>] [--rule-check <text>] [--rule-title <title>] [--dry-run] [--json]'
+        'Usage: node <suite-path>/tools/devlog-sync.mjs <host-project-root> --title <title> --goal <goal> --action <action> --result <result> [--actor <actor>] [--date YYYY-MM-DD] [--time HH:MM] [--files path1,path2] [--stage <stage>] [--conclusion <text>] [--next <text>] [--plan-path <path>] [--reflection <text>] [--rule-scope <scope>] [--rule-target <path>] [--rule-check <text>] [--rule-title <title>] [--dry-run] [--json]'
+    );
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
     );
 }
 

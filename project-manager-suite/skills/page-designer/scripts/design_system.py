@@ -16,6 +16,7 @@ Usage:
 import csv
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from core import search, DATA_DIR
@@ -188,6 +189,20 @@ class DesignSystemGenerator:
         best_typography = typography_results[0] if typography_results else {}
         best_landing = landing_results[0] if landing_results else {}
 
+        # Track raw-query hit counts so callers can tell a real knowledge-base
+        # recommendation apart from the generic fallback defaults below.
+        # Style gets a separate raw-query probe: the recommendation search above
+        # injects English reasoning keywords into the style query, so it can
+        # "hit" even when the user's own query matched nothing.
+        raw_style_hits = len(search(query, "style", 1).get("results", []))
+        search_hits = {
+            "product": len(product_results),
+            "style": raw_style_hits,
+            "color": len(color_results),
+            "typography": len(typography_results),
+            "landing": len(landing_results)
+        }
+
         # Step 5: Build final recommendation
         # Combine effects from both reasoning and style search
         style_effects = best_style.get("Effects & Animation", "")
@@ -197,6 +212,7 @@ class DesignSystemGenerator:
         return {
             "project_name": project_name or query.upper(),
             "category": category,
+            "search_hits": search_hits,
             "pattern": {
                 "name": best_landing.get("Pattern Name", reasoning.get("pattern", "Sidebar Nav + Main Workspace + Action Bar")),
                 "sections": best_landing.get("Section Order", "Sidebar > Header > Main Workspace > Action Bar"),
@@ -526,7 +542,16 @@ def generate_design_system(query: str, project_name: str = None, output_format: 
     """
     generator = DesignSystemGenerator()
     design_system = generator.generate(query, project_name)
-    
+
+    # Warn loudly when nothing matched: the output below is a generic fallback,
+    # not a knowledge-base recommendation. design-db content is English-only.
+    search_hits = design_system.get("search_hits", {})
+    if search_hits and sum(search_hits.values()) == 0:
+        print(f"warning: no design-db match for '{query}' in any domain "
+              f"(product/style/color/typography/landing); output falls back to generic defaults. "
+              f"design-db content is English-only — retry with English keywords "
+              f"(e.g. 'inventory management admin dashboard').", file=sys.stderr)
+
     # Persist to files if requested
     if persist:
         persist_design_system(design_system, page, output_dir, query)
@@ -551,8 +576,10 @@ def persist_design_system(design_system: dict, page: str = None, output_dir: str
         dict with created file paths and status
     """
     base_dir = Path(output_dir) if output_dir else Path.cwd()
-    
-    # Use project name for project-specific folder
+
+    # Use project name for project-specific folder. Only lowercases and replaces
+    # spaces — pass the BRD-derived slug via -p so the directory matches
+    # design-system/<project-slug>/ promised to downstream skills.
     project_name = design_system.get("project_name", "default")
     project_slug = project_name.lower().replace(' ', '-')
     
@@ -1124,7 +1151,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate Design System")
     parser.add_argument("query", help="Search query (e.g., 'SaaS dashboard')")
-    parser.add_argument("--project-name", "-p", type=str, default=None, help="Project name")
+    parser.add_argument("--project-name", "-p", type=str, default=None, help="Project slug; also becomes the design-system/<slug>/ directory name (lowercased, spaces -> '-'), so pass the BRD-derived slug")
     parser.add_argument("--format", "-f", choices=["ascii", "markdown"], default="ascii", help="Output format")
 
     args = parser.parse_args()

@@ -52,7 +52,7 @@ test-case-writer 生成 TC 之后，test-case-reviewer 进行一轮独立核查�
 
 1. 列出待核查的域清单（按业务域组织）
 2. 确认每个域对应的验收文档子文件（`acceptance-<slug>/<区块名>.md`）和 TC 文件（索引层 + 详情层）
-3. 确认每个域对应的 SQL 文件（`<业务域>/sql/<编号>-<场景>.sql`）
+3. 确认每个域对应的 SQL 文件（场景数据 `<业务域>/sql/<PREFIX>-<NN>.sql` 与种子数据 `<PREFIX>-SEED.sql`；`<PREFIX>` 为该域编号前缀）
 
 ### 3.2 单域核查步骤
 

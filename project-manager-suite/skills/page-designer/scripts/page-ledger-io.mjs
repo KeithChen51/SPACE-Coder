@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import process from 'process';
 
 export const SCHEMA_VERSION = '2.0.0';
 
@@ -49,25 +50,37 @@ export function getScreenshotsDir(hostDir) {
     return path.join(getPagePreviewDir(hostDir), 'screenshots');
 }
 
+// Search dirs are ordered by priority (new layout first, legacy fallbacks after).
+// Ledgers in several dirs at once: take the highest-priority dir and print a notice
+// to stderr, so legacy projects mid-migration keep working instead of hard-failing.
+// Multiple ledgers inside one dir are still ambiguous: fail and list the candidates.
 export function findLedger(hostDir) {
-    const matches = getPagePreviewSearchDirs(hostDir)
+    const dirGroups = getPagePreviewSearchDirs(hostDir)
         .filter((previewDir) => fs.existsSync(previewDir))
-        .flatMap((previewDir) =>
+        .map((previewDir) =>
             fs.readdirSync(previewDir)
                 .filter((name) => /^page-ledger-.*\.json$/.test(name))
                 .sort()
                 .map((name) => path.join(previewDir, name))
-        );
+        )
+        .filter((matches) => matches.length > 0);
 
-    if (matches.length === 0) {
+    if (dirGroups.length === 0) {
         return null;
     }
 
-    if (matches.length > 1) {
-        throw new Error(`multiple page ledgers found under ${resolveHostDir(hostDir)}`);
+    const [primary, ...ignoredGroups] = dirGroups;
+
+    if (primary.length > 1) {
+        throw new Error(`multiple page ledgers found in the same directory: ${primary.join(', ')}; keep exactly one ledger there`);
     }
 
-    return matches[0];
+    if (ignoredGroups.length > 0) {
+        const ignored = ignoredGroups.flat().join(', ');
+        process.stderr.write(`notice: page ledgers found in multiple page-preview directories; using ${primary[0]} (highest priority), ignoring: ${ignored}\n`);
+    }
+
+    return primary[0];
 }
 
 export function findBrd(hostDir) {
@@ -75,12 +88,12 @@ export function findBrd(hostDir) {
     const docsBrdDir = path.join(absoluteHostDir, 'docs', 'brd');
     const docsMatches = listBrdFiles(docsBrdDir);
     if (docsMatches.length > 0) {
-        return path.join(docsBrdDir, docsMatches.at(-1));
+        return path.join(docsBrdDir, pickBrdFile(docsMatches, docsBrdDir));
     }
 
     const rootMatches = listBrdFiles(absoluteHostDir);
     if (rootMatches.length > 0) {
-        return path.join(absoluteHostDir, rootMatches.at(-1));
+        return path.join(absoluteHostDir, pickBrdFile(rootMatches, absoluteHostDir));
     }
 
     return null;
@@ -94,6 +107,23 @@ function listBrdFiles(targetDir) {
     return fs.readdirSync(targetDir)
         .filter((name) => /^BRD-.*\.md$/.test(name))
         .sort();
+}
+
+// Same anti-conflict policy as findLedger: one slug with several timestamps is
+// fine (take the newest by filename timestamp), but different slugs are ambiguous —
+// fail and list the candidates so the user keeps a single project's BRD files.
+function pickBrdFile(names, targetDir) {
+    const slugs = new Set(names.map((name) => deriveSlugFromBrd(name)));
+
+    if (slugs.size > 1) {
+        const candidates = names.map((name) => path.join(targetDir, name)).join(', ');
+        throw new Error(`multiple BRD slugs found under ${targetDir}: ${candidates}; keep only one project's BRD files before running page-designer`);
+    }
+
+    const timestampOf = (name) => name.match(/-(\d{8}-\d{4})\.md$/)?.[1] ?? '';
+    return [...names].sort(
+        (a, b) => timestampOf(a).localeCompare(timestampOf(b)) || a.localeCompare(b)
+    ).at(-1);
 }
 
 export function deriveSlugFromBrd(brdPath) {

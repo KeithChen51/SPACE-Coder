@@ -3,6 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +22,10 @@ const excludedNames = new Set([
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/install-suite-into-host.mjs <host-project-root> [--force] [--move] [--dry-run] [--json]'
+        'Usage: node <suite-path>/tools/install-suite-into-host.mjs <host-project-root> [--force] [--move] [--dry-run] [--json]'
+    );
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
     );
 }
 
@@ -178,12 +182,64 @@ function copyDirectoryRecursive(sourceDir, targetDir, options, result) {
     }
 }
 
-function buildManifestContent({ sourceSuiteRoot, targetSuiteRoot, installMode }) {
+function detectSourceVersion(sourceSuiteRoot) {
+    try {
+        const commit = execFileSync('git', ['-C', sourceSuiteRoot, 'rev-parse', 'HEAD'], {
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        }).trim();
+
+        if (commit) {
+            return { type: 'git_commit', value: commit };
+        }
+    } catch {
+        // 源目录不是 git 仓库（或没有 git 命令）时退回时间戳标识。
+    }
+
+    return { type: 'timestamp', value: new Date().toISOString() };
+}
+
+function collectStaleFiles(sourceDir, targetDir, staleFiles) {
+    if (!safeExists(targetDir)) {
+        return;
+    }
+
+    const entries = fs.readdirSync(targetDir, { withFileTypes: true }).sort((left, right) =>
+        left.name.localeCompare(right.name)
+    );
+
+    for (const entry of entries) {
+        if (shouldExcludeEntry(entry.name)) {
+            continue;
+        }
+
+        const sourcePath = path.join(sourceDir, entry.name);
+        const targetPath = path.join(targetDir, entry.name);
+
+        if (entry.isDirectory()) {
+            collectStaleFiles(sourcePath, targetPath, staleFiles);
+            continue;
+        }
+
+        if (!entry.isFile()) {
+            continue;
+        }
+
+        if (!safeExists(sourcePath)) {
+            staleFiles.push(targetPath);
+        }
+    }
+}
+
+function buildManifestContent({ sourceSuiteRoot, targetSuiteRoot, installMode, sourceVersion, installedFiles }) {
     return {
         install_mode: installMode,
         installed_at: new Date().toISOString(),
         source_suite_root: sourceSuiteRoot,
         target_suite_root: targetSuiteRoot,
+        source_version_type: sourceVersion.type,
+        source_version: sourceVersion.value,
+        installed_files: installedFiles,
         installed_by: 'tools/install-suite-into-host.mjs'
     };
 }
@@ -223,7 +279,8 @@ function formatTextReport(result) {
         `Directories created: ${result.directories.created.length}`,
         `Files created: ${result.files.created.length}`,
         `Files overwritten: ${result.files.overwritten.length}`,
-        `Files skipped: ${result.files.skipped.length}`
+        `Files skipped: ${result.files.skipped.length}`,
+        `Stale files (no longer in source): ${result.files.stale.length}`
     ];
 
     if (result.installMode === 'already_installed') {
@@ -254,6 +311,14 @@ function formatTextReport(result) {
         for (const filePath of result.files.overwritten) {
             lines.push(`- ${normalizeRelative(result.hostRoot, filePath)}`);
         }
+    }
+
+    if (result.files.stale.length > 0) {
+        lines.push('', 'Stale files (exist in the host install but were removed from the source suite):');
+        for (const filePath of result.files.stale) {
+            lines.push(`- ${normalizeRelative(result.hostRoot, filePath)}`);
+        }
+        lines.push('These files were NOT deleted automatically. Review the list and remove them manually if they are no longer needed.');
     }
 
     if (result.moveSourceRequested) {
@@ -297,7 +362,8 @@ function installSuiteIntoHost({ hostRoot, force = false, move = false, dryRun = 
         files: {
             created: [],
             overwritten: [],
-            skipped: []
+            skipped: [],
+            stale: []
         },
         notes: [],
         sourceRemoved: false
@@ -323,18 +389,27 @@ function installSuiteIntoHost({ hostRoot, force = false, move = false, dryRun = 
         result.target.initialState = 'absent';
     } else if (result.target.initialState === 'installed_suite') {
         result.installMode = move ? 'move' : 'upgrade';
+        // 升级是增量复制：目标里有、源里已删除/改名的文件不会被自动清理，
+        // 这里先把它们收集成 stale 清单，交给使用者自行确认后处理。
+        collectStaleFiles(suiteRoot, targetSuiteRoot, result.files.stale);
     } else {
         result.installMode = move ? 'move' : 'install';
     }
 
     copyDirectoryRecursive(suiteRoot, targetSuiteRoot, { dryRun, json }, result);
 
+    const installedFiles = [...result.files.created, ...result.files.overwritten]
+        .map((filePath) => normalizeRelative(targetSuiteRoot, filePath))
+        .sort();
+
     writeManifest(
         targetSuiteRoot,
         buildManifestContent({
             sourceSuiteRoot: suiteRoot,
             targetSuiteRoot,
-            installMode: result.installMode
+            installMode: result.installMode,
+            sourceVersion: detectSourceVersion(suiteRoot),
+            installedFiles
         }),
         { dryRun, json },
         result

@@ -132,6 +132,49 @@
 - V1 不负责自动删除旧套件目录
 - V1 不替代主入口完成访谈；调用方必须先完成访谈并提交结构化结果
 
+### 最小可用示例（从零到骨架）
+
+`--interview-json` 指向的访谈结果文件必须包含以下四个键，值都是非空字符串；也可以把这四个键包在顶层 `startupMinimum` 对象里，两种结构脚本都接受：
+
+| 键名 | 中文含义 |
+|------|----------|
+| `project_name` | 项目名称（在容器目录下初始化时，新宿主目录名取自它） |
+| `project_one_liner` | 项目一句话目标 |
+| `target_users` | 目标使用者 |
+| `main_problem` | 主要问题（这个项目要解决什么） |
+
+最小 `interview.json` 完整示例：
+
+```json
+{
+  "project_name": "demo-mall",
+  "project_one_liner": "给个体小商家的一站式在线开店工具",
+  "target_users": "个体小商家",
+  "main_problem": "现有开店方案成本高、上手慢"
+}
+```
+
+从零到宿主骨架的完整命令序列。`<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
+
+1. 主入口完成启动访谈后，把访谈结果按上面的示例保存为 `interview.json`。
+2. 补齐骨架。在空目录（容器目录）下执行时，会按 `project_name` 新建宿主目录并在其中建骨架；输出中的 `Effective root` 就是宿主根目录：
+
+   ```bash
+   node <suite-path>/tools/bootstrap-host.mjs . --interview-complete --interview-json interview.json --create-profile-file --create-rules-file
+   ```
+
+3. 校验骨架是否健康。查的是规则 / 画像 / 计划 / 日志四类全局文件入口与结构标记；输出的 `Errors: 0` 且 Issues 里没有 `[error]` 条目即通过：
+
+   ```bash
+   node <suite-path>/tools/validate-global-files.mjs <宿主根目录>
+   ```
+
+4. 查看当前阶段与下一步动作。输出 `Can enter: yes` 表示允许进入目标阶段，`Next action` 会给出下一步建议：
+
+   ```bash
+   node <suite-path>/tools/route-check.mjs <宿主根目录>
+   ```
+
 ---
 
 ## `install-suite-into-host.mjs`
@@ -155,6 +198,13 @@
 - 新项目骨架已经建立，需要把完整套件装入宿主
 - 宿主已存在 `.agent/`，希望一键安装或升级 `project-manager-suite`
 - 联调完成后，希望把当前套件同步到宿主内固定路径
+
+### 升级语义与残留清理
+
+- 默认的“同步/升级”（目标已是已安装套件时自动进入 `upgrade` 模式）是**增量复制**：源里有的文件会被新建或覆盖，宿主里多出来的文件不会被自动删除。
+- 因此套件迭代中被删除或改名的文件，升级后会残留在宿主 `.agent/project-manager-suite/` 里。脚本会把这类文件列成 `Stale files` 清单打印出来（`--json` 模式在 `files.stale` 字段），只提示、不代删，由使用者确认后手动清理。
+- 需要完全干净的安装时，显式传 `--force`：先整体删除目标目录再全新复制，不会有残留。这是破坏性操作，执行前确认目标目录下没有需要保留的手工改动。
+- 每次安装/升级都会在目标目录写入 `.install-manifest.json`，记录安装模式、时间、源套件版本标识（源目录是 git 仓库时记 commit，否则记时间戳）以及本次写入的文件清单，可用来核对宿主安装态对应哪个源码版本。
 
 当前边界：
 
@@ -206,8 +256,7 @@
 当前边界：
 
 - V1 先覆盖协议文档与结构化实现的双向对照
-- V1 的变更影响分析依赖显式传入 `--changed`
-- 若未传 `--changed`，脚本会优先尝试从当前 git 工作区自动识别变更文件
+- 变更影响分析的输入有两种：显式传 `--changed`，或未传时从当前 git 工作区自动识别变更文件（包括未暂存的修改）
 - 还没有覆盖“协议文档 ↔ 工具脚本 ↔ 平台入口”的全量自动对照
 
 ---
@@ -223,8 +272,5 @@
 
 ## 相关文档
 
-- `docs/ai-project-manager-scriptification-plan.md`
-- `lib/ai-pm-protocol/README.md`
-- `docs/tooling/ai-pm-tools-usage.md`
-- `docs/tooling/ai-pm-maintenance-guide.md`
-- `tests/README.md`
+- `lib/ai-pm-protocol/README.md`（协议结构化实现层的说明）
+- `tests/README.md`（工具层测试的运行方式与覆盖范围）

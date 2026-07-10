@@ -55,6 +55,8 @@ description: Use when the user is preparing to finalize a project, asking whethe
 
 始终使用 [references/report-template.md](references/report-template.md) 的固定结构，不增删核心章节。
 
+扫描报告必须落盘到 `<host>/docs/security/`（宿主项目文档目录下的安全报告目录，不存在则先创建），不得只停留在对话里。
+
 如果本轮仅为局部扫描，也要保留完整章节，并在 `扫描范围` 和 `输入证据` 里写清楚缩减原因。
 
 ## Decision Logic

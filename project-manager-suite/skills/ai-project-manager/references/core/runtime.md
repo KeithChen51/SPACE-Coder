@@ -37,6 +37,7 @@
   - `lib/ai-pm-protocol/stages.js`
   - `lib/ai-pm-protocol/routing.js`
   - `lib/ai-pm-protocol/markdown-structure.js`
+  - `lib/ai-pm-protocol/change-impact-map.js`
 - 对应脚本：
   - `tools/route-check.mjs`
   - `tools/devlog-sync.mjs`
@@ -49,7 +50,7 @@
 
 ## 0. 一页版总规则
 
-如果你只记得住一页，就记这 5 条：
+如果你只记得住一页，就记这 8 条：
 
 1. 运行环境允许时，优先调用工具脚本完成校验、阶段判断、骨架补齐和日志回写，不先手工硬推。
 2. 先识别宿主项目已有的全局文件和状态入口，不要先新建。
@@ -76,8 +77,10 @@
 `route-check.mjs` 的命令口径固定为位置参数，不使用 `--host-dir`：
 
 ```bash
-node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S0.5|S1|S2|S3|S4|S5|S6|S7] [--json]
+node <suite-path>/tools/route-check.mjs <host-project-root> [--target-stage S0.5|S1|S2|S3|S4|S5|S6|S7] [--json]
 ```
+
+`<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 
 注意：`--host-dir` 是 `page-designer/scripts/page-ledger-query.mjs` 的参数口径，不能套用到 `route-check.mjs`。
 
@@ -131,7 +134,7 @@ node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-s
 | P4 | `第一版核心目标`、`第一版范围`、已有材料 |
 | P5 | 待确认项 |
 
-**读取执行计划文件**时识别：当前正式计划文件、当前活跃 Phase / Task、下一步任务、完成标准摘要、当前阻塞与前置依赖。
+**读取执行计划文件**时识别：当前正式计划文件组、当前活跃 Phase / Task、下一步任务、完成标准摘要、当前阻塞与前置依赖。
 
 **读取状态日志载体**时识别：最近日志、最近验收、最近决策、待跟进事项；若命中日志或状态沉淀任务，默认由 `project-devlog` 承接，并写入宿主 `logs/` 或默认 `logs/`。
 
@@ -243,7 +246,7 @@ skill 优先级（**先后顺序不可混淆**）：
 
 S2 页面环节收口后的回写口径：
 
-- 当 `page-chief` 判定页面环节 DONE 后，主入口必须把项目画像中的 `当前轮应输出的交付物` 更新为 `技术地基 / PRD 环节输入`，把 `当前最大不确定项` 从页面布局/交互确认切换为 Word 解析、修复规则、文件生成等技术地基问题，并将页面相关待确认项标记为已确认或移出待确认列表。
+- 当 `page-chief` 判定页面环节 DONE 后，主入口必须把项目画像中的 `当前轮应输出的交付物` 更新为 `技术地基 / PRD 环节输入`，把 `当前最大不确定项` 从页面布局/交互确认切换为术语表、Schema、API 等技术地基问题，并将页面相关待确认项标记为已确认或移出待确认列表。
 - 同一轮必须把执行计划中的 `当前目标`、`进行中任务`、`下一步任务`、`完成标准` 从 page-designer / page-explainer 页面环节更新为 `prd-chief` 调度 `foundation-builder`；不得让“页面环节需确认”这类旧措辞继续留在驾驶舱里。
 - 若本轮已产出 `page-delivery`、`explainer-delivery` 或 route-check 明确显示 `pageStageClosedForPrd.pass = true`，应作为一次阶段内交接点写入 `project-devlog`，方便下一轮直接进入 PRD 环节。
 
@@ -342,7 +345,7 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 - 禁止主入口绕过 `page-chief` 直接把 `page-designer`、`page-explainer`、`foundation-builder`、`prd-writer` 拼成非受控链路
 - 禁止主入口绕过 `page-designer`，直接用任何未登记的页面专项能力充当 S2 正式阶段交付
 
-### 2.1 全局伴随能力规则
+### 2.3 全局伴随能力规则
 
 `project-devlog` 不归属于单一阶段，而是全局伴随能力。
 
@@ -369,15 +372,20 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 
 主入口每次运行 `route-check.mjs` 后必须读取 `companionActions`。若其中包含 `project-link-indexer`，必须先加载并执行该 skill；执行完成后，再继续主阶段路由或本轮收口。
 
-满足以下任一条件时，`route-check.mjs` 应在 `companionActions` 中返回 `project-link-indexer`：
-- S0.5 baseline audit 完成后
-- S1 BRD 完成后
-- S2 页面 / foundation / PRD 产物形成或拆分后
-- S3 开发计划文件组形成或修复后
-- S5 验收文档 / 测试用例形成后
-- 用户询问文件关系、坏链、回链、孤立文件或影响范围时
+`project-link-indexer` 的调起条件分两层：
 
-执行入口：`node skills/project-link-indexer/scripts/run-project-link-indexer.mjs <hostRoot> --trigger <trigger> --json`。
+**第一层：脚本可判定条件。** `route-check.mjs` 只在已识别到项目画像时判定，且每次最多返回一条伴随动作（按下列顺序取首个命中）：
+- 宿主已存在可用的 baseline-audit 清单（S0.5 诊断完成后；不限本次检查的目标阶段）
+- 本次检查的目标阶段为 S2，且 BRD 已存在（对应“S1 BRD 完成后”）
+- 本次检查的目标阶段为 S3 / S5，且 foundation 交付清单或完整版 PRD 的门禁已通过（对应“S2 页面 / foundation / PRD 产物形成后”）
+- 本次检查的目标阶段为 S4，且正式开发计划文件组的门禁已通过（对应“S3 开发计划文件组形成或修复后”）
+- 本次检查的目标阶段为 S6，且测试用例门禁已通过（对应“S5 验收文档 / 测试用例形成后”）
+
+**第二层：语义条件。** 以下场景脚本拿不到判定输入，`companionActions` 不会返回；主入口自行判断命中后，必须直接调用 indexer，不等脚本提示：
+- 阶段产物刚在当前轮形成或拆分，但本轮 route-check 尚未以下一阶段为目标重跑（例如 BRD 刚落盘、阶段判断仍停留在 S1 时），按 `artifact_files_added_or_split` 触发
+- 用户询问坏链、回链或孤立文件时，按 `need_broken_link_or_reverse_link_check` 触发；询问文件之间怎么关联时，按 `need_file_relationship_diagnosis` 触发；询问改某个文件会影响哪些文件时，按 `need_impact_lookup` 触发。这三个是诊断类取值，只检查不写索引文件；`--trigger` 合法取值全表见 `skills/project-link-indexer/SKILL.md`
+
+执行入口：`node <suite-path>/skills/project-link-indexer/scripts/run-project-link-indexer.mjs <hostRoot> --trigger <trigger> --json`。
 
 ---
 
@@ -403,7 +411,7 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 - 不允许把“首次必问”一次性整组抛给用户，也不要改写成问卷式多问题消息
 - 每次提问附 1 条参考回答，标注"仅供参考，可按实际情况改写"
 - 不展示 `对应字段` 给用户
-- 用户回答清楚后可停止，不必问完所有问题
+- “启动最小必需字段包”的 4 个字段都已拿到答案（或可从既有回答直接推断）时即可停止，不必逐题问完；只要字段包仍有缺口，就继续按顺序补问缺口字段
 - 首次必问一旦结束，且启动最小必需字段包已齐，主入口默认不再停留 S0，而是按 S1 承接后续 BRD 形成
 - 一旦 `项目名称` 已确认，且当前工作目录疑似容器目录，后续骨架补齐时默认使用 `<当前目录>/<项目名称>/` 作为物理落点，除非用户明确指定其他位置
 
@@ -435,7 +443,7 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 当用户没有指定研发流程时，按此顺序推进：
 
 ```
-项目画像 → 需求清单 → 业务需求文档 → page-chief → 页面代码 / 页面交付清单 → 页面确认 → page-explainer 冻结交互语义 / gap 收口 → prd-chief → 术语表 / Schema / API / foundation 交付清单 → 功能列表 / 主 PRD / 子 PRD → 开发计划 → 开发执行 → 验收 + 测试用例 → 测试执行 → 完工前安全扫描
+项目画像 → 需求清单 → 业务需求文档 → page-chief → 页面代码 / 页面交付清单 → 页面确认 → page-explainer 冻结交互语义 / gap 收口 → prd-chief → 术语表 / Schema / API / foundation 交付清单 → 功能列表 / 主 PRD / 子 PRD → 开发计划 → 开发执行 → 验收文档 + 测试用例 → 测试执行 → 完工前安全扫描
 ```
 
 输出约束：

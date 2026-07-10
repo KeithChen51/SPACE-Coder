@@ -1,6 +1,6 @@
-# 产品设计与开发计划流水线（project-profile → PRD → 开发计划 → 代码实装）
+# 产品设计与开发流水线（project-profile → PRD → 开发计划 → 代码实装 → 测试 → 完工安全扫描）
 
-本文件描述从项目画像到 PRD、开发执行计划到代码实装的完整流水线，同时包含既有代码接入时的基线诊断旁路。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
+本文件描述从项目画像到 PRD、开发执行计划、代码实装、测试用例与测试执行、直到完工前安全扫描（S0 → S7）的完整流水线，同时包含既有代码接入时的基线诊断旁路。所有下游 skill 都依据此文件中的路径约定去读取上游产物。
 
 相关协议：
 - 主入口阶段路由、骨架补齐与阶段触发目录：[`skills/ai-project-manager/references/core/routing.md`](skills/ai-project-manager/references/core/routing.md)
@@ -27,7 +27,7 @@ S1 ─────────────────────────�
 S2 ──────── page-chief 调度 ────────────────────
    page-designer
        │
-       ▼  Vue 3 页面工程 + 页面交付清单
+       ▼  前端页面工程 + 页面交付清单
    page-explainer
        │
        ▼  流程图 / 交互语义 / 差异(可选) / 交付清单
@@ -60,6 +60,16 @@ S5 ──────── test-case-chief 调度 ─────────�
    test-case-reviewer
        │
        ▼  待裁定 TC 问题清单 + TC 修正
+
+S6 ─────────────────────────────────────────────
+   test-case-runner
+       │
+       ▼  测试报告（按业务域） + 缺陷清单 + 截图证据
+
+S7 ─────────────────────────────────────────────
+   security-scan
+       │
+       ▼  安全扫描报告（PASS / BLOCK / WAIVER 放行结论）
 ```
 
 ### 调度层说明
@@ -83,7 +93,8 @@ S5 ──────── test-case-chief 调度 ─────────�
 ├── project-profile.md                        # ai-project-manager 产出；全局画像与状态入口
 ├── docs/
 │   ├── brd/                                  # 业务需求层
-│   │   ├── brd-ledger-<slug>.md              # brd-writer 过程台账
+│   │   ├── ledger-state-<slug>.json          # brd-writer 台账权威数据源（只经脚本读写，勿手改）
+│   │   ├── brd-ledger-<slug>.md              # brd-writer 过程台账（由 JSON 渲染的只读展示层）
 │   │   └── BRD-<slug>-<YYYYMMDD-HHMM>.md     # brd-writer 最终交付 BRD
 │   ├── baseline/                             # 既有项目基线诊断层
 │   │   ├── baseline-audit-<slug>.json        # project-baseline-auditor 给主路由读取的结构化清单
@@ -121,18 +132,30 @@ S5 ──────── test-case-chief 调度 ─────────�
 │           ├── explainer-b-interaction-<slug>.md     # page-explainer 交互语义
 │           ├── explainer-b-gap-<slug>.md     # page-explainer 差异（可选，有差异时产出）
 │           └── explainer-delivery-<slug>.md  # page-explainer 交付清单（入口索引 + 一致性自查）
-├── <Vue 3 前端工程>/                             # page-designer 产出的可运行代码（src/、package.json 等）
-└── docs/test-case/                            # 测试用例层（S5 产物）
-    ├── acceptance-<slug>.md                  # prd-acceptance-reviewer 验收文档主索引
-    ├── acceptance-<slug>/                    # 按 PRD 区块拆的子验收文档
-    │   └── <区块名>.md                        # 每个区块一份，对应一个 subprd
-    ├── tc-main-<slug>.md                     # test-case-writer 测试用例主索引
-    ├── <业务域>/                              # test-case-writer 按业务域组织的 TC 文件夹
-    │   ├── tc-<业务域>.md                     # 域内测试用例文件
-    │   └── sql/                              # 本域测试数据 SQL
-    │       └── <编号>-<场景>.sql
-    └── tc-reviews/                           # test-case-reviewer 待裁定 TC 问题清单
-        └── <日期>-issues.md
+├── <工程名>/                                  # page-designer 产出的可运行前端工程（src/、package.json 等；技术栈以 page-delivery 交付清单声明为准）
+├── design-system/                             # page-designer 设计系统落点
+│   └── <slug>/                                # 与项目 slug 同名
+│       ├── MASTER.md                          # 全局设计规范
+│       └── pages/<page>.md                    # 页面级覆盖（可选）
+├── docs/test-case/                            # 测试用例层（S5 产物）+ 测试报告层（S6 产物）
+│   ├── acceptance-<slug>.md                  # prd-acceptance-reviewer 验收文档主索引
+│   ├── acceptance-<slug>/                    # 按 PRD 区块拆的子验收文档
+│   │   └── <区块名>.md                        # 每个区块一份，对应一个 subprd
+│   ├── tc-main-<slug>.md                     # test-case-writer 测试用例主索引
+│   ├── <业务域>/                              # test-case-writer 按业务域组织的 TC 文件夹
+│   │   ├── tc-<业务域>.md                     # 域内测试用例文件（超长时可拆出 tc-<业务域>-用例详情.md）
+│   │   └── sql/                              # 本域测试数据 SQL（<PREFIX> = 该域编号前缀，形如 TC-<域简称>）
+│   │       ├── <PREFIX>-<NN>.sql             # 场景数据，与用例编号一一对应
+│   │       └── <PREFIX>-SEED.sql             # 种子数据，本域多用例共用
+│   ├── tc-reviews/                           # test-case-reviewer 待裁定 TC 问题清单
+│   │   └── <日期>-issues.md                   # 同日多轮时第 2 轮起加 -2、-3 后缀
+│   └── reports/                              # test-case-runner 测试报告（S6 产物）
+│       ├── index.md                          # 索引报告
+│       ├── 测试验收-<业务域>.md                # 业务域报告，一个域一份
+│       ├── defects.md                        # 缺陷跟踪，全项目唯一
+│       └── screenshots/                      # 截图证据，按业务域分目录
+└── docs/security/                             # 完工前安全扫描层（S7 产物）
+    └── （security-scan 固定结构扫描报告与豁免记录）
 ```
 
 ### 目录语义
@@ -144,33 +167,37 @@ S5 ──────── test-case-chief 调度 ─────────�
 | `<host>/docs/index/` | 文件级引用索引层 | 可重建的文件关系图、坏链诊断和 LLM wiki 导航入口 | project-link-indexer | ai-project-manager、所有下游 skill |
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
 | `<host>/<工程名>/` | 代码层 | page-designer 产出的可运行前端工程 | page-designer | page-explainer、foundation-builder、prd-writer |
+| `<host>/design-system/<slug>/` | 设计规范层 | page-designer 沉淀的全局设计规范与页面级覆盖 | page-designer | page-designer（构建页面时回读） |
 | `<host>/src/frontend/page-preview/` | 页面元数据层 | 页面台账、交付清单、交互语义 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
 | `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
 | `<host>/docs/plans/foundation-plans/` | 计划层（S4 反哺） | foundation 漂移待改 backlog，只记录需要回改 foundation 的请求 | coding-standards | foundation-builder、ai-project-manager |
 | `<host>/src/`（或项目约定代码根目录） | 实装层（S4） | 按 delivery-plan Phase/Task 产出的实际代码文件 | coding-standards | test-and-acceptance |
-| `<host>/docs/test-case/` | 测试用例层（S5） | 验收文档 + 测试用例 + TC 核查报告 | prd-acceptance-reviewer、test-case-writer、test-case-reviewer | test-case-runner |
+| `<host>/docs/test-case/` | 测试用例层（S5）+ 测试报告层（S6，`reports/` 子目录） | 验收文档 + 测试用例 + TC 核查报告 + 测试执行报告 | prd-acceptance-reviewer、test-case-writer、test-case-reviewer、test-case-runner（仅 `reports/`） | test-case-runner、security-scan（读 `reports/`）、test-and-acceptance（读 `reports/`） |
+| `<host>/docs/security/` | 完工安全层（S7） | 完工前安全扫描报告与豁免记录 | security-scan | ai-project-manager、用户 |
 
 ### Skill → 文件夹 权威映射（单一来源）
 
-**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹之一；同一 skill 可以登记多个目标文件夹，但每个落点都必须在本表显式登记。各 skill SKILL.md 和下方 §1-§7 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
+**所有 skill 产出文件落地位置以此表为准。**后续新增、重命名、拆分产物时，只要产出该 skill 的文件，一律落入下表声明的目标文件夹之一；同一 skill 可以登记多个目标文件夹，但每个落点都必须在本表显式登记。各 skill SKILL.md 和下方 §0-§12 per-skill 产物表的"存放位置"列都是此表的派生信息，不是独立契约。
 
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
 | ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
 | project-baseline-auditor | `<host>/` + `<host>/docs/baseline/` | 受控生成或更新 `project-profile.md`；`baseline-audit-<slug>.json`、`baseline-audit-<slug>.md` 写入 `docs/baseline/` |
 | project-link-indexer | `<host>/docs/index/` | `project-link-graph.json`、`project-link-graph.md`、`project-wiki-schema.json`；均为可重建索引，不替代原始业务文件 |
-| brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`brd-ledger-<slug>.md` 及后续该 skill 新增的业务层文件 |
-| page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（元数据） | Vue 3 前端工程目录写入 `<host>/<工程名>/`；`page-ledger-<slug>.json`、`page-delivery-<slug>.md` 等元数据文件写入 `<host>/src/frontend/page-preview/` |
+| brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`ledger-state-<slug>.json`（台账权威状态源，只能经 brd-writer 脚本读写，不得手改或删除）、`brd-ledger-<slug>.md`（由 JSON 渲染的只读展示层）及后续该 skill 新增的业务层文件 |
+| page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（元数据）+ `<host>/design-system/<slug>/`（设计规范） | 前端工程目录写入 `<host>/<工程名>/`（技术栈以 page-delivery 交付清单声明为准）；`page-ledger-<slug>.json`、`page-delivery-<slug>.md` 等元数据文件写入 `<host>/src/frontend/page-preview/`；`MASTER.md`、`pages/<page>.md` 设计规范写入 `<host>/design-system/<slug>/` |
 | page-explainer | `<host>/src/frontend/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/foundation/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` + `<host>/docs/prd/subprd/` | `prd-feature-list-<slug>.md`、`mainprd-<slug>.md`、`subprd/0X-subprd-<区块英文短名>.md` 及后续新增 |
-| delivery-planner | `<host>/docs/plans/delivery-plans/` | `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` |
-| coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；同时回写对应子开发计划和任务看板状态 |
+| delivery-planner | `<host>/docs/plans/delivery-plans/` | `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`；Task 状态回写（受 `ai-project-manager` 调度，在任务看板、主计划执行阶段表、子开发计划三处同步翻状态） |
+| coding-standards | `<host>/src/`（或项目约定代码根目录） | 按 Task `核心文件` 字段产出的实装代码文件；Task 完成后向 `ai-project-manager` 提交完成事实，计划文件组的状态回写由 `ai-project-manager` 调度 delivery-planner 执行 |
 | coding-standards | `<host>/docs/plans/foundation-plans/` | `foundation-change-requests-<slug>.md`；仅在 S4 发现需要回改 foundation 的漂移时追加 |
 | prd-acceptance-reviewer | `<host>/docs/test-case/` | `acceptance-<slug>.md` 主索引 + `acceptance-<slug>/<区块名>.md` 子文件；另可对 `<host>/docs/prd/subprd/` 下 subprd 的 §X.6 验收小节做条目修订与回链追加（原地回写），不做 baseline / changelog / baseline.md 维护 |
 | test-case-writer | `<host>/docs/test-case/` | `tc-main-<slug>.md`、`<业务域>/tc-<业务域>.md`、`<业务域>/sql/*.sql` |
-| test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`；对已产出 TC 文件做原地修正 |
+| test-case-reviewer | `<host>/docs/test-case/` | `tc-reviews/<日期>-issues.md`（同日多轮时第 2 轮起加 `-2`、`-3` 后缀）；对已产出 TC 文件做原地修正 |
+| test-case-runner | `<host>/docs/test-case/reports/` | `index.md`（索引报告）、`测试验收-<业务域>.md`（业务域报告）、`defects.md`（缺陷跟踪，全项目唯一）、`screenshots/`（截图证据） |
+| security-scan | `<host>/docs/security/` | 完工前安全扫描报告（固定结构，含 PASS / BLOCK / WAIVER 结论）与豁免记录 |
 
 **不变式（写 skill 时的硬约束）：**
 
@@ -309,7 +336,8 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| BRD 决策台账 | `brd-ledger-<slug>.md` | `<host>/docs/brd/` | 过程产物：P0 字段确认状态、冲突记录、轮次变更日志、充分性快照 |
+| 台账权威数据源 | `ledger-state-<slug>.json` | `<host>/docs/brd/` | 台账的权威状态源，只能经 brd-writer 脚本读写，不得手改或删除 |
+| BRD 决策台账 | `brd-ledger-<slug>.md` | `<host>/docs/brd/` | 过程产物（由 JSON 自动渲染的只读展示层）：P0 字段确认状态、冲突记录、轮次变更日志、充分性快照 |
 | BRD 文件 | `BRD-<slug>-<YYYYMMDD-HHMM>.md` | `<host>/docs/brd/` | 最终交付物 |
 
 ---
@@ -329,7 +357,8 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 页面台账 | `page-ledger-<slug>.json` | `<host>/src/frontend/page-preview/` | phase 状态、回环轮次 |
-| 页面代码 | Vue 3 工程 | `<host>/<工程名>/` | 可交互，mock 数据 |
+| 页面代码 | 前端页面工程 | `<host>/<工程名>/` | 可交互，mock 数据；技术栈以 page-delivery 交付清单声明为准，默认见 tech-stack.md |
+| 设计系统 | `MASTER.md`、`pages/<page>.md` | `<host>/design-system/<slug>/` | 全局设计规范 + 页面级覆盖，构建页面时回读 |
 | 交付清单 | `page-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` | 页面路由表、文件路径、下游索引 |
 
 ---
@@ -344,7 +373,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 | `page-delivery-<slug>.md` | page-designer | `<host>/src/frontend/page-preview/` |
-| 页面代码文件（Vue 3 组件） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
+| 页面代码文件（前端组件，技术栈以 page-delivery 交付清单声明为准） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
 
 **产出文件**：
 
@@ -369,7 +398,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 | `page-delivery-<slug>.md` | page-designer | `<host>/src/frontend/page-preview/` |
-| 页面代码文件（Vue 3 组件） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
+| 页面代码文件（前端组件，技术栈以 page-delivery 交付清单声明为准） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
@@ -397,7 +426,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
 | `page-delivery-<slug>.md` | page-designer | `<host>/src/frontend/page-preview/` |
-| 页面代码文件（Vue 3 组件） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
+| 页面代码文件（前端组件，技术栈以 page-delivery 交付清单声明为准） | page-designer | `<host>/<工程名>/`（路径从 page-delivery 中读取） |
 | `explainer-flow-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-b-interaction-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
 | `explainer-delivery-<slug>.md` | page-explainer | `<host>/src/frontend/page-preview/` |
@@ -419,6 +448,8 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 ## 6. delivery-planner — 开发执行计划
 
 **职责**：基于上游 PRD 规格和技术地基产物，产出面向 AI 执行、人类 review 的开发计划文档（Phase/Task 拆解、完成标准、完成判定）。不直接执行代码开发。前置运行 `collect-upstream-context.mjs` 脚本程序化发现上游产物，产出后运行 `validate-plan-structure.mjs` 脚本做结构化校验。
+
+计划形成后，本 skill 还承担计划文件组的状态回写与修复：Task 状态每次翻转（`待开发` → `进行中` → `已完成(YYYY-MM-DD)`）都由 `ai-project-manager` 调度本 skill 在任务看板、主计划执行阶段表、当前子开发计划**三处同步**执行（同一时刻有且仅有一个 Task「进行中」）；S4 开工前由本 skill 的 `check-plan-consistency.mjs` 脚本校验这三处状态一致，未通过不得进入 S4 写代码（详见 `skills/delivery-planner/SKILL.md` 的「S4 开工前一致性校验」）。
 
 **依赖文件**：
 
@@ -446,7 +477,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 ## 7. coding-standards — S4 代码实装
 
-**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件，并回写 Task 状态。S4 收尾时必须检查是否存在需要回改 foundation 的漂移；有则追加 `foundation-change-requests-<slug>.md`，无则在开发日志记录无漂移。不负责需求澄清、方案设计、测试执行、foundation 直接修订或发布决策。
+**职责**：消费 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和当前 Task 对应的 `sub-delivery-plan-*.md`，前置运行 `verify-task-context.mjs` 脚本确认上游 PRD 文件真实存在，再按 Task 的 `PRD双链·读` 加载对应 PRD 文件，参照 `skills/coding-standards/references/` 中匹配的编码规范，产出真实代码文件。开工的 Task 状态置「进行中」和完成后的状态回写都不由本 skill 直接改计划文件：开工前由 `ai-project-manager` 调度 delivery-planner 置「进行中」；Task 完成标准全部核查通过后，本 skill 向 `ai-project-manager` 提交完成事实（完成日期、验证证据），三处计划文件的状态回写由 `ai-project-manager` 调度 delivery-planner 执行。S4 收尾时必须检查是否存在需要回改 foundation 的漂移；有则追加 `foundation-change-requests-<slug>.md`，无则在开发日志记录无漂移。不负责需求澄清、方案设计、测试执行、foundation 直接修订或发布决策。
 
 **依赖文件**：
 
@@ -463,7 +494,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 实装代码文件 | 由 Task 的 `核心文件` 字段决定 | `<host>/src/` 或项目约定代码根目录 | 按 PRD 和编码规范产出的真实文件 |
-| Task 状态回写 | 对应子开发计划和任务看板 | `<host>/docs/plans/delivery-plans/` | 将已完成 Task 的状态改为 `已完成(YYYY-MM-DD)` |
+| Task 完成事实 | （提交给 `ai-project-manager`，非文件产物） | — | 完成标准全部核查通过后提交完成日期与验证证据；任务看板、主计划、子开发计划三处的 `已完成(YYYY-MM-DD)` 回写由 `ai-project-manager` 调度 delivery-planner 执行 |
 | foundation 漂移待改 backlog | `foundation-change-requests-<slug>.md` | `<host>/docs/plans/foundation-plans/` | 仅在 S4 发现需要回改 foundation 的漂移时追加，状态默认 `待评审` |
 
 ---
@@ -520,8 +551,9 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | TC 主索引 | `tc-main-<slug>.md` | `<host>/docs/test-case/` | 全局 TC 入口，按业务域索引所有域 TC 文件 |
-| 域 TC 文件 | `<业务域>/tc-<业务域>.md` | `<host>/docs/test-case/<业务域>/` | 单个业务域下的完整测试用例 |
-| 测试数据 SQL | `<业务域>/sql/<编号>-<场景>.sql` | `<host>/docs/test-case/<业务域>/sql/` | 本域测试用例对应的数据准备脚本 |
+| 域 TC 文件 | `<业务域>/tc-<业务域>.md` | `<host>/docs/test-case/<业务域>/` | 单个业务域下的完整测试用例；超长时可拆出 `tc-<业务域>-用例详情.md` 详情层 |
+| 场景数据 SQL | `<业务域>/sql/<PREFIX>-<NN>.sql` | `<host>/docs/test-case/<业务域>/sql/` | 与用例编号一一对应的数据准备与清理脚本；`<PREFIX>` 为该域编号前缀（形如 `TC-<域简称>`） |
+| 种子数据 SQL | `<业务域>/sql/<PREFIX>-SEED.sql` | `<host>/docs/test-case/<业务域>/sql/` | 该域多条用例共用的配置 / 种子数据 |
 
 ---
 
@@ -537,14 +569,62 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 | `acceptance-<slug>/<区块名>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/acceptance-<slug>/` |
 | `tc-main-<slug>.md` | test-case-writer | `<host>/docs/test-case/` |
 | `<业务域>/tc-<业务域>.md` | test-case-writer | `<host>/docs/test-case/<业务域>/` |
-| `<业务域>/sql/<编号>-<场景>.sql` | test-case-writer | `<host>/docs/test-case/<业务域>/sql/` |
+| `<业务域>/sql/<PREFIX>-<NN>.sql`、`<PREFIX>-SEED.sql` | test-case-writer | `<host>/docs/test-case/<业务域>/sql/` |
 
 **产出文件**：
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 待裁定 TC 问题清单 | `tc-reviews/<日期>-issues.md` | `<host>/docs/test-case/tc-reviews/` | 列出 reviewer 发现但需用户裁定的疑问 |
+| 待裁定 TC 问题清单 | `tc-reviews/<日期>-issues.md` | `<host>/docs/test-case/tc-reviews/` | 列出 reviewer 发现但需用户裁定的疑问；同日多轮时第 2 轮起加 `-2`、`-3` 后缀 |
 | TC 原地修正 | `<业务域>/tc-<业务域>.md` 等 | `<host>/docs/test-case/<业务域>/` | 可自行修正的 TC 内部问题，直接改对应文件 |
+
+---
+
+## 11. test-case-runner — 测试用例执行（S6）
+
+**职责**：按 `docs/test-case/` 下已有的测试用例文档逐条执行测试，每条用例走完整的四段式闭环（数据准备 → 测试执行 → 结果验证 → 数据清理），覆盖 API / UI 两种方式，产出按业务域组织的测试报告、缺陷清单和截图证据。只负责"执行"：不设计用例（test-case-writer 负责）、不修正用例（test-case-reviewer 负责）、不修复代码缺陷（记录后交由开发处理）。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| `tc-main-<slug>.md` | test-case-writer | `<host>/docs/test-case/` |
+| `<业务域>/tc-<业务域>.md`（及拆出的 `tc-<业务域>-用例详情.md`） | test-case-writer | `<host>/docs/test-case/<业务域>/` |
+| `<业务域>/sql/<PREFIX>-<NN>.sql`、`<PREFIX>-SEED.sql` | test-case-writer | `<host>/docs/test-case/<业务域>/sql/` |
+| `application.yml`（地址/端口/目录）+ `.env`（仅密码凭证） | 测试执行者按宿主实际环境创建（非流水线上游产物） | `<host>/` 项目根目录 |
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 索引报告 | `index.md` | `<host>/docs/test-case/reports/` | 全部业务域执行情况的汇总入口 |
+| 业务域报告 | `测试验收-<业务域>.md` | `<host>/docs/test-case/reports/` | 一个业务域一份，`<业务域>` 与 TC 文件目录同名 |
+| 缺陷跟踪 | `defects.md` | `<host>/docs/test-case/reports/` | 全项目唯一的缺陷清单 |
+| 截图证据 | `screenshots/测试验收-<业务域>/` | `<host>/docs/test-case/reports/` | UI 用例的过程与结果截图 |
+
+---
+
+## 12. security-scan — 完工前安全扫描（S7）
+
+**职责**：完工 / 交付前的固定安全闸门。按固定扫描范围（默认聚焦应用代码 + 依赖 + 敏感信息 + 输入校验四维，面向内部 / 本机工具场景）执行扫描，输出固定结构的安全扫描报告，最终结论只能是 `PASS`（放行）/ `BLOCK`（阻断）/ `WAIVER`（凭书面豁免放行）。未完成扫描前不得给出"可完工"结论；豁免必须书面记录责任人、理由、失效日期和临时缓解措施。
+
+**依赖文件**：
+
+| 文件 | 来源 | 位置 |
+|------|------|------|
+| 当前执行计划与完成标准 | delivery-planner | `<host>/docs/plans/delivery-plans/` |
+| 本轮代码、配置、依赖、文档变更 | 宿主项目 | `<host>/` |
+| 测试报告与验收材料 | test-case-runner | `<host>/docs/test-case/reports/` |
+| 部署配置、环境变量清单（如适用） | 宿主项目 | 宿主约定路径 |
+
+输入材料缺失时可以继续扫描，但必须在报告"输入证据缺口"里写明，不得假装完成全量扫描。
+
+**产出文件**：
+
+| 产物 | 文件名 | 存放位置 | 说明 |
+|------|--------|---------|------|
+| 安全扫描报告 | 固定结构报告（模板见 `skills/security-scan/references/report-template.md`） | `<host>/docs/security/` | 含扫描范围、输入证据、发现项、风险分级、阻断项和 `PASS / BLOCK / WAIVER` 结论；目录不存在则先创建 |
+| 豁免记录（如有） | 按 `skills/security-scan/references/waiver-template.md` | `<host>/docs/security/` | 记录责任人、理由、失效日期、临时缓解措施 |
 
 ---
 
@@ -552,27 +632,29 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 下表展示每个 Skill 消费了哪些上游产物（✓ = 直接依赖，👁 = 观察但不修改）：
 
-| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner | coding-standards | test-case-chief | prd-acceptance-reviewer | test-case-writer | test-case-reviewer |
-|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ | | | ✓ | | |
-| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | | | ✓ | ✓ | |
-| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | |
-| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | |
-| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
-| explainer-b-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | | | | | |
-| explainer-b-gap | | | 👁 | | 产出（可选） | 👁 | | | | | | | | |
-| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | |
-| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
-| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
-| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | |
-| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ | | 👁 | ✓ | ✓ | |
-| prd-feature-list | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
-| mainprd | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | |
-| subprd | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） | 👁 | ✓ | ✓ | |
-| delivery-plan | | | | | | | | | 产出 | ✓（硬依赖，逐 Task 消费） | 👁 | | | |
-| 验收文档（主索引 + 子文件） | | | | | | | | | | | 👁 | 产出 | ✓ | ✓ |
-| TC 主索引 + 域 TC + SQL | | | | | | | | | | | 👁 | | 产出 | ✓（原地修正） |
-| TC 问题清单 | | | | | | | | | | | 👁 | | | 产出 |
+| 产物 | ai-project-manager | brd-writer | page-chief | page-designer | page-explainer | prd-chief | foundation-builder | prd-writer | delivery-planner | coding-standards | test-case-chief | prd-acceptance-reviewer | test-case-writer | test-case-reviewer | test-case-runner | security-scan |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ | | | ✓ | | | | |
+| BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | | | ✓ | ✓ | | | |
+| 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | | | |
+| page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | | | |
+| explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | | | |
+| explainer-b-interaction | | | 👁 | | 产出 | 👁 | ✓（仅 locked） | ✓（仅 locked） | | | | | | | | |
+| explainer-b-gap | | | 👁 | | 产出（可选） | 👁 | | | | | | | | | | |
+| explainer-delivery | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | | | |
+| foundation-glossary | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | | | |
+| foundation-schema | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | | | |
+| foundation-api | | | | | | 👁 | 产出 | ✓ | ✓ | ✓（按 Task 选读） | 👁 | ✓ | ✓ | | | |
+| foundation-delivery | | | | | | 👁 | 产出 | ✓ | ✓ | | 👁 | ✓ | ✓ | | | |
+| prd-feature-list | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | | | |
+| mainprd | | | | | | 👁 | | 产出 | ✓ | | 👁 | ✓ | ✓ | | | |
+| subprd | | | | | | 👁 | | 产出 | ✓（按任务选读） | ✓（按 Task PRD双链选读） | 👁 | ✓ | ✓ | | | |
+| delivery-plan | | | | | | | | | 产出 | ✓（硬依赖，逐 Task 消费） | 👁 | | | | | ✓（读执行计划与完成标准） |
+| 验收文档（主索引 + 子文件） | | | | | | | | | | | 👁 | 产出 | ✓ | ✓ | | |
+| TC 主索引 + 域 TC + SQL | | | | | | | | | | | 👁 | | 产出 | ✓（原地修正） | ✓（逐条执行） | |
+| TC 问题清单 | | | | | | | | | | | 👁 | | | 产出 | | |
+| 测试报告 + 缺陷清单（reports/） | | | | | | | | | | | | | | | 产出 | ✓（作为放行证据） |
+| 安全扫描报告（docs/security/） | | | | | | | | | | | | | | | | 产出 |
 
 ---
 
@@ -580,7 +662,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 截至 2026-04-14，三大目录结构统一为 `docs/brd/` / `src/frontend/page-preview/` / `docs/prd/`。其中页面层目录已从 2026-04-13 版的 `可操作页面/` 改名为 `page-preview/`，现进一步归并到 `src/frontend/` 下。
 
-截至 2026-04-16，page-designer 产出的 Vue 3 前端工程代码从 `page-preview/<工程名>/` 迁移到 `<host>/<工程名>/`（项目根级）。`src/frontend/page-preview/` 仅保留元数据文件（交付清单、实体中间文件）。页面代码是项目级产物，不应嵌套在环节产物目录中。
+截至 2026-04-16，page-designer 产出的前端工程代码从 `page-preview/<工程名>/` 迁移到 `<host>/<工程名>/`（项目根级）。`src/frontend/page-preview/` 仅保留元数据文件（交付清单、实体中间文件）。页面代码是项目级产物，不应嵌套在环节产物目录中。
 
 历史宿主项目若文件仍停留在旧目录或根目录：
 

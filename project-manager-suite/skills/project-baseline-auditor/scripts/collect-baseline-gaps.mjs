@@ -23,7 +23,9 @@ const ignoredDirectories = new Set([
     'coverage',
     '.next',
     '.nuxt',
-    '.vite'
+    '.vite',
+    '.turbo',
+    '.cache'
 ]);
 
 const allowedNextSkills = new Set([
@@ -36,24 +38,35 @@ const allowedNextSkills = new Set([
 const artifactOrder = ['PROJECT_PROFILE', 'BRD', 'PAGE_EXPLAINER', 'FOUNDATION', 'PRD'];
 
 function printUsage() {
-    console.log('Usage: node collect-baseline-gaps.mjs <host-project-root> [--json] [--dry-run]');
+    console.log('Usage: node collect-baseline-gaps.mjs <host-project-root> [--slug <slug>] [--json] [--dry-run]');
 }
 
 function parseArgs(argv) {
     const args = argv.slice(2);
     const options = {
         hostRoot: '',
+        slug: '',
         json: false,
         write: true
     };
 
-    for (const arg of args) {
+    for (let index = 0; index < args.length; index += 1) {
+        const arg = args[index];
         if (arg === '--json') {
             options.json = true;
             continue;
         }
         if (arg === '--dry-run') {
             options.write = false;
+            continue;
+        }
+        if (arg === '--slug') {
+            const slug = args[index + 1];
+            if (!slug) {
+                throw new Error('Missing value for --slug.');
+            }
+            options.slug = slug;
+            index += 1;
             continue;
         }
         if (!options.hostRoot) {
@@ -150,6 +163,51 @@ function slugify(value) {
     return slug || 'existing-project';
 }
 
+function findExistingAuditSlug(hostRoot) {
+    const baselineDir = path.join(hostRoot, 'docs', 'baseline');
+    if (!fs.existsSync(baselineDir)) {
+        return '';
+    }
+
+    const candidates = fs
+        .readdirSync(baselineDir)
+        .map((name) => name.match(/^baseline-audit-(.+)\.json$/))
+        .filter(Boolean)
+        .map((match) => match[1]);
+
+    if (candidates.length === 0) {
+        return '';
+    }
+
+    return candidates
+        .map((slug) => ({
+            slug,
+            mtimeMs: fs.statSync(path.join(baselineDir, `baseline-audit-${slug}.json`)).mtimeMs
+        }))
+        .sort((a, b) => b.mtimeMs - a.mtimeMs)[0].slug;
+}
+
+function resolveSlug({ explicitSlug, profile, packageInfo, hostRoot }) {
+    if (explicitSlug) {
+        return { slug: slugify(explicitSlug), source: 'explicit' };
+    }
+
+    const profileSlug = profile.fields.project_slug?.value;
+    if (profileSlug && !isPlaceholder(profileSlug)) {
+        return { slug: slugify(profileSlug), source: 'profile' };
+    }
+
+    const existingAuditSlug = findExistingAuditSlug(hostRoot);
+    if (existingAuditSlug) {
+        return { slug: existingAuditSlug, source: 'existing-audit' };
+    }
+
+    return {
+        slug: slugify(packageInfo.name || profile.fields.project_name?.value || path.basename(hostRoot)),
+        source: 'derived'
+    };
+}
+
 function stripSourceMarker(value) {
     return String(value || '')
         .replace(/^`|`$/g, '')
@@ -191,6 +249,7 @@ function existingProfileFields(hostRoot) {
     const content = readText(profilePath);
     const labels = {
         project_name: '项目名称',
+        project_slug: '项目 slug',
         project_one_liner: '项目一句话目标',
         target_users: '目标使用者',
         main_problem: '主要问题',
@@ -384,7 +443,7 @@ function collectProfileConflicts(profile, inferred) {
     ].filter(Boolean);
 }
 
-function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evidence, docs }) {
+function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evidence, docs, slug, slugSource }) {
     const inferredName = packageInfo.name || path.basename(hostRoot);
     const inferredOneLiner = packageInfo.description || readmeSummary;
     const pagePurpose = evidence.pages.length > 0 ? '系统管理' : '';
@@ -447,6 +506,7 @@ function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evid
 
     const fields = {
         project_name: chooseField(profile.fields.project_name, inferredName),
+        project_slug: chooseField(profile.fields.project_slug, slug, slugSource === 'explicit' ? '【主入口回写】' : '【系统推断】'),
         project_one_liner: chooseField(profile.fields.project_one_liner, inferredOneLiner),
         target_users: chooseField(profile.fields.target_users, ''),
         main_problem: chooseField(profile.fields.main_problem, ''),
@@ -467,6 +527,7 @@ function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evid
 ## 1. 基本信息
 
 - 项目名称：${fields.project_name}
+- 项目 slug：${fields.project_slug}
 - 项目一句话目标：${fields.project_one_liner}
 - 当前阶段：\`【主入口回写】 S0.5\`
 - 协作模式：\`【系统推断】 业务单人 + AI执行\`
@@ -531,6 +592,98 @@ function buildProfileDraft({ hostRoot, profile, packageInfo, readmeSummary, evid
     };
 }
 
+function parseProfileFieldLabel(line) {
+    const match = line.match(/^-\s+([^：]+)：/);
+    return match ? match[1].trim() : null;
+}
+
+function isProtectedProfileLine(line) {
+    return /【(?:用户确认|主入口回写)】/.test(line);
+}
+
+function insertFieldLinesIntoSection(lines, sectionHeading, fieldLines) {
+    const headingIndex = lines.findIndex((line) => line.trim() === sectionHeading);
+    if (headingIndex === -1) {
+        return false;
+    }
+
+    let insertAt = headingIndex + 1;
+    for (let index = headingIndex + 1; index < lines.length; index += 1) {
+        if (/^##\s+/.test(lines[index])) {
+            break;
+        }
+        if (lines[index].trim()) {
+            insertAt = index + 1;
+        }
+    }
+
+    lines.splice(insertAt, 0, ...fieldLines);
+    return true;
+}
+
+function mergeProfileMarkdown(existingContent, draftMarkdown) {
+    const draftLines = draftMarkdown.replace(/\n$/, '').split('\n');
+    const existingLines = existingContent.replace(/\n$/, '').split('\n');
+
+    const draftFieldLines = new Map();
+    const draftSectionOfField = new Map();
+    let currentDraftSection = '';
+    for (const line of draftLines) {
+        if (/^##\s+/.test(line)) {
+            currentDraftSection = line.trim();
+        }
+        const label = parseProfileFieldLabel(line);
+        if (label && !draftFieldLines.has(label)) {
+            draftFieldLines.set(label, line);
+            draftSectionOfField.set(label, currentDraftSection);
+        }
+    }
+
+    const existingLabels = new Set();
+    for (const line of existingLines) {
+        const label = parseProfileFieldLabel(line);
+        if (label) {
+            existingLabels.add(label);
+        }
+    }
+
+    const mergedLines = existingLines.map((line) => {
+        const label = parseProfileFieldLabel(line);
+        if (!label || isProtectedProfileLine(line)) {
+            return line;
+        }
+        return draftFieldLines.get(label) || line;
+    });
+
+    const missingBySection = new Map();
+    for (const [label, line] of draftFieldLines) {
+        if (existingLabels.has(label)) {
+            continue;
+        }
+        const section = draftSectionOfField.get(label) || '';
+        if (!missingBySection.has(section)) {
+            missingBySection.set(section, []);
+        }
+        missingBySection.get(section).push(line);
+    }
+
+    for (const [section, fieldLines] of missingBySection) {
+        if (section && insertFieldLinesIntoSection(mergedLines, section, fieldLines)) {
+            missingBySection.delete(section);
+        }
+    }
+
+    for (const [section, fieldLines] of missingBySection) {
+        mergedLines.push('');
+        if (section) {
+            mergedLines.push(section, '');
+        }
+        mergedLines.push(...fieldLines);
+    }
+
+    return `${mergedLines.join('\n')}\n`;
+}
+
 function artifactStatus(hasArtifact, evidencePaths) {
     return {
         status: hasArtifact ? 'present' : 'missing',
@@ -584,7 +737,7 @@ function buildArtifacts({ profileExistsAfterWrite, docs, evidence }) {
                 ...docs.foundationApi,
                 ...docs.foundationDelivery
             ].map((file) => file.relativePath)),
-            expected_location: 'docs/prd/',
+            expected_location: 'docs/prd/foundation/',
             recommended_skill: foundationPresent ? null : 'foundation-builder',
             reason: foundationPresent
                 ? '已发现 foundation 文件'
@@ -661,7 +814,7 @@ function ensureDir(dirPath) {
     fs.mkdirSync(dirPath, { recursive: true });
 }
 
-function collectBaselineGaps({ hostRoot, write = true }) {
+function collectBaselineGaps({ hostRoot, slug: explicitSlug = '', write = true }) {
     const resolvedHostRoot = path.resolve(hostRoot);
     const files = walkFiles(resolvedHostRoot);
     const packageInfo = inferPackageInfo(resolvedHostRoot);
@@ -670,18 +823,28 @@ function collectBaselineGaps({ hostRoot, write = true }) {
     const evidence = collectCodeEvidence(files);
     const docs = detectExistingArtifacts(files);
     const profile = existingProfileFields(resolvedHostRoot);
-    const slug = slugify(packageInfo.name || profile.fields.project_name?.value || path.basename(resolvedHostRoot));
+    const { slug, source: slugSource } = resolveSlug({
+        explicitSlug,
+        profile,
+        packageInfo,
+        hostRoot: resolvedHostRoot
+    });
     const profileDraft = buildProfileDraft({
         hostRoot: resolvedHostRoot,
         profile,
         packageInfo,
         readmeSummary,
         evidence,
-        docs
+        docs,
+        slug,
+        slugSource
     });
 
     if (write) {
-        fs.writeFileSync(profile.path, profileDraft.markdown, 'utf8');
+        const profileMarkdown = profile.exists
+            ? mergeProfileMarkdown(profile.content, profileDraft.markdown)
+            : profileDraft.markdown;
+        fs.writeFileSync(profile.path, profileMarkdown, 'utf8');
     }
 
     const artifacts = buildArtifacts({

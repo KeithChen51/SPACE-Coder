@@ -206,7 +206,7 @@ const fileContracts = {
         },
         {
             key: 'in_progress_tasks',
-            label: '进行中任务',
+            label: '进行中任务（当前活跃 Phase / Task）',
             level: FIELD_LEVELS.REQUIRED,
             source: FIELD_SOURCES.PM_WRITTEN
         },
@@ -218,7 +218,19 @@ const fileContracts = {
         },
         {
             key: 'completion_criteria',
-            label: '完成标准',
+            label: '完成标准（完成标准摘要）',
+            level: FIELD_LEVELS.REQUIRED,
+            source: FIELD_SOURCES.PM_WRITTEN
+        },
+        {
+            key: 'official_plan_group',
+            label: '当前正式计划文件组（若未生成则写 待生成）',
+            level: FIELD_LEVELS.REQUIRED,
+            source: FIELD_SOURCES.PM_WRITTEN
+        },
+        {
+            key: 'active_sub_plan',
+            label: '当前子开发计划',
             level: FIELD_LEVELS.REQUIRED,
             source: FIELD_SOURCES.PM_WRITTEN
         },

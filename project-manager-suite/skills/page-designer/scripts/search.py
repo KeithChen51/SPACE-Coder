@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     # Design system generation
     parser.add_argument("--design-system", "-ds", action="store_true", help="Generate complete design system recommendation")
-    parser.add_argument("--project-name", "-p", type=str, default=None, help="Project name for design system output")
+    parser.add_argument("--project-name", "-p", type=str, default=None, help="Project slug for design system output; also becomes the design-system/<slug>/ directory name (lowercased, spaces -> '-'), so pass the BRD-derived slug")
     parser.add_argument("--format", "-f", choices=["ascii", "markdown"], default="ascii", help="Output format for design system")
     # Persistence (Master + Overrides pattern)
     parser.add_argument("--persist", action="store_true", help="Save design system to <output-dir>/design-system/<project>/MASTER.md")
@@ -99,6 +99,9 @@ if __name__ == "__main__":
     # Stack search
     elif args.stack:
         result = search_stack(args.query, args.stack, args.max_results)
+        if not result.get("error") and result.get("count") == 0:
+            print(f"warning: no match for '{args.query}' in stack '{args.stack}'. "
+                  f"design-db content is English-only — retry with English keywords.", file=sys.stderr)
         if args.json:
             import json
             print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -107,6 +110,9 @@ if __name__ == "__main__":
     # Domain search
     else:
         result = search(args.query, args.domain, args.max_results)
+        if not result.get("error") and result.get("count") == 0:
+            print(f"warning: no match for '{args.query}' in domain '{result.get('domain')}'. "
+                  f"design-db content is English-only — retry with English keywords.", file=sys.stderr)
         if args.json:
             import json
             print(json.dumps(result, indent=2, ensure_ascii=False))

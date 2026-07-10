@@ -4,7 +4,9 @@
  *
  * Subcommands:
  *   chapters plan      --ledger <path>
- *   chapters finalize  --ledger <path> --include "1,2,4,5,8,9,10,11,12"
+ *   chapters finalize  --ledger <path> --include "1,2,3,6,8,11,12,13"
+ *                      (--include lists TEMPLATE chapter numbers — valid: 1,2,3,4,6,8,9,10,11,12,13;
+ *                       output renumbers the included chapters consecutively from 1)
  *   save-brd           --ledger <path> --content <path> --output-dir <dir>
  *   markdown           --ledger <path>
  */

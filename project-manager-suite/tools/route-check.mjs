@@ -50,7 +50,10 @@ const STAGE_ORDER = [
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/route-check.mjs <host-project-root> [--target-stage S0.5|S1|S2|S3|S4|S5|S6|S7] [--json]'
+        `Usage: node <suite-path>/tools/route-check.mjs <host-project-root> [--target-stage ${STAGE_ORDER.join('|')}] [--json]`
+    );
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
     );
 }
 
@@ -1892,6 +1895,13 @@ function formatTextReport(result) {
     lines.push('', 'Gate checks:');
     for (const [key, check] of Object.entries(result.gateChecks)) {
         lines.push(`- ${key}: ${check.pass ? 'pass' : 'fail'}`);
+    }
+
+    const hasFailedGate = Object.values(result.gateChecks).some((check) => !check.pass);
+    if (result.canEnter && hasFailedGate) {
+        lines.push(
+            'Note: gates marked "fail" above do not block the current target stage; entry is decided by "Blocking reasons" below (empty means allowed).'
+        );
     }
 
     lines.push('', 'Blocking reasons:');

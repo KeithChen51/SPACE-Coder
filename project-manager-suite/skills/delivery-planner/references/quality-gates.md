@@ -35,6 +35,7 @@
 - [ ] `核心逻辑`
 - [ ] `核心文件`
 - [ ] `完成标准`
+- [ ] `完成收尾：状态同步`
 - [ ] `Owner`
 - [ ] `前置`
 - [ ] `状态`
@@ -96,7 +97,26 @@
 - [ ] 已同步更新 PRD → 任务反向索引
 - [ ] 新增验收口径已经进入计划正文，而不是只留在聊天记录中
 
-## 八、Harness 增强门禁
+## 八、S4 开工前一致性门禁
+
+进入 S4（代码实装）前，`ai-project-manager` 会触发本 skill 的 `s4_pre_coding_plan_consistency_check`。运行命令：
+
+```bash
+node <suite-path>/skills/delivery-planner/scripts/check-plan-consistency.mjs <主开发计划路径> --json
+```
+
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
+
+脚本读主开发计划执行阶段表、任务看板和当前子开发计划三处的 Task 状态。逐项确认：
+- [ ] 当前开工 Task 已在任务看板置为「进行中」（或主计划里有驾驶舱表声明当前 Task）
+- [ ] 有且仅有一个 Task 处于「进行中」
+- [ ] 主计划执行阶段表与任务看板中每个 Task 的状态一致
+- [ ] 「进行中」Task 链接的子开发计划文件存在，且其 `**状态**` 字段同为「进行中」
+- [ ] 已完成 Task 在主计划与看板两边的完成日期一致
+
+脚本 exit code 0 表示以上全部满足，可放行进入 `coding-standards`；exit code 2 表示存在不一致，输出错误清单（含修复方法），修复后重跑，未通过前不得开工写代码。
+
+## 九、Harness 增强门禁
 
 如果本次计划希望更适合 harness 评估，再额外确认：
 - [ ] 关键需求具备 `Requirement -> Task -> Verification -> Evidence` 追溯链
@@ -104,7 +124,7 @@
 - [ ] 阻塞条件会显式影响发布闸门，而不是口头说明
 - [ ] 标准映射体现在执行规则中，而不是只写“参考某某标准”
 
-## 九、四类常见不合格结果
+## 十、四类常见不合格结果
 
 ### 1. 外形像完整计划，内容像空模板
 

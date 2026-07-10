@@ -1,19 +1,23 @@
 # AI PM Tool Tests
 
-本目录存放 `ai-project-manager` 脚本化能力的最小测试样例。
+本目录存放套件脚本化能力的最小测试样例，共 4 个测试文件。
 
-当前覆盖范围：
+当前覆盖范围（按测试文件）：
 
-- `validate-global-files.mjs`
-- `route-check.mjs`
-- `generate-host-rules.mjs`
-- `bootstrap-host.mjs`
-- `install-suite-into-host.mjs`
-- `devlog-sync.mjs`
-- `check-protocol-alignment.mjs`
-- `page-ledger-io.mjs`
-- `page-ledger-mutate.mjs`
-- `page-ledger-query.mjs`
+- `ai-pm-tools.test.mjs` —— 主链路与高风险写入动作：
+  - `tools/` 脚本：`validate-global-files.mjs`、`route-check.mjs`（S2–S7 各阶段门禁、baseline 路由、新旧页面目录优先级）、`generate-host-rules.mjs`、`install-suite-into-host.mjs`（首装与升级）、`bootstrap-host.mjs`（容器目录判定、访谈门禁）、`devlog-sync.mjs`（建日志 / 追加 / 候选池）
+  - skill 侧脚本：`project-baseline-auditor/scripts/collect-baseline-gaps.mjs`、`project-link-indexer/scripts/collect-project-links.mjs` / `validate-project-links.mjs` / `run-project-link-indexer.mjs`、`delivery-planner/scripts/collect-upstream-context.mjs` / `validate-plan-structure.mjs` / `check-plan-consistency.mjs`、`coding-standards/scripts/verify-task-context.mjs`、`brd-writer/scripts/ledger-query.mjs`（D.5 复触发判断，经 `ledger-io.mjs` 构造台账）
+  - 文档一致性断言：对 SKILL / 协议 / PIPELINE 的关键口径做文本检查（多文件计划命名、foundation 目录、link-indexer 伴随调度、baseline 刷新归属、S4 一致性门禁），防止文档被改回旧口径
+- `protocol-alignment.test.mjs` —— `tools/check-protocol-alignment.mjs`：当前套件全量对齐通过、合成 fixture 检出缺失反向链接、非 git 环境安全降级、`--changed` 关联文件提示
+- `page-ledger.test.mjs` —— `page-designer/scripts/page-ledger-io.mjs` / `page-ledger-mutate.mjs` / `page-ledger-query.mjs`：台账创建与恢复、phase 相位图推进与非法跳转拦截、回环 start-loop、BRD 缺失兜底
+- `prd-check.test.mjs` —— `prd-writer/scripts/prd-check.mjs`：structure / crosscheck / set-status / sync-index 各命令，另含 PRD 自查表与 `route-check` 互不污染的回归
+
+当前**未被任何测试直接覆盖**的脚本（改动它们时测试不会报警，需要人工验证）：
+
+- `brd-writer/scripts/ledger-mutate.mjs`、`ledger-render.mjs`（台账写操作与 Markdown 渲染）
+- `doc-governance/scripts/scan-authority-overlap.mjs`
+- `page-designer/scripts/search.py`、`design_system.py`、`core.py`（Python 设计知识库链路）
+- `project-link-indexer/scripts/render-project-links.mjs`（人读 wiki 索引渲染）
 
 运行方式：
 

@@ -1,6 +1,6 @@
 ---
 name: project-devlog
-description: 用于项目状态回写和开发日志维护。包括每轮推进后沉淀项目状态、记录本轮产出与风险、每日开发日志新建与追加、收口汇总和周报生成。触发词：写日志、总结今天、日志收口、补今日日志、写周报、把这轮结果写回项目状态、记录当前推进结论、做一次阶段收口。当主入口或其他子 skill 完成一轮输出后，优先使用本 skill 进行状态回写。
+description: 用于项目状态回写和开发日志维护。包括每轮推进后沉淀项目状态、记录本轮产出与风险、每日开发日志新建与追加、收口汇总。触发词：写日志、总结今天、日志收口、补今日日志、把这轮结果写回项目状态、记录当前推进结论、做一次阶段收口。当主入口或其他子 skill 完成一轮输出后，优先使用本 skill 进行状态回写。
 ---
 
 # Project Devlog
@@ -78,6 +78,14 @@ logs/YYYYMMDD_refactor_log_<用户名>.md   # 每天一个；<用户名> 默认�
 4. 若日志中出现高频、稳定、可执行检查的经验，再考虑升级回写到 `project-rules.md` 或专项规则
 
 ## 资源入口
+
+- 结构化写入工具：`tools/devlog-sync.mjs`（套件自带的命令行工具，把一轮推进的目标 / 动作 / 结果按模板结构写入当日日志，必要时自动新建日志文件）。运行环境能执行 Node.js 时优先用它，不要手工复制模板：
+
+```bash
+node <suite-path>/tools/devlog-sync.mjs <hostRoot> --title <标题> --goal <目标> --action <动作> --result <结果> --json
+```
+
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。工具不可用（如无 Node.js）时，再按下面的模板与工作流手工维护日志。
 
 - 每日日志模板：`assets/daily.md`
 - 每日操作工作流：`references/daily-workflow.md`

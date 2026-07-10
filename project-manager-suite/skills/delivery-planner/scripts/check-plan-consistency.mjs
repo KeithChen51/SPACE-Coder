@@ -12,6 +12,15 @@
  *   Check whether the formal delivery plan file group is internally
  *   consistent before ai-project-manager routes S4 work to coding-standards.
  *
+ *   Active-task resolution (three-level source):
+ *     1. Optional cockpit table in the main plan (a two-column "字段/内容"
+ *        Markdown table with rows 当前活跃 Phase / Task and 当前子开发计划).
+ *        When present it is read and cross-checked against the kanban.
+ *     2. Otherwise the active task is derived from the task kanban row whose
+ *        状态 is 进行中, plus the sub delivery plan linked from that row.
+ *     3. When neither source yields an active task, an error is reported
+ *        with concrete fix instructions.
+ *
  * Usage:
  *   node check-plan-consistency.mjs <main-delivery-plan-file> [--json]
  *
@@ -182,21 +191,19 @@ function extractDate(rawValue) {
 
 function extractCockpit(content) {
     const cockpit = {};
-    const tables = parseMarkdownTables(content);
-    const table = tables.find((candidate) => {
-        const fieldIndex = findColumn(candidate.headers, ['字段']);
-        const valueIndex = findColumn(candidate.headers, ['内容']);
-        return fieldIndex !== -1 && valueIndex !== -1;
-    });
 
-    if (!table) return cockpit;
+    // 驾驶舱表是可选结构：扫描主计划里所有「字段 | 内容」两列表，
+    // 同名字段以先出现者为准（文档信息表与驾驶舱表并存时互不覆盖）。
+    for (const table of parseMarkdownTables(content)) {
+        const fieldIndex = findColumn(table.headers, ['字段']);
+        const valueIndex = findColumn(table.headers, ['内容']);
+        if (fieldIndex === -1 || valueIndex === -1) continue;
 
-    const fieldIndex = findColumn(table.headers, ['字段']);
-    const valueIndex = findColumn(table.headers, ['内容']);
-    for (const row of table.rows) {
-        const key = normalizeInlineValue(row[fieldIndex]);
-        if (!key) continue;
-        cockpit[key] = row[valueIndex] || '';
+        for (const row of table.rows) {
+            const key = normalizeInlineValue(row[fieldIndex]);
+            if (!key || key in cockpit) continue;
+            cockpit[key] = row[valueIndex] || '';
+        }
     }
 
     return cockpit;
@@ -354,8 +361,25 @@ function checkPlanConsistency({ planPath }) {
     let activeSubPlanPath = null;
     let subPlanStatus = { rawStatus: '', status: '' };
 
+    // 三级来源：驾驶舱表（可选，向后兼容）→ 任务看板「进行中」行推导 → 两者皆无则报错。
+    const cockpitActiveTaskRaw = normalizeInlineValue(cockpit['当前活跃 Phase / Task'] || '');
+    const cockpitSubPlanRaw = normalizeInlineValue(cockpit['当前子开发计划'] || '');
+    const hasCockpit = Boolean(cockpitActiveTaskRaw || cockpitSubPlanRaw);
+    const cockpitActiveTaskId = taskIdFromText(cockpitActiveTaskRaw);
+    const cockpitSubPlanTarget = extractMarkdownTarget(cockpit['当前子开发计划'] || '', /^sub-delivery-plan-.+\.md$/);
+
     if (activeKanbanTasks.length === 0) {
-        errors.push(makeIssue('missing_active_task', '任务看板中没有唯一的进行中 Task'));
+        if (hasCockpit) {
+            errors.push(makeIssue(
+                'missing_active_task',
+                '主计划驾驶舱声明了当前 Task，但任务看板中没有状态为「进行中」的 Task。修复方法：在任务看板将当前开工 Task 状态置为『进行中』，并同步主计划执行阶段表与子开发计划的状态'
+            ));
+        } else {
+            errors.push(makeIssue(
+                'missing_active_task',
+                '无法确定当前活跃 Task：任务看板中没有状态为「进行中」的 Task，主计划也没有驾驶舱表。修复方法：在任务看板将当前开工 Task 状态置为『进行中』，或在主计划补驾驶舱表（字段：当前活跃 Phase / Task、当前子开发计划）'
+            ));
+        }
     } else if (activeKanbanTasks.length > 1) {
         errors.push(makeIssue(
             'multiple_active_tasks',
@@ -374,18 +398,29 @@ function checkPlanConsistency({ planPath }) {
     }
 
     const activeTaskId = activeTask?.taskId || null;
-    const cockpitActiveTaskId = taskIdFromText(cockpit['当前活跃 Phase / Task'] || '');
-    if (!cockpitActiveTaskId) {
-        errors.push(makeIssue('missing_cockpit_active_task', '主计划驾驶舱缺少当前活跃 Phase / Task'));
-    } else if (activeTaskId && cockpitActiveTaskId !== activeTaskId) {
+    if (hasCockpit) {
+        if (!cockpitActiveTaskId) {
+            errors.push(makeIssue(
+                'missing_cockpit_active_task',
+                '主计划驾驶舱缺少当前活跃 Phase / Task 字段，或该字段中没有可识别的 Task 编号（应含 T<阶段>.<序号>，如 T1.2）'
+            ));
+        } else if (activeTaskId && cockpitActiveTaskId !== activeTaskId) {
+            errors.push(makeIssue(
+                'cockpit_active_task_mismatch',
+                `主计划驾驶舱当前 Task 与任务看板进行中 Task 不一致：驾驶舱=${cockpitActiveTaskId}，看板=${activeTaskId}`,
+                { cockpitTaskId: cockpitActiveTaskId, activeTaskId }
+            ));
+        }
+    }
+
+    if (activeTask && !activeTask.subPlanTarget) {
         errors.push(makeIssue(
-            'cockpit_active_task_mismatch',
-            `主计划驾驶舱当前 Task 与任务看板进行中 Task 不一致：驾驶舱=${cockpitActiveTaskId}，看板=${activeTaskId}`,
-            { cockpitTaskId: cockpitActiveTaskId, activeTaskId }
+            'missing_current_sub_plan',
+            `${activeTask.taskId} 在任务看板中未链接子开发计划，无法确定当前子开发计划。修复方法：在该 Task 的看板行补上 sub-delivery-plan-<slug>-<TaskID>-<short-name>.md 链接`,
+            { taskId: activeTask.taskId }
         ));
     }
 
-    const cockpitSubPlanTarget = extractMarkdownTarget(cockpit['当前子开发计划'] || '', /^sub-delivery-plan-.+\.md$/);
     if (activeTask?.subPlanTarget) {
         activeSubPlanPath = resolveRelativeTo(planDir, activeTask.subPlanTarget);
         if (!fs.existsSync(activeSubPlanPath)) {
@@ -413,14 +448,16 @@ function checkPlanConsistency({ planPath }) {
         }
     }
 
-    if (!cockpitSubPlanTarget) {
-        errors.push(makeIssue('missing_cockpit_sub_plan', '主计划驾驶舱缺少当前子开发计划'));
-    } else if (activeTask?.subPlanTarget && cockpitSubPlanTarget !== activeTask.subPlanTarget) {
-        errors.push(makeIssue(
-            'cockpit_sub_plan_mismatch',
-            `主计划驾驶舱当前子开发计划与任务看板进行中 Task 不一致：驾驶舱=${cockpitSubPlanTarget}，看板=${activeTask.subPlanTarget}`,
-            { cockpitSubPlanTarget, activeSubPlanTarget: activeTask.subPlanTarget }
-        ));
+    if (hasCockpit) {
+        if (!cockpitSubPlanTarget) {
+            errors.push(makeIssue('missing_cockpit_sub_plan', '主计划驾驶舱缺少当前子开发计划（应为 sub-delivery-plan-*.md 链接）'));
+        } else if (activeTask?.subPlanTarget && cockpitSubPlanTarget !== activeTask.subPlanTarget) {
+            errors.push(makeIssue(
+                'cockpit_sub_plan_mismatch',
+                `主计划驾驶舱当前子开发计划与任务看板进行中 Task 不一致：驾驶舱=${cockpitSubPlanTarget}，看板=${activeTask.subPlanTarget}`,
+                { cockpitSubPlanTarget, activeSubPlanTarget: activeTask.subPlanTarget }
+            ));
+        }
     }
 
     return {
@@ -433,6 +470,7 @@ function checkPlanConsistency({ planPath }) {
         sources: {
             mainPlan: {
                 path: normalizePathForOutput(resolvedPlanPath),
+                cockpitPresent: hasCockpit,
                 cockpitActiveTaskId,
                 cockpitSubPlanTarget: cockpitSubPlanTarget || null
             },

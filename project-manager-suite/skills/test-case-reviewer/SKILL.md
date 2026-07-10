@@ -13,13 +13,13 @@ description: Use when test-case-writer 已产出 `tc-main-<slug>.md` 和业务�
 
 **验收文档是唯一 Oracle**：`acceptance-<slug>/<区块名>.md` 的验收条目是对错判定的唯一基准。PRD / foundation / API 契约 / 宿主代码只做上下文或辅助，不参与对错判定。
 
-**硬约束（与父 spec §4.4 对齐）**：默认验收文档 / PRD / foundation 都是对的。核查过程中即使觉得某条验收条目可疑，也不记录、不反馈、不触发跨 skill 打补丁流程；reviewer 的定位是"找 TC 自己的问题"，不是"代替用户审验收文档"。
+**硬约束（默认上游正确）**：默认验收文档 / PRD / foundation 都是对的。核查过程中即使觉得某条验收条目可疑，也不记录、不反馈、不触发跨 skill 打补丁流程；reviewer 的定位是"找 TC 自己的问题"，不是"代替用户审验收文档"。
 
 **问题类型只有两类**：
 - `TC 错误`：TC 断言引用不存在的字段、自创逻辑、曲解验收条目、引用条目 ID 错位
 - `TC 遗漏`：验收文档条目未被 TC 覆盖
 
-**§5.27 被动察觉三条约束**：当核查某条 TC 时，TC 引用的 PRD 正文段落与验收文档对同一规则的描述不一致——
+**"被动察觉"三条约束**：当核查某条 TC 时，TC 引用的 PRD 正文段落与验收文档对同一规则的描述不一致——
 - 被动触发：仅在核查单条 TC 时顺带触发，不主动扫 PRD 全文 vs 验收文档找脱节
 - 只记录事实：贴 TC 原文 + PRD 段落 + 对应验收条目三份文字，不做对错裁决
 - 不改上游：不改 PRD、不改验收文档、不改 foundation / BRD / delivery-plan
@@ -36,14 +36,14 @@ description: Use when test-case-writer 已产出 `tc-main-<slug>.md` 和业务�
 | `acceptance-<slug>/<区块名>.md` | prd-acceptance-reviewer | `<host>/docs/test-case/acceptance-<slug>/` | 唯一 Oracle；TC 断言必须可回链到条目 |
 | `tc-main-<slug>.md` | test-case-writer | `<host>/docs/test-case/` | TC 主索引（含业务域 TC 文件路径 / 编号前缀 / 覆盖率 / `[待确认]` 汇总） |
 | `<业务域>/tc-<业务域>.md` | test-case-writer | `<host>/docs/test-case/<业务域>/` | 域 TC 文件（索引层 / 详情层） |
-| `<业务域>/sql/<编号>-<场景>.sql` | test-case-writer | `<host>/docs/test-case/<业务域>/sql/` | 核查 SQL 与用例是否匹配 |
+| `<业务域>/sql/<PREFIX>-<NN>.sql`（场景数据）与 `<PREFIX>-SEED.sql`（种子数据） | test-case-writer | `<host>/docs/test-case/<业务域>/sql/` | 核查 SQL 与用例是否匹配；`<PREFIX>` 为该域编号前缀（形如 `TC-<域简称>`） |
 
 ### 可选运行时辅助输入（不属于 PIPELINE §10 依赖）
 
 | 文件 / 目录 | 用途 |
 |---|---|
 | foundation-glossary / foundation-schema / foundation-api | 核查字段、枚举、API 契约是否存在 |
-| subprd（docs/prd/subprd/0X-subprd-<区块英文短名>.md） | §5.27 被动察觉时读 TC 引用的 PRD 正文段落——**只读 TC 引用到的位置**，不主动扫全文 |
+| subprd（docs/prd/subprd/0X-subprd-<区块英文短名>.md） | "被动察觉"（见第 1 节）时读 TC 引用的 PRD 正文段落——**只读 TC 引用到的位置**，不主动扫全文 |
 | 宿主代码实现 | 核查 SQL 数据链路时按需抽读 |
 
 和 PIPELINE §10 的"不查 PRD 或验收文档"对齐说明：这里的"不查"指不审查上游正确性；读取验收文档作为唯一 Oracle、读取 TC 已引用的 PRD 局部段落做被动事实记录，不算越界。
@@ -55,7 +55,7 @@ description: Use when test-case-writer 已产出 `tc-main-<slug>.md` 和业务�
 | `methodology.md` | `../test-case-chief/knowledge/methodology.md` | 覆盖维度框架（BCDE）——核查 TC 覆盖是否完整时对照 |
 | `templates-shared.md` | `../test-case-chief/knowledge/templates-shared.md` | TC 产物规格模板——核查文件头 / 验收矩阵 / 版本历史结构 |
 
-**不引用** `../test-case-chief/knowledge/checklist.md`——该文件 P6 完工后已删除；reviewer 用 `references/verification-check.md` 代替。
+共享知识包里**没有** reviewer 的核查清单——reviewer 的核查自检一律使用本 skill 的 `references/verification-check.md`，不要去 `../test-case-chief/knowledge/` 下找。
 
 ## 3. 产出
 
@@ -76,7 +76,7 @@ reviewer 必须使用 `test-case-chief/SKILL.md` 已登记的三种结论字段�
 | `需 writer 续改` | 问题超出 reviewer 原地修正能力（SQL 需重构、验收矩阵重算、跨域用例重组等） |
 | `需用户接手` | 被动察觉到 PRD 正文 vs 验收文档不一致的事实、或其它 reviewer 无法自决的疑问 |
 
-同日多轮 issues 的命名规则：`YYYY-MM-DD-issues.md` → `YYYY-MM-DD-issues-2.md` → `YYYY-MM-DD-issues-3.md`；按字典序取最新一份，历史 issues 保留作审计。
+同日多轮 issues 的命名规则：第 1 轮 `YYYY-MM-DD-issues.md`（不带后缀），同日第 2 轮起加数字后缀 `YYYY-MM-DD-issues-2.md` → `YYYY-MM-DD-issues-3.md`…。"最新一份"= 日期最大的那天中数字后缀最大的一份（无后缀视为第 1 轮）；**不要**按整个文件名的字典序排序取末尾——带 `-2` / `-3` 后缀的文件名在字典序里反而排在无后缀文件之前。历史 issues 保留作审计。
 
 reviewer 的职责到"用固定结论值写清楚本轮终态"为止。下游（用户或调度层）如何基于这行结论决定动作——不是 reviewer 的事。
 
@@ -126,6 +126,6 @@ reviewer 的职责到"用固定结论值写清楚本轮终态"为止。下游（
 | `references/phase-verification.md` | 核查方法论（逐域比对流程 / 问题分类 / 记录规范 / 修复流程） | Phase 2-5 全程 |
 | `references/verification-check.md` | 核查自检清单、常见核查期陷阱 | Phase 2 / Phase 5 自检时 |
 
-**不读取** `../test-case-chief/knowledge/checklist.md`——P6 完工后已删除；相关内容已迁入 `references/verification-check.md`。
+核查自检相关内容全部在 `references/verification-check.md`；`../test-case-chief/knowledge/` 共享包中只有方法论与产物模板，没有 reviewer 的核查清单。
 
 writer 侧的 `../test-case-writer/references/self-check.md` 是 writer 自检清单，不在 reviewer 读取范围；reviewer 的自检完全走本 skill 的 `references/verification-check.md`。

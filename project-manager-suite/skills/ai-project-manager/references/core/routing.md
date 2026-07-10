@@ -34,6 +34,7 @@
   - `lib/ai-pm-protocol/stages.js`
   - `lib/ai-pm-protocol/routing.js`
   - `lib/ai-pm-protocol/rules-sync.js`
+  - `lib/ai-pm-protocol/change-impact-map.js`
 - 对应脚本：
   - `tools/route-check.mjs`
   - `tools/bootstrap-host.mjs`
@@ -92,7 +93,7 @@
 | `page-chief` (S2 页面环节调度：`page-designer` → `page-explainer`，必要时回环) | S2 | `skills/page-chief/` |
 | `prd-chief` (S2 PRD 环节调度：`foundation-builder` → `prd-writer`) | S2 | `skills/prd-chief/` |
 | `delivery-planner` (任务拆解与开发计划) | S3 | `skills/delivery-planner/` |
-| `test-case-chief` (S5 验收 + 测试用例调度：`prd-acceptance-reviewer` → `test-case-writer` → `test-case-reviewer`) | S5 | `skills/test-case-chief/` |
+| `test-case-chief` (S5 测试用例生成环节调度：`prd-acceptance-reviewer` → `test-case-writer` → `test-case-reviewer`) | S5 | `skills/test-case-chief/` |
 | `test-case-runner` (测试执行) | S6 | `skills/test-case-runner/` |
 | `security-scan` (完工前固定安全闸门扫描与放行结论) | S7 | `skills/security-scan/` |
 
@@ -148,11 +149,7 @@
 ├── project-profile.md     (仅在宿主缺少项目画像文件时创建；已有则映射到宿主权威文件)
 ├── project-rules.md       (仅在宿主缺少全局规则文件时创建；已有则映射到宿主权威文件)
 ├── docs/plans/
-│   ├── execution-plan.md  (启动期 AI 记忆骨架中的当前执行计划载体)
-│   └── delivery-plans/
-│       ├── main-delivery-plan-<slug>.md
-│       ├── task-kanban-<slug>.md
-│       └── sub-delivery-plan-<slug>-<TaskID>-<short-name>.md
+│   └── execution-plan.md  (启动期 AI 记忆骨架中的当前执行计划载体)
 ├── docs/rules/            (宿主专项规则权威目录；首次创建后应自动从套件默认规则源补齐默认文件)
 ├── logs/                  (`project-devlog` 默认状态回写与开发日志目录；不再创建 `project-status.md`)
 └── .agent/skills/         (宿主项目本地 AI 配置和扩充能力挂载位)
@@ -163,7 +160,8 @@
 - 若宿主项目不存在对应全局文件，且已完成首轮必要访谈，才按默认文件名创建最小载体。
 - 若通过 `bootstrap-host.mjs` 创建 `project-profile.md`，必须同时满足“访谈已结束 + 已提供结构化访谈输入 + 启动最小必需字段包完整”这 3 个条件。
 - `execution-plan.md` 属于启动必建骨架，是 AI 持续记忆系统中的当前执行计划载体；若宿主缺失，应在初始化时创建最小文件。
-- 若宿主 `docs/rules/` 为空或缺少默认专项规则文件，主入口在完成骨架目录创建后，应从 `skills/ai-project-manager/references/rules/` 自动补齐同名规则文件；执行时可调用 `project-manager-suite/tools/generate-host-rules.mjs` 工具脚本完成批量生成。
+- 若宿主 `docs/rules/` 为空或缺少默认专项规则文件，主入口在完成骨架目录创建后，应从 `skills/ai-project-manager/references/rules/` 自动补齐同名规则文件；执行时可调用批量生成脚本：`node <suite-path>/tools/generate-host-rules.mjs`。
+  `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 - 已存在同名宿主规则文件时不得覆盖，除非显式执行强制刷新。
 - `bootstrap-host.mjs` V1 负责安全补骨架，不负责自动迁移整个套件到宿主 `.agent/`。
 - 若需要把当前套件固定到宿主内执行路径，应在骨架补齐后调用 `tools/install-suite-into-host.mjs` 安装到宿主 `.agent/project-manager-suite/`；该脚本应复用宿主已有 `.agent/`，若不存在则自动创建。
@@ -174,6 +172,7 @@
 - 进入 S1：补业务需求层目录
 - 进入 S2 页面环节：补页面层目录
 - 进入 S2 PRD 环节：补技术地基与 PRD 层目录
+- 进入 S3：补 `docs/plans/delivery-plans/` 开发计划目录；其中 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 三份正式开发计划文件由 `delivery-planner` 在 S3 产出，启动期不预建
 - 发生方案选型：补决策记录目录
 - S4 实装中首次发现需要回改 foundation 的漂移：补 `docs/plans/foundation-plans/`
 - 进入测试设计：补测试用例目录
@@ -201,9 +200,9 @@ tools/    # 仅在出现脚本、自动化、迁移需求时补建
 内部结构约束：
 - `routing.md` 只约束“是否需要补一个代码根目录”，不再预设其内部结构
 - 代码根目录下的真实文件组织以宿主既有工程结构、当前 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md` 中 Task 的 `核心文件` 字段，以及具体实现阶段读取到的编码规范为准
-- 若 S4 门禁发现 `docs/plans/delivery-plans/` 下正式开发计划文件组缺失、结构校验失败或 main plan / kanban / sub plan 三者状态不一致，路由目标应回到 `delivery-planner`，先生成、修复或校正 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`，不得继续进入 `coding-standards`
+- 若 S4 门禁发现 `docs/plans/delivery-plans/` 下正式开发计划文件组缺失、结构校验失败或 main plan / kanban / sub plan 三者状态不一致，路由目标应回到 `delivery-planner`，先生成、修复或校正 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md` 和 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`，不得继续进入 `coding-standards`（该文件组是 S3 阶段由 `delivery-planner` 独占产出的交付物，不属于启动必建骨架）
 - 主入口识别当前为 S4 时，必须先以 `s4_pre_coding_plan_consistency_check` 为目的触发 `delivery-planner/scripts/check-plan-consistency.mjs`；只有该校验通过后，才允许把当前 Task 交给 `coding-standards`
-- 若宿主已经存在 `frontend/`、`backend/`、`server/`、`web/` 等既有工程目录，优先映射现有结构，不按协议再造一层 `<项目名>-Toc/`、`<项目名>-Config/` 之类的目录模板
+- 若宿主已经存在 `frontend/`、`backend/`、`server/`、`web/` 等既有工程目录，优先映射现有结构，不再按 `<项目名>-frontend/`、`<项目名>-admin/` 之类的固定命名模板另造一层平行目录
 
 > **操作纪律**：先扫描，能映射的映射，识别到真缺失再补。若只是某个次要阶段还没到，其所属目录不要提前建立。在操作结束后，给出已建和延后建的总结单。
 >
@@ -216,6 +215,6 @@ tools/    # 仅在出现脚本、自动化、迁移需求时补建
 
 若当前涉及具体的技术栈开发工作，请严格遵守独立维护的技术约束规范：
 
-- 详细技术栈参考：[`../defaults/tech-stack.md`](file:../defaults/tech-stack.md)
+- 详细技术栈参考：[`../defaults/tech-stack.md`](../defaults/tech-stack.md)
 
 主入口与各子能力在提出技术选型、组件建议或代码实现方案时，必须默认遵循该文件中定义的前后两端框架与部署约束。

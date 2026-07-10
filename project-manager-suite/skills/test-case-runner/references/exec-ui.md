@@ -15,12 +15,13 @@
 
 3. **打开页面（必须人类可见）** — 优先使用人类可见的 Chrome/浏览器窗口打开目标 URL，让协作中的人类可以同步看到当前页面；只有在“人类已明确接受后台执行仅用于辅助截图取证”时，才可额外使用 Playwright/MCP 做补充操作，但**不能以非可见方式直接完成 UI 判定**。
    ```
-   ${TOC_URL}?phone=13800001001&vin=LVTEST...
+   ${APP_URL}<用例文档指定的页面路径与参数>
    ```
+   其中 `${APP_URL}` 为 `application.yml` 中 `urls.app` 的实际值（见 [env-setup.md](env-setup.md)）；页面路径与参数以用例文档写的为准。
 
 4. **截图取证** — 使用 `browser_take_screenshot` 保存截图到：
    ```
-   docs/test-case/reports/screenshots/{区块名}/
+   docs/test-case/reports/screenshots/测试验收-{业务域}/
    ```
    目录不存在则先创建。
 

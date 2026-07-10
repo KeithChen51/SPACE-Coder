@@ -13,7 +13,7 @@ description: Use when 页面环节产物全部就绪（delivery + 页面代码 +
 2. 观察子 skill 的产物文件状态，判断下一步该执行哪个子 skill
 3. 全部完成后标记 DONE，下游直接读子 skill 的产物文件
 
-**你可以做的事**：读取产物文件内容，基于内容做合格性判断（如检查索引表是否与 subprd 一致、自查结果是否通过）。
+**你可以做的事**：读取产物文件内容，基于内容做完整性判断（如检查索引表是否与 subprd 一致、状态是否全部为 `已确认`）。一致性自查等质量结论由子 skill 自行负责（见 H5）。
 
 **你不做的事**：不定义术语表、不设计 Schema/API、不撰写 PRD、不产出任何文件、不修改任何子 skill 的产物、不做任何子 skill 的具体工作。子 skill 不感知你的存在——你不向子 skill 传递指令或参数。子 skill 依然直接和用户交互。
 
@@ -124,11 +124,11 @@ START
 ### Stage 2: foundation-builder
 
 1. 指示：`下一步请执行 foundation-builder`
-2. 观察产物文件状态：
-   - `docs/prd/` 中的 `foundation-glossary-<slug>.md` 是否存在
-   - `docs/prd/` 中的 `foundation-schema-<slug>.md` 是否存在
-   - `docs/prd/` 中的 `foundation-api-<slug>.md` 是否存在
-   - `docs/prd/` 中的 `foundation-delivery-<slug>.md` 是否存在
+2. 观察产物文件状态（foundation 产物固定落在 `docs/prd/foundation/`，与 §3 目录读取口径一致）：
+   - `docs/prd/foundation/` 中的 `foundation-glossary-<slug>.md` 是否存在
+   - `docs/prd/foundation/` 中的 `foundation-schema-<slug>.md` 是否存在
+   - `docs/prd/foundation/` 中的 `foundation-api-<slug>.md` 是否存在
+   - `docs/prd/foundation/` 中的 `foundation-delivery-<slug>.md` 是否存在
 3. 4 个文件全部存在 → 进入 Stage 3
 
 ### Stage 3: prd-writer
@@ -142,6 +142,7 @@ START
    - 功能列表功能总表中的区块数
    - `mainprd` 的 subprd 索引行数
    - 真实存在的 subprd 文件数
+   - 计数口径：`真实 subprd 文件数` 只统计 `docs/prd/subprd/` 下符合 `0X-subprd-<区块英文短名>.md` 命名的文件；目录里其它命名的文件（草稿、备份等）不计入，但发现时要在回复中列出并提醒用户确认是否清理
 4. 检查状态闭合：
    - 功能列表中每个 subprd 状态均为 `已确认`
    - `mainprd` 中每个 subprd 状态均为 `已确认`

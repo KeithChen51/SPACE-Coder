@@ -56,7 +56,7 @@ description: 面向 AI 编程的 PRD 撰写。适用于 ai-project-manager/prd-c
 **拆分消费协议**（适用于 foundation-schema、foundation-api）：
 
 1. 拿到主文件路径后，stat 同名子目录（去 `.md`）是否存在
-2. 子目录存在 → 主文件是索引，**必须**从 `docs/prd/foundation/foundation-delivery-<slug>.md` 的"拆分子文件"列读取子文件清单，逐个读入作为权威来源；主文件仅用于获得索引结构
+2. 子目录存在 → 主文件是索引，**必须**从 `docs/prd/foundation/foundation-delivery-<slug>.md` 的"拆分子文件"列读取子文件清单，逐个读入作为权威来源；主文件仅用于获得索引结构。读取口径：该列单元格内的多条路径以 `<br>`（HTML 换行标签）分隔，按 `<br>` 拆开后每段是一条完整路径
 3. 子目录不存在 → 主文件即权威来源
 4. 拆分消费的上游契约见 PIPELINE.md §"产物拆分约定"
 
@@ -102,6 +102,8 @@ subprd 命名必须满足：
 ```bash
 node <suite-path>/skills/prd-writer/scripts/prd-check.mjs <command> [options] --json
 ```
+
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 
 命令：
 

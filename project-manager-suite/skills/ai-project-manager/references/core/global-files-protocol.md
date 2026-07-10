@@ -35,6 +35,7 @@
   - `lib/ai-pm-protocol/field-contracts.js`
   - `lib/ai-pm-protocol/validation.js`
   - `lib/ai-pm-protocol/rules-sync.js`
+  - `lib/ai-pm-protocol/change-impact-map.js`
 - 对应脚本：
   - `tools/validate-global-files.mjs`
   - `tools/bootstrap-host.mjs`
@@ -143,6 +144,11 @@
 | 当前阻塞 / 前置依赖 / 待确认项 | 可选 | **主入口回写** |
 | 可并行任务 / 任务优先级 / 候选后续任务 | 自动推断 | 系统推断 |
 
+章节落点说明（与默认模板 `assets/global-files/execution-plan.md` 和结构校验器保持一致）：
+- `当前活跃 Phase / Task` 落在驾驶舱的「进行中任务」章节，`完成标准摘要` 落在「完成标准」章节；两组名称同义，工具读取时两种章节名都接受，模板默认使用「进行中任务」「完成标准」
+- `当前正式计划文件组` 是独立章节，内含主开发计划、任务看板、当前子开发计划三个入口条目；未生成时写 `待生成`
+- 结构校验（`validate-global-files.mjs` 会检查这些章节 / 条目是否存在，缺失时报 `missing_required_markers`）以上述章节名为准
+
 ### 3.4 状态回写能力 (`project-devlog`)
 | 字段名 | 层级 | 来源 |
 |--------|------|------|
@@ -192,7 +198,7 @@
 3. **已有代码接入且需要补维护知识底座时** → 可由 `project-baseline-auditor` 基于代码生成或更新同一个 `project-profile.md`；必须保留 `【用户确认】` 字段，代码反推内容只能写为 `【系统推断】`，未能证明的内容进入单焦点待确认
 4. **缺全局规则角色文件时** → 仅在确有长期规则承载需要，且无法通过现有文件映射时，才创建最小规则载体；若已有同职责权威文件，直接复用
 5. **项目启动且缺计划载体时** → 将执行计划文件作为启动记忆骨架与当前执行驾驶舱补齐；若已有同职责权威文件，直接复用
-6. **任一单次有效协作（分析、开发、验收等）结束后** → 默认调用 `project-devlog` 进行状态回写；优先写回已有日志文件，仅在无可映射载体时于 `logs/` 下补最小日志文件
+6. **本轮推进需要状态回写时** → 由 `project-devlog` 承接；何时写入（默认只在阶段切换、正式交付、会话收口或需要交接时合并写入，小步动作先在画像 / 执行计划中累积）统一以 `runtime.md` §2.3「全局伴随能力规则」为准；优先写回已有日志文件，仅在无可映射载体时于 `logs/` 下补最小日志文件
 7. **协作大范围调整、项目阶段跃升** → 回写项目画像文件或其宿主映射文件
 8. **任务完成或目标调整** → 更新执行计划文件或其宿主映射文件
 9. **S3 正式开发计划形成或更新后** → `delivery-planner` 负责维护 `main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`、`sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`；`ai-project-manager` 负责把“主开发计划入口 + 任务看板入口 + 当前子开发计划入口 + 当前活跃摘要”同步回 `execution-plan.md`

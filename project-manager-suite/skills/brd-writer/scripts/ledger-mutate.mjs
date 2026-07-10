@@ -7,11 +7,13 @@
  */
 
 import process from 'process';
+import fs from 'fs';
 import path from 'path';
 import {
   readLedger,
   writeLedger,
   createEmptyLedger,
+  normalizeProjectType,
   isValidTransition,
   RULE_CONFLICTS,
   invalidateDerivedState,
@@ -26,9 +28,13 @@ function parseArgs(args) {
   for (let i = 0; i < args.length; i++) {
     if (args[i].startsWith('--')) {
       const key = args[i].slice(2);
-      const val = args[i + 1];
-      opts[key] = val === 'true' ? true : val === 'false' ? false : val;
-      i++;
+      const next = args[i + 1];
+      if (next === undefined || next.startsWith('--')) {
+        opts[key] = true; // bare flag, e.g. --force
+      } else {
+        opts[key] = next === 'true' ? true : next === 'false' ? false : next;
+        i++;
+      }
     }
   }
   return opts;
@@ -58,13 +64,36 @@ function fail(obj) {
 // ─────────────────────────────────────────────
 
 function cmdInit(opts) {
-  const projectType  = opts['project-type'];
-  const slug         = opts['slug'];
-  const projectName  = opts['project-name'];
-  const outputDir    = opts['output-dir'];
+  const projectTypeRaw = opts['project-type'];
+  const slug           = opts['slug'];
+  const projectName    = opts['project-name'];
+  const outputDir      = opts['output-dir'];
+  const force          = opts['force'] === true;
 
-  if (!projectType || !slug || !projectName || !outputDir) {
+  if (!projectTypeRaw || !slug || !projectName || !outputDir) {
     fail({ success: false, error: 'missing_args', message: '--project-type, --slug, --project-name, --output-dir are required' });
+  }
+
+  // Whitelist check: six English tokens, or SKILL.md's Chinese names normalized to English keys.
+  // Unknown values must error out — a silent fallback would drop all type-specific P0 fields.
+  let projectType;
+  try {
+    projectType = normalizeProjectType(projectTypeRaw);
+  } catch (err) {
+    fail({ success: false, error: 'invalid_project_type', message: err.message });
+  }
+
+  const jsonPath = path.join(outputDir, `ledger-state-${slug}.json`);
+  const mdPath   = path.join(outputDir, `brd-ledger-${slug}.md`);
+
+  // Re-entry guard: an existing ledger holds locked decisions and the round log —
+  // overwriting it silently would destroy the traceability record.
+  if (!force && fs.existsSync(jsonPath)) {
+    fail({
+      success: false,
+      error:   'already_exists',
+      message: `台账已存在: ${jsonPath}。重跑 init 会清空全部已锁定字段与变更日志；确认要推倒重建时加 --force。`,
+    });
   }
 
   let data;
@@ -73,9 +102,6 @@ function cmdInit(opts) {
   } catch (err) {
     fail({ success: false, error: 'create_failed', message: err.message });
   }
-
-  const jsonPath = path.join(outputDir, `ledger-state-${slug}.json`);
-  const mdPath   = path.join(outputDir, `brd-ledger-${slug}.md`);
 
   try {
     writeLedger(jsonPath, data, slug);
@@ -115,6 +141,15 @@ function cmdLock(opts) {
     data = readLedger(ledgerPath);
   } catch (err) {
     fail({ success: false, error: 'read_failed', message: err.message });
+  }
+
+  // DONE guard: a finalized ledger is the traceability record of the saved BRD.
+  if (data.header.current_phase === 'DONE') {
+    fail({
+      success: false,
+      error:   'phase_done',
+      message: '终稿已落盘（DONE），台账禁止再锁定字段。需求方明确要求继续迭代时，先执行 set-phase --phase C --round <n> 显式重开（reopen），再重新收敛。',
+    });
   }
 
   let fieldsToLock;
@@ -239,6 +274,11 @@ function cmdLock(opts) {
   };
   data.changelog.push(entry);
 
+  // Advance header round marker (never decreases) — cross-session recovery reads it
+  if (Number.isFinite(roundNum)) {
+    header.current_round = Math.max(header.current_round ?? 0, roundNum);
+  }
+
   // Invalidate derived state after field value changes
   invalidateDerivedState(data);
 
@@ -274,18 +314,43 @@ function cmdRollback(opts) {
     fail({ success: false, error: 'read_failed', message: err.message });
   }
 
-  // Find last non-rollback changelog entry
+  // DONE guard: rolling back after finalization would desync the ledger from the saved BRD.
+  if (data.header.current_phase === 'DONE') {
+    fail({
+      success: false,
+      error:   'phase_done',
+      message: '终稿已落盘（DONE），禁止回滚——回滚会让台账与已落盘的 BRD 终稿不一致。需求方明确要求继续迭代时，先执行 set-phase --phase C --round <n> 显式重开（reopen）。',
+    });
+  }
+
+  // Find the latest lock entry that has NOT been rolled back yet.
+  // Stack-style matching: each rollback entry consumes the nearest earlier change-bearing
+  // entry, so consecutive rollbacks walk further back instead of re-hitting the same round.
   const changelog = data.changelog ?? [];
   let targetEntry = null;
+  let pendingRollbacks = 0;
   for (let i = changelog.length - 1; i >= 0; i--) {
-    if (changelog[i].action_type !== 'rollback' && changelog[i].action !== 'rollback') {
-      targetEntry = changelog[i];
-      break;
+    const entry = changelog[i];
+    if (entry.action_type === 'rollback' || entry.action === 'rollback') {
+      pendingRollbacks++;
+      continue;
     }
+    // Entries without field changes (e.g. reopen) have nothing to reverse — skip
+    if (!Array.isArray(entry.changes) || entry.changes.length === 0) continue;
+    if (pendingRollbacks > 0) {
+      pendingRollbacks--; // already rolled back — keep walking back
+      continue;
+    }
+    targetEntry = entry;
+    break;
   }
 
   if (!targetEntry) {
-    fail({ success: false, error: 'nothing_to_rollback', message: 'No non-rollback changelog entry found' });
+    fail({
+      success: false,
+      error:   'nothing_to_rollback',
+      message: '没有可回滚的锁定记录：历史锁定已全部回滚，或台账中还没有锁定记录。',
+    });
   }
 
   const fieldRegistry = new Map(data.fields.map((f) => [f.id, f]));
@@ -318,6 +383,12 @@ function cmdRollback(opts) {
     requester_quote:  null,
   };
   data.changelog.push(rollbackEntry);
+
+  // Advance header round marker (never decreases — rollback does not rewind round numbering)
+  const targetRound = Number(targetEntry.round);
+  if (Number.isFinite(targetRound)) {
+    data.header.current_round = Math.max(data.header.current_round ?? 0, targetRound);
+  }
 
   // Invalidate derived state after field value changes
   invalidateDerivedState(data);
@@ -369,6 +440,11 @@ function cmdSetPhase(opts) {
 
   // Apply phase transition
   data.header.current_phase = toPhase;
+
+  // Advance header round marker (never decreases) — cross-session recovery reads it
+  if (Number.isFinite(roundNum)) {
+    data.header.current_round = Math.max(data.header.current_round ?? 0, roundNum);
+  }
 
   // DONE → C special handling
   if (fromPhase === 'DONE' && toPhase === 'C') {

@@ -33,7 +33,10 @@ const STRUCTURED_ROOTS = ['lib/ai-pm-protocol', 'lib/bootstrap'];
 
 function printUsage() {
     console.log(
-        'Usage: node project-manager-suite/tools/check-protocol-alignment.mjs [suite-root] [--json] [--changed file-a,file-b]'
+        'Usage: node <suite-path>/tools/check-protocol-alignment.mjs [suite-root] [--json] [--changed file-a,file-b]'
+    );
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
     );
 }
 
@@ -97,40 +100,38 @@ function detectGitChangedFiles(suiteRoot) {
             stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
 
-        const statusOutput = execFileSync('git', ['-C', repoRoot, 'status', '--short'], {
+        const statusOutput = execFileSync('git', ['-C', repoRoot, 'status', '--porcelain', '-z'], {
             encoding: 'utf8',
             stdio: ['ignore', 'pipe', 'ignore']
-        }).trim();
+        });
 
-        if (!statusOutput) {
-            return {
-                mode: 'git-auto',
-                repoRoot,
-                changedFiles: []
-            };
+        // `--porcelain -z` 的输出以 NUL 分隔且路径不做引号转义：每条形如 "XY <path>"。
+        // XY 是两位状态码，未暂存修改是 " M"（首位为空格），因此不能 trim 整条记录，
+        // 只能按固定位置取值：slice(0, 2) 是状态码，slice(3) 是路径。
+        // 重命名/复制（R/C）条目后面还跟一条独立的“原路径”记录，需要跳过。
+        const entries = statusOutput.split('\0').filter((entry) => entry.length > 0);
+        const changedFiles = [];
+
+        for (let i = 0; i < entries.length; i += 1) {
+            const entry = entries[i];
+            const statusCode = entry.slice(0, 2);
+            const filePath = entry.slice(3);
+
+            if (statusCode.startsWith('R') || statusCode.startsWith('C')) {
+                i += 1;
+            }
+
+            if (!filePath) {
+                continue;
+            }
+
+            changedFiles.push(normalizeRepoPath(path.relative(suiteRoot, path.join(repoRoot, filePath))));
         }
-
-        const changedFiles = statusOutput
-            .split('\n')
-            .map((line) => line.trim())
-            .filter(Boolean)
-            .map((line) => {
-                const statusPrefix = line.slice(0, 3);
-                let filePath = line.slice(3).trim();
-
-                if (statusPrefix.startsWith('R') && filePath.includes(' -> ')) {
-                    filePath = filePath.split(' -> ').pop() || filePath;
-                }
-
-                return normalizeRepoPath(path.relative(suiteRoot, path.join(repoRoot, filePath)));
-            })
-            .filter((item) => item && !item.startsWith('..'))
-            .sort();
 
         return {
             mode: 'git-auto',
             repoRoot,
-            changedFiles
+            changedFiles: changedFiles.filter((item) => item && !item.startsWith('..')).sort()
         };
     } catch {
         return {

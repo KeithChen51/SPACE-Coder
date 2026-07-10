@@ -1,7 +1,7 @@
 ---
 name: test-case-runner
 description: >
-  测试用例执行引擎。当用户提到"跑测试""执行测试用例""运行 TC""跑区块""验证用例"
+  测试用例执行引擎。当用户提到"跑测试""执行测试用例""运行 TC""跑某个业务域""验证用例"
   "测试报告""PASS/FAIL""开始测试""逐条跑"时触发。
   标准化四段式闭环执行（数据准备→测试→验证→清理），覆盖 API / UI 两种方式。
   只要涉及执行已有测试用例文档、生成测试报告、追踪测试进度，都应使用本 skill。
@@ -14,7 +14,7 @@ description: >
 
 **权威文档源**：
 - 测试主文档：`docs/test-case/tc-main-<slug>.md`
-- 环境配置：`application.yml`（地址/端口/目录）+ `.env`（仅密码凭证）
+- 环境配置：`application.yml`（地址/端口/目录）+ `.env`（仅密码凭证）——这两个文件不是流水线上游 skill 的产物，首次执行测试前由测试执行者按宿主实际环境在项目根目录创建，最小示例见 [references/env-setup.md](references/env-setup.md)
 - 项目规则：宿主项目规则文件（如 `project-rules.md`）
 
 **外部依赖**：
@@ -23,7 +23,15 @@ description: >
 |------|------|---------|
 | pymysql | 数据准备/清理（执行 SQL） | `pip install pymysql` |
 | expect | SSH 隧道（仅 DB 直连失败时需要） | macOS 自带；Linux: `apt install expect` |
-| Playwright MCP | UI 用例（浏览器操作） | 在 Claude Code 设置中添加 `@anthropic/mcp-playwright` |
+| Playwright MCP | UI 用例（浏览器操作） | npm 包名 `@playwright/mcp`；接入命令见表下说明 |
+
+Playwright MCP 接入：宿主环境已配置过 Playwright MCP server 时直接复用，无需重复添加；未配置时在终端执行：
+
+```bash
+claude mcp add playwright -- npx @playwright/mcp@latest
+```
+
+其中 `claude mcp add` 是 Claude Code 自带的 MCP server 注册命令，`npx @playwright/mcp@latest` 会在启动时临时下载并运行官方 Playwright MCP 包。注册后重启会话即可使用浏览器操作工具。
 
 ---
 
@@ -120,11 +128,11 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 | 文件 | 路径 | 模板 |
 |------|------|------|
 | 索引报告 | `reports/index.md` | [references/report-template.md](references/report-template.md) |
-| 区块报告 | `reports/测试验收-{区块名}.md` | 同上 |
+| 业务域报告 | `reports/测试验收-{业务域}.md` | 同上 |
 | 缺陷跟踪 | `reports/defects.md`（全项目唯一） | [references/defect-template.md](references/defect-template.md) |
-| 截图 | `reports/screenshots/测试验收-{区块名}/` | — |
+| 截图 | `reports/screenshots/测试验收-{业务域}/` | — |
 
-> 路径前缀均为 `docs/test-case/`
+> 路径前缀均为 `docs/test-case/`。报告按**业务域**粒度组织，`{业务域}` 与 TC 文件目录 `docs/test-case/{业务域}/` 的域名一致，一个域一份报告。
 
 ---
 
@@ -165,15 +173,17 @@ SEED 前置：文档提到 SEED SQL 的，在该组第一条用例之前执行�
 ```
 docs/test-case/{业务域}/tc-{业务域}.md                # 索引
 docs/test-case/{业务域}/tc-{业务域}-用例详情.md       # 详情（超约 200 行时拆出）
-docs/test-case/{业务域}/sql/TC-{域缩写}-{NN}.sql     # 用例 SQL
-docs/test-case/{业务域}/sql/TC-{域缩写}-SEED.sql     # 种子数据
+docs/test-case/{业务域}/sql/{PREFIX}-{NN}.sql        # 场景数据 SQL，与用例编号一一对应
+docs/test-case/{业务域}/sql/{PREFIX}-SEED.sql        # 种子数据 SQL，多用例共用
 ```
+
+`{PREFIX}` 为该域编号前缀（形如 `TC-{域缩写}`），由 test-case-writer 的 project-conventions 决定。
 
 ### 报告输出路径
 ```
 docs/test-case/reports/index.md
-docs/test-case/reports/测试验收-{区块名}.md
-docs/test-case/reports/screenshots/测试验收-{区块名}/
+docs/test-case/reports/测试验收-{业务域}.md
+docs/test-case/reports/screenshots/测试验收-{业务域}/
 docs/test-case/reports/defects.md
 ```
 

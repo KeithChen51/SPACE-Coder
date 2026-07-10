@@ -107,7 +107,7 @@ export const TYPE_SPECIFIC_P0 = {
     // ref: p0-fields.md 创新#11
     {
       id: 'innovation_target_user_scenario',
-      display_name: '目标用户与核心场景',
+      display_name: '目标使用者与核心场景',
       field_type: 'fact',
       value_type: 'text',
       section: 'innovation',
@@ -189,7 +189,7 @@ export const TYPE_SPECIFIC_P0 = {
     // ref: p0-fields.md 扩展#11
     {
       id: 'extension_target_user_scenario',
-      display_name: '目标用户与核心场景',
+      display_name: '目标使用者与核心场景',
       field_type: 'fact',
       value_type: 'text',
       section: 'extension',
@@ -319,6 +319,40 @@ export const TYPE_SPECIFIC_P0 = {
     },
   ],
 };
+
+// ─────────────────────────────────────────────
+// Project type normalization
+// ref: SKILL.md Phase A 中英对照表（中文类型名 ↔ 脚本英文 token）
+// ─────────────────────────────────────────────
+
+export const VALID_PROJECT_TYPES = Object.keys(TYPE_SPECIFIC_P0);
+
+export const PROJECT_TYPE_ALIASES = {
+  创新型: 'innovation',
+  改造型: 'transformation',
+  扩展型: 'extension',
+  集成型: 'integration',
+  运营型: 'operational',
+  合规型: 'compliance',
+};
+
+/**
+ * Normalize a --project-type value to its English key.
+ * Accepts the six English tokens, or the Chinese names used in SKILL.md (mapped to English keys).
+ * Throws with the full list of valid values on unknown input.
+ *
+ * @param {string} input - raw --project-type value
+ * @returns {string} normalized English key
+ */
+export function normalizeProjectType(input) {
+  const raw = String(input ?? '').trim();
+  if (VALID_PROJECT_TYPES.includes(raw)) return raw;
+  if (PROJECT_TYPE_ALIASES[raw]) return PROJECT_TYPE_ALIASES[raw];
+  const validList = Object.entries(PROJECT_TYPE_ALIASES)
+    .map(([zh, en]) => `${en}（${zh}）`)
+    .join(', ');
+  throw new Error(`Unknown project type: "${raw}". Valid values: ${validList}`);
+}
 
 // ─────────────────────────────────────────────
 // Page fields
@@ -453,7 +487,9 @@ export function isValidTransition(from, to) {
 /**
  * CHAPTER_MATRIX — keyed by template chapter number.
  * Chapter 5 (市场与竞品差异化) and Chapter 7 (商业化路径) are intentionally absent.
- * Final BRD chapter numbering keeps the original gaps (§1-§4, §6, §8-§13) for downstream-reference stability.
+ * Template numbers are skeleton IDs used only for cropping/lookup — `chapters finalize`
+ * renumbers the included chapters consecutively (1..N) in the final BRD, and the
+ * appendix references the renumbered chapters (see references/brd-template.md).
  * Each entry:
  *   title           : default Chinese chapter title
  *   page_dependent  : true → skip unless hasPages
@@ -743,11 +779,14 @@ export function readLedger(jsonPath) {
 export function writeLedger(jsonPath, data, slug) {
   data.header.last_updated = nowTimestamp();
 
+  // Output dir may not exist yet (greenfield host: bootstrap does not pre-create docs/brd)
+  const dir = path.dirname(jsonPath);
+  fs.mkdirSync(dir, { recursive: true });
+
   const tmp = `${jsonPath}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
   fs.renameSync(tmp, jsonPath);
 
-  const dir = path.dirname(jsonPath);
   const mdPath = path.join(dir, `brd-ledger-${slug}.md`);
   try {
     const mdContent = renderMarkdown(data);

@@ -1,5 +1,7 @@
 # 既有项目关键文件诊断清单
 
+> 本文件只是结构示意，供人对照阅读：真实报告由 `scripts/collect-baseline-gaps.mjs` 里的 `buildAuditMarkdown` 函数直接生成，不读取本模板。要调整报告结构，请改脚本，并同步更新本示意。
+
 - 模式：existing-project-baseline
 - 范围：maintenance-docs-only
 - slug：<slug>
@@ -16,7 +18,7 @@
 | PROJECT_PROFILE | <status> | project-profile.md | project-baseline-auditor | <reason> |
 | BRD | <status> | docs/brd/ | brd-writer | <reason> |
 | PAGE_EXPLAINER | <status> | src/frontend/page-preview/ | page-explainer | <reason> |
-| FOUNDATION | <status> | docs/prd/ | foundation-builder | <reason> |
+| FOUNDATION | <status> | docs/prd/foundation/ | foundation-builder | <reason> |
 | PRD | <status> | docs/prd/ | prd-writer | <reason> |
 
 ## 3. 代码证据摘要

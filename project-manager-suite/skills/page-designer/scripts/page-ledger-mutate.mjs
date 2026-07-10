@@ -157,8 +157,14 @@ function cmdStartLoop(flags) {
         );
     }
 
+    const gapFiles = parseGapFiles(flags['gap-files']);
+    const missingGapFiles = gapFiles.filter((file) => !fs.existsSync(file));
+    if (missingGapFiles.length > 0) {
+        fail('gap_file_not_found', `gap files not found: ${missingGapFiles.join(', ')}`);
+    }
+
     ledger.loopRound += 1;
-    ledger.gapFilesConsumed = parseGapFiles(flags['gap-files']);
+    ledger.gapFilesConsumed = gapFiles;
     ledger.phase = 1;
     ledger.updatedAt = nowTimestamp();
     writeLedger(ledgerPath, ledger);

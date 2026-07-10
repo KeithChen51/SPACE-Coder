@@ -27,14 +27,14 @@
 1. 检查 delivery 中"差异摘要"：
    - 存在未解决 `design_gap` / `logic_conflict`：主动建议回环 page-designer，展示具体条目
    - 仅剩 `clarification`：向用户提问，获得答案后转为语义条目或标记 `resolved`
-   - 用户拒绝回环：对应差异条目标记为 `resolved | reason: user-declined`
+   - 用户拒绝回环：对应差异条目分类改为 `resolved`，并在「解决记录」字段写明 `用户拒绝回环（reason: user-declined）`
 2. 无未解决差异：直接进入完工
 
 ## 回环后复查
 
 page-designer 修改完页面后重新进入 page-explainer 时：
 1. 仅复查差异文件中 `design_gap` 和 `logic_conflict` 类型的条目涉及的运行页面、页面代码和交互
-2. 差异已闭环：对应条目分类改为 `resolved`
+2. 差异已闭环：对应条目分类改为 `resolved`，并在「解决记录」字段写明闭环方式（如 `回环#N 修复`）
 3. 仍有差异：更新差异文件，再次建议回环
 4. 每次复查结束都必须重新生成 `explainer-delivery-<slug>.md`，保持一致性自查表与产物状态同步
 

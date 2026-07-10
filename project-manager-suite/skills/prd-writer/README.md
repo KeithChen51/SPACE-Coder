@@ -41,12 +41,14 @@ BRD → page-designer → foundation-builder → prd-writer → ...
 `scripts/prd-check.mjs` 是本 skill 的结构化反馈入口：
 
 ```bash
-node skills/prd-writer/scripts/prd-check.mjs structure --file docs/prd/prd-feature-list-<slug>.md --json
-node skills/prd-writer/scripts/prd-check.mjs crosscheck --host-dir <host> --slug <slug> --json
-node skills/prd-writer/scripts/prd-check.mjs progress --host-dir <host> --slug <slug> --json
-node skills/prd-writer/scripts/prd-check.mjs set-status --host-dir <host> --slug <slug> --block 1 --status 已确认 --json
-node skills/prd-writer/scripts/prd-check.mjs sync-index --host-dir <host> --slug <slug> --json
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs structure --file docs/prd/prd-feature-list-<slug>.md --json
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs crosscheck --host-dir <host> --slug <slug> --json
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs progress --host-dir <host> --slug <slug> --json
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs set-status --host-dir <host> --slug <slug> --block 1 --status 已确认 --json
+node <suite-path>/skills/prd-writer/scripts/prd-check.mjs sync-index --host-dir <host> --slug <slug> --json
 ```
+
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 
 脚本输出 `ruleId / severity / file / section / expected / actual / fixHint / nextCommand`，用于让工具协作型模型按反馈修复，而不是靠记忆模板注释。
 

@@ -28,7 +28,10 @@ const sourceDir = path.join(
 );
 
 function printUsage() {
-    console.log('Usage: node project-manager-suite/tools/generate-host-rules.mjs <host-project-root> [--force] [--dry-run]');
+    console.log('Usage: node <suite-path>/tools/generate-host-rules.mjs <host-project-root> [--force] [--dry-run]');
+    console.log(
+        '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
+    );
 }
 
 function parseArgs(argv) {

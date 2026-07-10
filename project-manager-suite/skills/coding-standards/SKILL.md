@@ -43,6 +43,9 @@ Current scope note:
    node <suite-path>/skills/coding-standards/scripts/verify-task-context.mjs \
      <main-delivery-plan-path> <task-id> --env-check
    - envReady: true  → 继续读计划
+   - envReady: true 但带「0 条环境依赖声明」警告 → 可继续，但先核对主计划
+     「环境依赖声明」表格是否符合可解析格式（见 delivery-planner/references/plan-anatomy.md），
+     防止格式写错被误当成"无环境依赖"
    - envReady: false → 输出缺失依赖清单，停止，不得开始写代码
 
 1. 读取 `docs/plans/delivery-plans/main-delivery-plan-<slug>.md`、`task-kanban-<slug>.md`，并定位当前 Task 对应的 `sub-delivery-plan-<slug>-<TaskID>-<short-name>.md`
@@ -107,6 +110,7 @@ S4 实装收尾时必须判断本 Task 是否发现 foundation 漂移。这里�
 - `foundation-builder`：只读 `待评审` 条目，作为增量修订输入
 - `ai-project-manager`：在消费点翻条目状态，并向用户报告裁决结果
 
+## Routing workflow
 
 1. Identify the main task type before editing files.
 2. Load only the 1-2 most relevant standards documents.
@@ -154,8 +158,8 @@ Use these combinations as defaults:
 - New table plus SQL changes: `05-mysql-table.md` and `06-mysql-sql-orm.md`
 - REST API change with backend implementation: `09-api-design.md`, plus the main Java rule document that matches the implementation
 - Vue page plus backend API integration: `07-vue-frontend.md`, plus `09-api-design.md` if the API contract also changes
-- Feature delivery with tests: load the main implementation document first, then check whether `10-testing.md` exists before loading it
-- Automated tests plus test case document update: first check whether `10-testing.md` and `11-test-case-design.md` exist; if not, do not route to missing files
+- Feature delivery with tests: load the main implementation document first, then check whether `12-testing.md` exists before loading it
+- Automated tests plus test case document update: first check whether `12-testing.md` and `13-test-case-design.md` exist; if not, do not route to missing files
 - Python script or module: `10-python-naming-style.md`, plus `11-python-engineering.md` if the task involves project structure or exception design
 - Python service with REST API: `10-python-naming-style.md` or `11-python-engineering.md`, plus `09-api-design.md` if the API contract also changes
 - Python with Java interop (e.g., calling Java API): load the primary Python document, plus `09-api-design.md` for interface alignment
@@ -178,7 +182,7 @@ Example: "Refactor this Vue page and keep the request and response fields consis
 Load `07-vue-frontend.md`. If the task changes the backend contract, also load `09-api-design.md`.
 
 Example: "补单测并补充测试用例文档。"
-Check whether `10-testing.md` and `11-test-case-design.md` exist first. If they do not exist, fall back to the closest active standards file and explicitly note the gap.
+Check whether `12-testing.md` and `13-test-case-design.md` exist first. If they do not exist, fall back to the closest active standards file and explicitly note the gap.
 
 Example: "写一个 Python 数据处理脚本，需要从数据库读取数据并导出 CSV。"
 Load `10-python-naming-style.md` and `11-python-engineering.md`. If the task also involves database schema changes, also load `05-mysql-table.md` or `06-mysql-sql-orm.md`.

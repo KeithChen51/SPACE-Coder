@@ -101,6 +101,7 @@ description: 当任务涉及代码仓库内的开发实施计划时使用，例�
 node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <hostRoot> --json
 ```
 
+> `<suite-path>` 指套件根目录：源码仓库联调时为 `project-manager-suite/`，安装到宿主后为 `.agent/project-manager-suite/`；命令默认在宿主项目根目录执行。
 > 如果项目不在默认的 `docs/prd/` 目录存放 PRD 文档，追加 `--docs-dir <相对路径>` 参数；foundation 产物固定放在该目录下的 `foundation/` 子目录。
 > 如果项目未安装 suite（`.agent/` 目录不存在），改用 suite 的绝对路径运行脚本。
 
@@ -142,6 +143,17 @@ node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <
 5. `canProceed` 始终为 `true`
 
 > 但若同时满足“`slug = null` + 无 PRD / foundation 主链 + 当前仓库明显是套件 / 框架 / skill 源码仓库”，则只允许进入内部维护文档路线，不允许把该仓库当宿主生成正式开发计划文件组。
+
+#### 分支 E：脚本以 exit code 1 退出（致命错误，无 JSON 输出）
+
+脚本因致命错误中止时不会输出清单 JSON，只打印 usage 和 `Error: ...` 一行。按报错信息分两类处理：
+
+1. **报错含 `Docs directory does not exist`**：宿主还没有 PRD 文档目录（默认 `docs/prd/`）。
+   - 若 PRD 实际放在其他目录，追加 `--docs-dir <相对路径>` 重跑
+   - 确认宿主确实没有任何 PRD 产物时，按分支 B 的失败分支处理：输出缺失清单与影响、停止写计划，等待上游（S2 页面 / PRD 阶段）补齐；不要为了让脚本跑通而自建空目录
+2. **其他致命错误**（`Host root does not exist`、参数缺失或拼写错误等）：属于命令本身写错，按脚本打印的 usage 修正 `<hostRoot>` 路径或参数后重跑
+
+无论哪一类，Step 0.5 仍是硬性前置：脚本未成功产出清单前，不得开始读取项目文件或写计划。
 
 ---
 
@@ -249,7 +261,7 @@ docs/plans/delivery-plans/
 每个子开发计划最后必须包含 `完成收尾：状态同步`。它是当前 Task 的完成工作之一，不是可选备注。该区块必须说明：
 - 完成实现、验证和 foundation 漂移判断后，执行者要把 Task 完成事实、验证证据、完成日期、foundation 漂移结论和建议下一 Task 提交给 `ai-project-manager`
 - `ai-project-manager` 调度 `delivery-planner` 同步主开发计划、任务看板和当前子开发计划状态
-- 同步后重新运行 `route-check.mjs <host> --target-stage S4 --json`，确认正式开发计划文件组三者一致
+- 同步后重新运行 `node <suite-path>/tools/route-check.mjs <host> --target-stage S4 --json`（route-check 是套件的阶段门禁检查工具），确认正式开发计划文件组三者一致
 - 未完成状态同步收尾前，不得标记 Task 已完成
 
 > **待审阅规则**：子开发计划初次生成后，状态默认为 `待审阅`。处于 `待审阅` 状态的 Task，AI 不得开始执行。必须由人类 Owner 明确说明“审阅通过”后，才能将状态变更为 `待开发`，此后 AI 方可进入执行。AI 不得在未获得人类明确审阅通过的情况下自行将状态从 `待审阅` 修改为 `待开发`。
@@ -289,7 +301,7 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 - 主开发计划 13 个必需章节是否齐全
 - 主开发计划、任务看板、子开发计划之间的 Task 是否一一对应
 - 每个子开发计划是否只包含一个 Task 正文
-- 每个 Task 是否具备 7 个必填字段
+- 每个 Task 是否具备 8 个必填字段（含 `完成收尾：状态同步`）
 - 完成标准中是否出现高风险模糊词（`数据完整`、`配置补齐`、`符合预期` 等）
 
 **脚本报错（`passed: false`）时，不能宣称计划完成**，必须先修正再重新校验。
@@ -300,6 +312,33 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 
 完整自检清单见：
 - `references/quality-gates.md`
+
+### S4 开工前一致性校验（check-plan-consistency.mjs）
+
+当 `ai-project-manager` 判定即将进入 S4（代码实装）时，本 skill 执行 `s4_pre_coding_plan_consistency_check`，命令：
+
+```bash
+node <suite-path>/skills/delivery-planner/scripts/check-plan-consistency.mjs <host>/docs/plans/delivery-plans/main-delivery-plan-<slug>.md --json
+```
+
+**脚本读什么**：
+- 主开发计划：执行阶段表中的 Task 行（Task / 子开发计划 / 状态列）；如主计划里有「驾驶舱」表则一并读取。驾驶舱表是**可选**结构：一张表头为 `字段 | 内容` 的两列 Markdown 表，至少含 `当前活跃 Phase / Task` 和 `当前子开发计划` 两行
+- 任务看板：全部 Task 行的状态与子开发计划链接
+- 当前子开发计划：从看板「进行中」行链接到的 `sub-delivery-plan-*.md` 里的 `**状态**` 字段
+
+**当前活跃 Task 的判定顺序（三级来源）**：
+1. 主计划驾驶舱表存在时，读取并与看板交叉校验
+2. 驾驶舱缺失时，从任务看板中状态为「进行中」的 Task 行及其链接的子开发计划推导
+3. 两者都推不出时报错，报错信息中直接给出修复方法（在看板把当前开工 Task 置为「进行中」，或在主计划补驾驶舱表）
+
+**怎么算通过**：主计划与看板中每个 Task 的状态一致；有且仅有一个 Task 处于「进行中」；该 Task 链接的子开发计划存在且状态同为「进行中」；已完成 Task 在两边的完成日期一致。
+
+**谁把状态翻成「进行中」**：S4 开工前，经用户确认开工该 Task 后，由 `ai-project-manager` 调度本 skill 在任务看板、主计划执行阶段表和当前子开发计划三处同步置为「进行中」。完整状态机（含审阅通过、完成回写的翻转时机）见 `references/plan-anatomy.md` 的「状态机」一段。
+
+**Exit code 含义**：
+- `0`：一致性校验通过，可放行进入 `coding-standards`
+- `1`：致命错误（主计划文件不存在、参数错误），修正命令后重跑
+- `2`：一致性校验失败，输出错误清单；按清单修复计划文件后重跑，未通过前不得进入 S4 写代码
 
 ## Harness 增强协议
 
@@ -386,6 +425,7 @@ node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <�
 
 - 需要运行上游发现脚本时：`node <suite-path>/skills/delivery-planner/scripts/collect-upstream-context.mjs <hostRoot> --json`
 - 需要运行产出校验脚本时：`node <suite-path>/skills/delivery-planner/scripts/validate-plan-structure.mjs <计划文件路径> --json`
+- 需要做 S4 开工前一致性校验时：`node <suite-path>/skills/delivery-planner/scripts/check-plan-consistency.mjs <主开发计划路径> --json`（读什么、怎么算通过见 [S4 开工前一致性校验](#s4-开工前一致性校验check-plan-consistencymjs)）
 - 需要模板时：读取 `templates/main-delivery-plan-template.md`、`templates/sub-delivery-plan-template.md`、`templates/task-kanban-template.md`
 - 需要章节说明时：读取 `references/plan-anatomy.md`
 - 需要判断先读哪些资料时：读取 `references/source-loading-order.md`
