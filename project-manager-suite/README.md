@@ -1,5 +1,7 @@
 # Project Manager Suite
 
+> **当前版本：2.0**（2026-07-10）。变更摘要见 [版本历史](#版本历史)。
+
 ## 快速概览
 
 `project-manager-suite` 不是零散的 prompt 集合，也不是文档生成工具，而是一个面向业务到研发落地场景的 **AI 开发助手套件**。
@@ -357,6 +359,13 @@ project-manager-suite/
     # 若选择不提交套件拷贝，取消下一行注释
     # .agent/project-manager-suite/
     ```
+
+## 版本历史
+
+| 版本 | 日期 | 变更摘要 |
+|------|------|---------|
+| **2.0** | 2026-07-10 | 全套件审计修复版。基于 51 项经真实执行核实的审计发现做系统性修复：模板与校验器对齐（S4 一致性门禁、prd-check 拆分模式、feature-list 编号）、脚本命令统一 `<suite-path>` 路径约定、foundation 目录契约统一为 `docs/prd/foundation/`、brd-writer 生命周期护栏（init 重入保护、栈式回滚、DONE 态保护）、baseline 按行合并保留用户确认字段、PIPELINE 补齐 S6/S7 契约、hooks 注入链路修通、清理历史项目泄漏词。测试 112/112 通过，6 个沙箱场景真实复现验证全部通过。 |
+| 1.x | 2026-04 ～ 2026-07 | 初始版本：S0–S5 主流水线、调度层（page-chief / prd-chief / test-case-chief）、协议脚本化（route-check / bootstrap / ledger 工具链）、既有项目接入旁路（S0.5 baseline）逐步成形。 |
 
 ## 延伸阅读
 
