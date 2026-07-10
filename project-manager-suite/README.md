@@ -210,31 +210,35 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 - **阶段交付型**：`project-baseline-auditor`、`brd-writer`、`page-designer`、`page-explainer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-acceptance-reviewer`、`test-case-writer`、`test-case-reviewer`、`test-case-runner`、`security-scan`，负责承接某一阶段或接入旁路的正式交付物
 - **专项执行型**：`coding-standards`、`project-devlog`、`project-link-indexer`、`doc-governance`、`test-and-acceptance`，负责研发执行规范、状态回写、文件级索引等专项工作，不承担主流程调度
 
-当前主链路中的能力职责如下：
+为了让人一眼看懂调用顺序，下表给每个 skill 编了一个「系列-序号」阅读编号：
 
-| 能力 | 主要职责 | 默认介入阶段 |
-|------|----------|--------------|
-| `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
-| `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单 | S0.5 |
-| `brd-writer` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
-| `page-chief` | 观察页面环节文件状态，调度 `page-designer -> page-explainer` 并控制是否回环 | S2 页面环节 |
-| `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单 | S2 首轮 |
-| `page-explainer` | 基于页面代码沉淀流程、交互语义与 gap 文件，并完成页面环节收口 | S2 页面确认后 |
-| `prd-chief` | 在页面环节收口后调度 `foundation-builder -> prd-writer`，控制 PRD 环节推进 | S2 PRD 环节 |
-| `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面环节收口后 |
-| `prd-writer` | 基于页面与 foundation 产物沉淀 AI 可编码 PRD | S2 foundation 完成后 |
-| `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
-| `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
-| `test-case-chief` | 调度 `prd-acceptance-reviewer -> test-case-writer -> test-case-reviewer`，控制验收 + 测试用例环节推进 | S5 |
-| `prd-acceptance-reviewer` | 把 subprd §X.6 验收条目拉齐为独立验收文档 | S5 验收文档 |
-| `test-case-writer` | 基于验收文档产出按业务域组织的测试用例 + SQL 数据准备 | S5 测试用例 |
-| `test-case-reviewer` | 核查 TC 质量，原地修正或写入待裁定问题清单 | S5 TC 核查 |
-| `test-case-runner` | 按测试用例文档执行 API / UI 测试并生成报告 | S6 |
-| `security-scan` | 在完工前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
-| `test-and-acceptance` | 人工点检准备与验收收口支撑（用户显式调用，不在主入口自动路由内） | S6 测试执行后按需 |
-| `doc-governance` | 文档治理 advisory（不强制载入流水线） | 按需 |
-| `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
-| `project-link-indexer` | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物 | 全阶段伴随 |
+- 主编号代表调用阶段顺序：`00` 为全局型（总入口与全阶段伴随能力，不属于单一阶段），`01`～`09` 按流水线从接入到安全扫描依次推进
+- 同一系列的 skill 共享主编号，副编号表示系列内的先后（如 PRD 系列：`04-01` prd-chief 调度 → `04-02` foundation-builder 打地基 → `04-03` prd-writer 写 PRD）
+- **编号只是 README 里的阅读辅助**：目录名和 skill 名都不带编号，AI 按协议自行判断调用先后，与编号无关
+
+| 编号 | 能力 | 主要职责 | 默认介入阶段 |
+|------|------|----------|--------------|
+| 00-01 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
+| 00-02 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
+| 00-03 | `project-link-indexer` | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物 | 全阶段伴随 |
+| 00-04 | `doc-governance` | 文档治理 advisory（不强制载入流水线） | 按需 |
+| 01-01 | `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单 | S0.5 |
+| 02-01 | `brd-writer` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
+| 03-01 | `page-chief` | 观察页面环节文件状态，调度 `page-designer -> page-explainer` 并控制是否回环 | S2 页面环节 |
+| 03-02 | `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单 | S2 首轮 |
+| 03-03 | `page-explainer` | 基于页面代码沉淀流程、交互语义与 gap 文件，并完成页面环节收口 | S2 页面确认后 |
+| 04-01 | `prd-chief` | 在页面环节收口后调度 `foundation-builder -> prd-writer`，控制 PRD 环节推进 | S2 PRD 环节 |
+| 04-02 | `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面环节收口后 |
+| 04-03 | `prd-writer` | 基于页面与 foundation 产物沉淀 AI 可编码 PRD | S2 foundation 完成后 |
+| 05-01 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
+| 06-01 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
+| 07-01 | `test-case-chief` | 调度 `prd-acceptance-reviewer -> test-case-writer -> test-case-reviewer`，控制验收 + 测试用例环节推进 | S5 |
+| 07-02 | `prd-acceptance-reviewer` | 把 subprd §X.6 验收条目拉齐为独立验收文档 | S5 验收文档 |
+| 07-03 | `test-case-writer` | 基于验收文档产出按业务域组织的测试用例 + SQL 数据准备 | S5 测试用例 |
+| 07-04 | `test-case-reviewer` | 核查 TC 质量，原地修正或写入待裁定问题清单 | S5 TC 核查 |
+| 08-01 | `test-case-runner` | 按测试用例文档执行 API / UI 测试并生成报告 | S6 |
+| 08-02 | `test-and-acceptance` | 人工点检准备与验收收口支撑（用户显式调用，不在主入口自动路由内） | S6 测试执行后按需 |
+| 09-01 | `security-scan` | 在完工前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
 
 ## 套件目录结构
 
@@ -249,34 +253,34 @@ project-manager-suite/
 ├── lib/                           # 协议结构化实现与 bootstrap 组装层
 │   ├── ai-pm-protocol/            # 字段、阶段、路由、规则同步等协议层结构化配置
 │   └── bootstrap/                 # 平台注入与 bootstrap 组装逻辑
-├── skills/                        # 实际运行时的能力目录
-│   ├── ai-project-manager/        # [核心] 唯一总入口
+├── skills/                        # 实际运行时的能力目录（[编号] 为调用顺序阅读辅助，见"能力分工"；目录名不含编号，磁盘上按字母序排列）
+│   ├── ai-project-manager/        # [00-01][核心] 唯一总入口
 │   │   ├── SKILL.md               # 入口指令
 │   │   ├── references/
 │   │   │   ├── core/              # 运行协议、全局文件协议、路由与骨架规则
 │   │   │   ├── rules/             # 前端/后端/数据库/调试等专项规则
 │   │   │   └── defaults/          # 默认技术栈与其他默认参数
 │   │   └── assets/global-files/   # 全局文件默认骨架（画像、计划等）
-│   ├── project-baseline-auditor/  # [子能力] 既有项目画像与关键文件缺口诊断
-│   ├── coding-standards/          # [子能力] 编码规范与研发执行
-│   ├── brd-writer/                # [子能力] 业务需求文档 / BRD 收敛
-│   ├── page-chief/                # [子能力] S2 页面环节调度
-│   ├── page-designer/             # [子能力] 页面设计（内置设计知识库 + BM25 搜索）
-│   ├── page-explainer/            # [子能力] 页面交互语义与 gap 收口
-│   ├── prd-chief/                 # [子能力] S2 PRD 环节调度
-│   ├── foundation-builder/        # [子能力] 术语表 / Schema / API 技术地基设计
-│   ├── prd-writer/                # [子能力] 基于页面与 foundation 的 PRD 反推
-│   ├── delivery-planner/          # [子能力] 任务拆解与交付规划
-│   ├── test-case-chief/           # [子能力] S5 验收 + 测试用例环节调度
-│   ├── prd-acceptance-reviewer/   # [子能力] 验收文档拉齐
-│   ├── test-case-writer/          # [子能力] 测试用例编写
-│   ├── test-case-reviewer/        # [子能力] 测试用例核查
-│   ├── test-case-runner/          # [子能力] 测试用例执行
-│   ├── security-scan/             # [子能力] 完工前固定安全闸门扫描
-│   ├── test-and-acceptance/       # [子能力] 验收收口
-│   ├── doc-governance/            # [子能力] 文档治理 advisory
-│   ├── project-devlog/            # [子能力] 日志与状态回写
-│   └── project-link-indexer/      # [子能力] 文件级引用索引与 LLM wiki 导航
+│   ├── project-devlog/            # [00-02] 日志与状态回写（全阶段伴随）
+│   ├── project-link-indexer/      # [00-03] 文件级引用索引与 LLM wiki 导航（全阶段伴随）
+│   ├── doc-governance/            # [00-04] 文档治理 advisory（按需）
+│   ├── project-baseline-auditor/  # [01-01] 既有项目画像与关键文件缺口诊断（S0.5）
+│   ├── brd-writer/                # [02-01] 业务需求文档 / BRD 收敛（S1）
+│   ├── page-chief/                # [03-01] S2 页面环节调度
+│   ├── page-designer/             # [03-02] 页面设计（内置设计知识库 + BM25 搜索）
+│   ├── page-explainer/            # [03-03] 页面交互语义与 gap 收口
+│   ├── prd-chief/                 # [04-01] S2 PRD 环节调度
+│   ├── foundation-builder/        # [04-02] 术语表 / Schema / API 技术地基设计
+│   ├── prd-writer/                # [04-03] 基于页面与 foundation 的 PRD 反推
+│   ├── delivery-planner/          # [05-01] 任务拆解与交付规划（S3）
+│   ├── coding-standards/          # [06-01] 编码规范与研发执行（S4）
+│   ├── test-case-chief/           # [07-01] S5 验收 + 测试用例环节调度
+│   ├── prd-acceptance-reviewer/   # [07-02] 验收文档拉齐
+│   ├── test-case-writer/          # [07-03] 测试用例编写
+│   ├── test-case-reviewer/        # [07-04] 测试用例核查
+│   ├── test-case-runner/          # [08-01] 测试用例执行（S6）
+│   ├── test-and-acceptance/       # [08-02] 验收收口（S6 后人工，显式调用）
+│   └── security-scan/             # [09-01] 完工前固定安全闸门扫描（S7）
 ├── tests/                         # 工具链与协议对齐测试
 └── tools/                         # 宿主初始化、校验、规则同步、日志回写、安装套件等脚本
 ```
