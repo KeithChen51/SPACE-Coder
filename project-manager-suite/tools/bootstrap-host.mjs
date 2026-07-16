@@ -26,6 +26,7 @@ import { fileURLToPath } from 'url';
 import { FILE_ROLE_IDS, fieldPackages, fileContracts } from '../lib/ai-pm-protocol/index.js';
 import { generateHostRules } from './generate-host-rules.mjs';
 import { validateGlobalFiles } from './validate-global-files.mjs';
+import { renderProgressDashboardFile } from '../lib/progress-dashboard/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -558,13 +559,38 @@ function formatTextReport(result) {
     return lines.join('\n');
 }
 
+function renderDashboardBestEffort(result, options) {
+    if (options.dryRun) {
+        return null;
+    }
+
+    try {
+        const { outPath } = renderProgressDashboardFile({
+            hostRoot: result.rootResolution.effectiveRoot
+        });
+        return { outPath, error: null };
+    } catch (error) {
+        return { outPath: null, error: error.message };
+    }
+}
+
 function main() {
     const options = parseArgs(process.argv);
     const result = bootstrapHost(options);
+    const dashboard = renderDashboardBestEffort(result, options);
 
     if (options.json) {
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify({ ...result, progressDashboard: dashboard }, null, 2));
         return;
+    }
+
+    if (dashboard?.outPath) {
+        console.log('★ 项目进度页已生成：' + dashboard.outPath);
+        console.log('  用浏览器打开这个文件，随时查看项目推进到哪一步；每轮推进后会自动刷新。');
+        console.log('');
+    } else if (dashboard?.error) {
+        console.log(`（进度页生成失败，不影响初始化：${dashboard.error}）`);
+        console.log('');
     }
 
     console.log(formatTextReport(result));

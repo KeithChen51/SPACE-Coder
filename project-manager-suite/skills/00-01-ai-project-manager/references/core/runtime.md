@@ -39,8 +39,9 @@
   - `lib/ai-pm-protocol/markdown-structure.js`
   - `lib/ai-pm-protocol/change-impact-map.js`
 - 对应脚本：
-  - `tools/route-check.mjs`
+  - `tools/route-check.mjs`（其 `context.profileSummary` 与逐 target 门禁结果同时供进度页采数使用）
   - `tools/devlog-sync.mjs`
+  - `tools/render-progress-dashboard.mjs`（回写完成后的进度页刷新）
 
 维护原则：
 
@@ -73,6 +74,7 @@
 2. 调用 `tools/route-check.mjs`
 3. 仅在确有骨架缺口时调用 `tools/bootstrap-host.mjs`
 4. 一轮有效推进结束后，按需调用 `tools/devlog-sync.mjs`
+5. 本轮回写（画像 / 执行计划 / 计划状态翻转 / 日志）完成后，调用 `tools/render-progress-dashboard.mjs` 刷新宿主根目录的进度页 `项目进度.html`，并用中文提醒用户可用浏览器打开查看（`devlog-sync.mjs` 默认已顺带刷新，单独回写画像 / 计划的轮次需显式调用）
 
 `route-check.mjs` 的命令口径固定为位置参数，不使用 `--host-dir`：
 
@@ -243,6 +245,10 @@ skill 优先级（**先后顺序不可混淆**）：
 | 当前正式计划入口、当前活跃任务、下一步任务、完成标准摘要 | 执行计划文件 |
 | 本轮做了什么、产出了什么、遇到的问题、下一轮建议 | 仅在阶段切换、正式交付、会话收口或需要交接时，合并调用 `project-devlog` 或 `tools/devlog-sync.mjs` 写入日志文件 |
 | 稳定的长期规则（极少更新） | 全局规则文件 |
+
+回写完成后的固定收尾动作：调用 `tools/render-progress-dashboard.mjs <host-project-root>` 刷新宿主根目录的进度页 `项目进度.html`（可重建编译产物，非权威源），并用一句中文提醒用户"进度页已更新，用浏览器打开 `项目进度.html` 可查看"。进度页渲染失败不阻断本轮收口，但应向用户说明。
+
+回写措辞提醒：画像与执行计划中用户可见的字段（`当前轮应输出的交付物`、`待确认项`、`下一步任务` 等）会被进度页原文展示给业务同事，回写时优先用业务白话（如"页面的交互说明还差你确认"），少用 skill 名与内部术语（如"explainer 收口"）。
 
 S2 页面环节收口后的回写口径：
 

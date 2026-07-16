@@ -79,6 +79,7 @@
 
 - 破坏性操作（`rm -rf`、`git reset --hard`、force push 等）执行前必须先告知用户并等确认。
 - 工作目录里的 `<host>/` 泛指被服务的宿主项目，不是本仓库自身。
+- **版本与 changelog**：套件行为 / 结构发生实质变更并收口时，在 `project-manager-suite/CHANGELOG.md` 的 `Unreleased` 段记一条；发版时运行 `node project-manager-suite/tools/sync-suite-version.mjs --release <版本号>`。README 顶部版本行与「版本历史」表由该脚本从 CHANGELOG 渲染，**不要手改**（本条是提醒层；真正的兜底是 `tests/suite-version.test.mjs` 的一致性门禁——漂移时 `npm run test:ai-pm` 会失败）。
 
 ## 注意
 

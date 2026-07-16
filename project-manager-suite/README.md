@@ -1,6 +1,6 @@
 # Project Manager Suite
 
-> **当前版本：2.0**（2026-07-10）。变更摘要见 [版本历史](#版本历史)。
+> **当前版本：2.1**（2026-07-16）。
 
 ## 快速概览
 
@@ -15,6 +15,7 @@
 - 首次了解套件：看 [什么是 Project Manager Suite？](#什么是-project-manager-suite)
 - 快速安装到宿主：看 [安装与使用](#安装与使用)
 - 理解主入口和推进链路：看 [核心运行机制](#核心运行机制)
+- 想直观看项目做到哪一步了：看 [进度可视化（项目进度.html）](#进度可视化项目进度html)
 - 排查目录和文件职责：看 [套件目录结构](#套件目录结构)
 - 查看 skill 职责边界：看 [能力分工](#能力分工)
 - 查看补充资料：看 [延伸阅读](#延伸阅读)
@@ -67,9 +68,9 @@ node project-manager-suite/tools/install-suite-into-host.mjs <host-project-root>
 
 套件内所有文档给出脚本命令时，统一写成 `node <suite-path>/skills/<skill 名>/scripts/<脚本名>.mjs` 或 `node <suite-path>/tools/<脚本名>.mjs` 的形式。`<suite-path>` 指套件根目录，按所处环境取值：
 
-| 所处环境 | `<suite-path>` 取值 | 示例 |
-|---------|--------------------|------|
-| 在套件源码仓库内联调 | `project-manager-suite/` | `node project-manager-suite/tools/route-check.mjs <host-project-root>` |
+| 所处环境             | `<suite-path>` 取值             | 示例                                                                            |
+| -------------------- | --------------------------------- | ------------------------------------------------------------------------------- |
+| 在套件源码仓库内联调 | `project-manager-suite/`        | `node project-manager-suite/tools/route-check.mjs <host-project-root>`        |
 | 套件已安装到宿主项目 | `.agent/project-manager-suite/` | `node .agent/project-manager-suite/tools/route-check.mjs <host-project-root>` |
 
 命令默认在**宿主项目根目录**执行。若按替换后的路径找不到脚本，应先核对套件的实际安装位置并修正路径，而不是跳过脚本改为纯文字判断——脚本门禁是流水线质量的兜底。
@@ -146,11 +147,11 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 
 为了避免 AI 上下文漂移，项目状态不再依赖临时聊天记忆，而依赖于 **3 类全局文件 + 1 类状态回写能力**：
 
-| 组成 | 作用 |
-|------|------|
-| 全局规则文件 | 定义项目怎么运行 |
-| 项目画像文件 | 记录项目当前是什么 |
-| 当前执行计划文件 | 指导现在该做什么 |
+| 组成               | 作用                   |
+| ------------------ | ---------------------- |
+| 全局规则文件       | 定义项目怎么运行       |
+| 项目画像文件       | 记录项目当前是什么     |
+| 当前执行计划文件   | 指导现在该做什么       |
 | `project-devlog` | 沉淀最近发生了什么变更 |
 
 这组机制可以统一理解为一套 **项目持续记忆底座**：全局规则负责长期约束，项目画像负责项目快照，执行计划负责当前推进目标，`project-devlog` 负责最近状态沉淀。
@@ -182,6 +183,25 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 → 测试执行（S6，test-case-runner）
 → 安全扫描（S7，security-scan）
 → 验收收口（test-and-acceptance：S6 测试报告产出后由用户显式调用承接，不在主入口自动路由内）
+```
+
+### 进度可视化（`项目进度.html`）
+
+想知道"项目现在做到哪一步了"，不需要翻文档：宿主项目根目录会有一个 **`项目进度.html`**，用浏览器打开（双击即可）就能看到——
+
+- 整个流水线（S0 → S7）推进到哪个阶段、每个阶段是"已产出 / 进行中 / 未开始 / 受阻"
+- 当前卡在什么问题、下一步该做什么、有哪些事等你拍板
+- 开发阶段（S4）**当前正在开发的功能点**、任务完成数与看板明细
+- 测试通过情况、未关闭缺陷数、安全检查结论
+
+关键性质与刷新时机：
+
+- 它是**可重建的编译产物（非权威源）**：由 `tools/render-progress-dashboard.mjs` 从画像 / 执行计划 / 任务看板 / 测试报告等权威文件重新编译，手改会被覆盖，删了可重建
+- 自动刷新时机：宿主初始化（bootstrap）后、主入口每轮回写完成后、`devlog-sync` 日志收口后、每次会话启动时
+- 页面顶部有"数据截至"时间；超过 24 小时会提示可能过期。想要最新进度，对 AI 说「刷新进度页」，或手动运行：
+
+```bash
+node .agent/project-manager-suite/tools/render-progress-dashboard.mjs <host-project-root>
 ```
 
 其中 **S2 页面设计、技术地基与完整版 PRD** 阶段有一条硬约束：
@@ -216,29 +236,29 @@ node .agent/project-manager-suite/tools/generate-host-rules.mjs <host-project-ro
 - 同一系列的 skill 共享主编号，副编号表示系列内的先后（如 PRD 系列：`04-01` prd-chief 调度 → `04-02` foundation-builder 打地基 → `04-03` prd-writer 写 PRD）
 - **编号是给人看的阅读辅助**：skill 的调用名（SKILL.md frontmatter 的 `name:`，如 `prd-writer`）不带编号，AI 按协议自行判断调用先后，与编号无关；文档中提到 skill 时也用不带编号的调用名
 
-| 编号 | 能力 | 主要职责 | 默认介入阶段 |
-|------|------|----------|--------------|
-| 00-01 | `ai-project-manager` | 识别全局文件、判断阶段、路由能力、回写状态 | 全阶段入口 |
-| 00-02 | `project-devlog` | 回写每轮推进状态和日志 | 全阶段伴随 |
-| 00-03 | `project-link-indexer` | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物 | 全阶段伴随 |
-| 00-04 | `doc-governance` | 文档治理 advisory（不强制载入流水线） | 按需 |
-| 01-01 | `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单 | S0.5 |
-| 02-01 | `brd-writer` | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策 | S1 |
-| 03-01 | `page-chief` | 观察页面环节文件状态，调度 `page-designer -> page-explainer` 并控制是否回环 | S2 页面环节 |
-| 03-02 | `page-designer` | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单 | S2 首轮 |
-| 03-03 | `page-explainer` | 基于页面代码沉淀流程、交互语义与 gap 文件，并完成页面环节收口 | S2 页面确认后 |
-| 04-01 | `prd-chief` | 在页面环节收口后调度 `foundation-builder -> prd-writer`，控制 PRD 环节推进 | S2 PRD 环节 |
-| 04-02 | `foundation-builder` | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单 | S2 页面环节收口后 |
-| 04-03 | `prd-writer` | 基于页面与 foundation 产物沉淀 AI 可编码 PRD | S2 foundation 完成后 |
-| 05-01 | `delivery-planner` | 把 PRD 拆成开发计划和任务清单 | S3 |
-| 06-01 | `coding-standards` | 承接开发执行和规范化实现工作 | S4 / 代码开发伴随 |
-| 07-01 | `test-case-chief` | 调度 `prd-acceptance-reviewer -> test-case-writer -> test-case-reviewer`，控制验收 + 测试用例环节推进 | S5 |
-| 07-02 | `prd-acceptance-reviewer` | 把 subprd §X.6 验收条目拉齐为独立验收文档 | S5 验收文档 |
-| 07-03 | `test-case-writer` | 基于验收文档产出按业务域组织的测试用例 + SQL 数据准备 | S5 测试用例 |
-| 07-04 | `test-case-reviewer` | 核查 TC 质量，原地修正或写入待裁定问题清单 | S5 TC 核查 |
-| 08-01 | `test-case-runner` | 按测试用例文档执行 API / UI 测试并生成报告 | S6 |
-| 08-02 | `test-and-acceptance` | 人工点检准备与验收收口支撑（用户显式调用，不在主入口自动路由内） | S6 测试执行后按需 |
-| 09-01 | `security-scan` | 在完工前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论 | S7 |
+| 编号  | 能力                         | 主要职责                                                                                               | 默认介入阶段         |
+| ----- | ---------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------- |
+| 00-01 | `ai-project-manager`       | 识别全局文件、判断阶段、路由能力、回写状态                                                             | 全阶段入口           |
+| 00-02 | `project-devlog`           | 回写每轮推进状态和日志                                                                                 | 全阶段伴随           |
+| 00-03 | `project-link-indexer`     | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物                                                 | 全阶段伴随           |
+| 00-04 | `doc-governance`           | 文档治理 advisory（不强制载入流水线）                                                                  | 按需                 |
+| 01-01 | `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单                                             | S0.5                 |
+| 02-01 | `brd-writer`               | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策                                             | S1                   |
+| 03-01 | `page-chief`               | 观察页面环节文件状态，调度`page-designer -> page-explainer` 并控制是否回环                           | S2 页面环节          |
+| 03-02 | `page-designer`            | 基于 BRD 产出可交互前端页面（内置设计知识库），管理页面交付清单                                        | S2 首轮              |
+| 03-03 | `page-explainer`           | 基于页面代码沉淀流程、交互语义与 gap 文件，并完成页面环节收口                                          | S2 页面确认后        |
+| 04-01 | `prd-chief`                | 在页面环节收口后调度`foundation-builder -> prd-writer`，控制 PRD 环节推进                            | S2 PRD 环节          |
+| 04-02 | `foundation-builder`       | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单                                           | S2 页面环节收口后    |
+| 04-03 | `prd-writer`               | 基于页面与 foundation 产物沉淀 AI 可编码 PRD                                                           | S2 foundation 完成后 |
+| 05-01 | `delivery-planner`         | 把 PRD 拆成开发计划和任务清单                                                                          | S3                   |
+| 06-01 | `coding-standards`         | 承接开发执行和规范化实现工作                                                                           | S4 / 代码开发伴随    |
+| 07-01 | `test-case-chief`          | 调度`prd-acceptance-reviewer -> test-case-writer -> test-case-reviewer`，控制验收 + 测试用例环节推进 | S5                   |
+| 07-02 | `prd-acceptance-reviewer`  | 把 subprd §X.6 验收条目拉齐为独立验收文档                                                             | S5 验收文档          |
+| 07-03 | `test-case-writer`         | 基于验收文档产出按业务域组织的测试用例 + SQL 数据准备                                                  | S5 测试用例          |
+| 07-04 | `test-case-reviewer`       | 核查 TC 质量，原地修正或写入待裁定问题清单                                                             | S5 TC 核查           |
+| 08-01 | `test-case-runner`         | 按测试用例文档执行 API / UI 测试并生成报告                                                             | S6                   |
+| 08-02 | `test-and-acceptance`      | 人工点检准备与验收收口支撑（用户显式调用，不在主入口自动路由内）                                       | S6 测试执行后按需    |
+| 09-01 | `security-scan`            | 在完工前执行固定安全闸门扫描并给出 PASS/BLOCK/WAIVER 结论                                              | S7                   |
 
 ## 套件目录结构
 
@@ -252,7 +272,8 @@ project-manager-suite/
 ├── hooks/                         # 会话启动时的注入与平台 hook 入口
 ├── lib/                           # 协议结构化实现与 bootstrap 组装层
 │   ├── ai-pm-protocol/            # 字段、阶段、路由、规则同步等协议层结构化配置
-│   └── bootstrap/                 # 平台注入与 bootstrap 组装逻辑
+│   ├── bootstrap/                 # 平台注入与 bootstrap 组装逻辑
+│   └── progress-dashboard/        # 进度可视化页的采数 / 白话文案 / 渲染层
 ├── skills/                            # 实际运行时的能力目录（目录名带 NN-NN 调用顺序前缀，按名排序即调用顺序；skill 调用名不含前缀）
 │   ├── 00-01-ai-project-manager/      # [核心] 唯一总入口
 │   │   ├── SKILL.md                   # 入口指令
@@ -366,10 +387,16 @@ project-manager-suite/
 
 ## 版本历史
 
+> 本表由 [CHANGELOG.md](CHANGELOG.md) 渲染（`tools/sync-suite-version.mjs`），**勿手改**；
+> 新增变更请写入 CHANGELOG 的 `Unreleased` 段，发版时运行 `node <suite-path>/tools/sync-suite-version.mjs --release <版本号>`。
+
+<!-- version-history:begin -->
 | 版本 | 日期 | 变更摘要 |
 |------|------|---------|
-| **2.0** | 2026-07-10 | 全套件审计修复版。基于 51 项经真实执行核实的审计发现做系统性修复：模板与校验器对齐（S4 一致性门禁、prd-check 拆分模式、feature-list 编号）、脚本命令统一 `<suite-path>` 路径约定、foundation 目录契约统一为 `docs/prd/foundation/`、brd-writer 生命周期护栏（init 重入保护、栈式回滚、DONE 态保护）、baseline 按行合并保留用户确认字段、PIPELINE 补齐 S6/S7 契约、hooks 注入链路修通、清理历史项目泄漏词。测试 112/112 通过，6 个沙箱场景真实复现验证全部通过。 |
+| **2.1** | 2026-07-16 | 新增进度可视化：宿主根目录 `项目进度.html`（可重建编译产物），聚合阶段轨道、当前开发功能点、门禁卡点、质量与安全指标；bootstrap 初始化、主入口每轮回写、devlog 收口、会话启动四个时机自动刷新（`lib/progress-dashboard/` + `tools/render-progress-dashboard.mjs`）；route-check 的 `context` 增补 `profileSummary`（项目名/一句话目标，additive）；新增版本 changelog 同步链：`CHANGELOG.md` 权威源 + `tools/sync-suite-version.mjs`（--check / --release）+ 版本一致性测试门禁 |
+| 2.0 | 2026-07-10 | 全套件审计修复版。基于 51 项经真实执行核实的审计发现做系统性修复：模板与校验器对齐（S4 一致性门禁、prd-check 拆分模式、feature-list 编号）、脚本命令统一 `<suite-path>` 路径约定、foundation 目录契约统一为 `docs/prd/foundation/`、brd-writer 生命周期护栏（init 重入保护、栈式回滚、DONE 态保护）、baseline 按行合并保留用户确认字段、PIPELINE 补齐 S6/S7 契约、hooks 注入链路修通、清理历史项目泄漏词。测试 112/112 通过，6 个沙箱场景真实复现验证全部通过。 |
 | 1.x | 2026-04 ～ 2026-07 | 初始版本：S0–S5 主流水线、调度层（page-chief / prd-chief / test-case-chief）、协议脚本化（route-check / bootstrap / ledger 工具链）、既有项目接入旁路（S0.5 baseline）逐步成形。 |
+<!-- version-history:end -->
 
 ## 延伸阅读
 

@@ -16,6 +16,7 @@
 | `bootstrap-host.mjs` | 安全补齐宿主骨架并复用规则同步 | V1 可用 |
 | `install-suite-into-host.mjs` | 将完整套件安装或同步到宿主 `.agent/project-manager-suite/` | V1 可用 |
 | `devlog-sync.mjs` | 每日日志新建/追加与规则候选池联动 | V1 可用 |
+| `render-progress-dashboard.mjs` | 渲染宿主进度可视化页 `项目进度.html` | V1 可用 |
 | `check-protocol-alignment.mjs` | 检查协议文档与结构化实现的双向追踪是否一致 | V1 可用 |
 
 ---
@@ -234,6 +235,41 @@
 - 不自动回写执行计划状态
 - 日志文件负责当天工作的总结沉淀，计划文件仍是 AI 执行判断依据
 - 规则候选池目前是“追加记录”能力，不做复杂去重合并
+
+进度页联动：
+
+- CLI 直接运行时，成功写入日志后默认顺带刷新宿主进度页 `项目进度.html`（best-effort，失败只提示不阻断）
+- 加 `--no-dashboard` 可关闭这次顺带刷新；`--dry-run` 时不刷新
+- 函数级调用 `devlogSync()` 不带该副作用，副作用只在 CLI `main()` 层
+
+---
+
+## `render-progress-dashboard.mjs`
+
+作用：
+
+- 从画像 / 执行计划 / 任务看板 / 测试报告 / 安全报告等权威文件采数，渲染宿主根目录的进度可视化页 `项目进度.html`
+- 页面为单文件自包含 HTML（无外部依赖，浏览器双击即开，亮暗双主题），默认视图全白话，术语原文在“工程师详情”折叠区
+
+```bash
+node <suite-path>/tools/render-progress-dashboard.mjs <host-project-root> [--out <path>] [--json]
+```
+
+- `--out`：改写输出路径（默认 `<host-project-root>/项目进度.html`）
+- `--json`：输出 DashboardModel（调试 / 测试用）
+
+适用场景（对应四个自动触发点）：
+
+- `bootstrap-host.mjs` 初始化后（CLI 自动顺带执行并打印进度页路径）
+- 主入口每轮回写完成后（runtime.md Step 0 第 5 步）
+- `devlog-sync.mjs` 日志收口后（CLI 默认顺带刷新）
+- 会话启动 hook（`lib/bootstrap/render-session-start.mjs` best-effort 刷新）
+
+当前边界：
+
+- 进度页是可重建编译产物（非权威源）：手改会被覆盖，删除可重建
+- 单个板块（如测试报告表格）解析失败只降级为“打开原文件”提示，不非零退出；仅宿主目录不存在等硬错误才 exit 1
+- 数据新鲜度取决于回写时机：页面顶部标注“数据截至”时间，超过 24 小时会提示可能过期
 
 ---
 

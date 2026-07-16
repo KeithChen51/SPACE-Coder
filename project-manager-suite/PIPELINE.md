@@ -91,6 +91,7 @@ S7 ─────────────────────────�
 ```
 <host>/                                       # 宿主项目根目录
 ├── project-profile.md                        # ai-project-manager 产出；全局画像与状态入口
+├── 项目进度.html                              # 进度可视化页（可重建编译产物，脚本渲染，勿手改）
 ├── docs/
 │   ├── brd/                                  # 业务需求层
 │   │   ├── ledger-state-<slug>.json          # brd-writer 台账权威数据源（只经脚本读写，勿手改）
@@ -182,7 +183,7 @@ S7 ─────────────────────────�
 
 | Skill | 产出目标文件夹 | 覆盖产物（模式） |
 |-------|--------------|----------------|
-| ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件 |
+| ai-project-manager | `<host>/` | `project-profile.md` 及其他全局画像/长期记忆类文件；`项目进度.html`（进度可视化页：可重建编译产物、非权威源，由 `tools/render-progress-dashboard.mjs` 从权威文件重新编译，勿手改） |
 | project-baseline-auditor | `<host>/` + `<host>/docs/baseline/` | 受控生成或更新 `project-profile.md`；`baseline-audit-<slug>.json`、`baseline-audit-<slug>.md` 写入 `docs/baseline/` |
 | project-link-indexer | `<host>/docs/index/` | `project-link-graph.json`、`project-link-graph.md`、`project-wiki-schema.json`；均为可重建索引，不替代原始业务文件 |
 | brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`ledger-state-<slug>.json`（台账权威状态源，只能经 brd-writer 脚本读写，不得手改或删除）、`brd-ledger-<slug>.md`（由 JSON 渲染的只读展示层）及后续该 skill 新增的业务层文件 |
@@ -255,6 +256,7 @@ S7 ─────────────────────────�
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
 | 项目画像 | `project-profile.md` | `<host>/project-profile.md` | 项目快照 + 当前阶段 + 主计划入口；长期记忆载体 |
+| 进度可视化页 | `项目进度.html` | `<host>/项目进度.html` | 可重建编译产物（非权威源）：由 `tools/render-progress-dashboard.mjs` 从画像 / 计划 / 看板 / 报告等权威文件重新编译；初始化（bootstrap）、每轮回写后、devlog 收口、会话启动四个时机刷新；勿手改 |
 
 ---
 

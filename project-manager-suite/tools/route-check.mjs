@@ -15,6 +15,8 @@
  *   - skills/00-01-ai-project-manager/references/core/runtime.md
  *   - skills/00-01-ai-project-manager/references/core/routing.md
  *   - skills/00-01-ai-project-manager/assets/global-files/project-profile.md
+ * - result.context.profileSummary and per-target gateChecks are consumed by
+ *   lib/progress-dashboard/collect.js (progress dashboard renderer).
  */
 import fs from 'fs';
 import path from 'path';
@@ -1836,6 +1838,14 @@ function routeCheck({ hostRoot, targetStage = '' }) {
         gateChecks,
         blockingReasons,
         context: {
+            profileSummary: {
+                projectName: isMissingValue(profileContext.fields.project_name)
+                    ? null
+                    : profileContext.fields.project_name,
+                projectOneLiner: isMissingValue(profileContext.fields.project_one_liner)
+                    ? null
+                    : profileContext.fields.project_one_liner
+            },
             currentRoundDeliverable: profileContext.fields.current_round_deliverable || null,
             currentExecutor: profileContext.fields.current_executor || null,
             planCurrentGoalCount: planContext.currentGoal.length,

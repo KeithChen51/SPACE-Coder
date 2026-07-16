@@ -15,6 +15,7 @@ import process from 'process';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { validateGlobalFiles } from './validate-global-files.mjs';
+import { renderProgressDashboardFile } from '../lib/progress-dashboard/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +32,7 @@ const ruleCandidatesTemplatePath = path.join(
 
 function printUsage() {
     console.log(
-        'Usage: node <suite-path>/tools/devlog-sync.mjs <host-project-root> --title <title> --goal <goal> --action <action> --result <result> [--actor <actor>] [--date YYYY-MM-DD] [--time HH:MM] [--files path1,path2] [--stage <stage>] [--conclusion <text>] [--next <text>] [--plan-path <path>] [--reflection <text>] [--rule-scope <scope>] [--rule-target <path>] [--rule-check <text>] [--rule-title <title>] [--dry-run] [--json]'
+        'Usage: node <suite-path>/tools/devlog-sync.mjs <host-project-root> --title <title> --goal <goal> --action <action> --result <result> [--actor <actor>] [--date YYYY-MM-DD] [--time HH:MM] [--files path1,path2] [--stage <stage>] [--conclusion <text>] [--next <text>] [--plan-path <path>] [--reflection <text>] [--rule-scope <scope>] [--rule-target <path>] [--rule-check <text>] [--rule-title <title>] [--dry-run] [--json] [--no-dashboard]'
     );
     console.log(
         '<suite-path> 指套件根目录：源码仓库联调时为 project-manager-suite/，安装到宿主后为 .agent/project-manager-suite/；命令默认在宿主项目根目录执行。'
@@ -60,7 +61,8 @@ function parseArgs(argv) {
         ruleCheck: '',
         ruleTitle: '',
         dryRun: false,
-        json: false
+        json: false,
+        noDashboard: false
     };
 
     const valueFlags = new Set([
@@ -93,6 +95,11 @@ function parseArgs(argv) {
 
         if (arg === '--json') {
             options.json = true;
+            continue;
+        }
+
+        if (arg === '--no-dashboard') {
+            options.noDashboard = true;
             continue;
         }
 
@@ -627,16 +634,35 @@ function formatTextReport(result) {
     return lines.join('\n');
 }
 
+function refreshDashboardBestEffort(options) {
+    if (options.dryRun || options.noDashboard) {
+        return null;
+    }
+
+    try {
+        const { outPath } = renderProgressDashboardFile({ hostRoot: options.hostRoot });
+        return { outPath, error: null };
+    } catch (error) {
+        return { outPath: null, error: error.message };
+    }
+}
+
 function main() {
     const options = parseArgs(process.argv);
     const result = devlogSync(options);
+    const dashboard = refreshDashboardBestEffort(options);
 
     if (options.json) {
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify({ ...result, progressDashboard: dashboard }, null, 2));
         return;
     }
 
     console.log(formatTextReport(result));
+    if (dashboard?.outPath) {
+        console.log(`进度页已刷新：${dashboard.outPath}`);
+    } else if (dashboard?.error) {
+        console.log(`（进度页刷新失败，不影响日志写入：${dashboard.error}）`);
+    }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {

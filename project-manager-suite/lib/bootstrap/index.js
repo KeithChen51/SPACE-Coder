@@ -49,16 +49,17 @@ function buildCoreBootstrap({ suiteRoot, introText, extraText = '' }) {
     return `<EXTREMELY_IMPORTANT>\n${chunks.join('\n')}\n</EXTREMELY_IMPORTANT>`;
 }
 
-function buildClaudeHookBootstrap(suiteRoot) {
+function buildClaudeHookBootstrap(suiteRoot, options = {}) {
     return buildCoreBootstrap({
         suiteRoot,
         introText:
-            '**以下是 ai-project-manager skill 的核心正文，作为项目域默认第一入口；当用户说“启动一个新项目”时，应直接开始主入口流程，且不要先进入 `superpower` 等通用增强类 skill。**'
+            '**以下是 ai-project-manager skill 的核心正文，作为项目域默认第一入口；当用户说“启动一个新项目”时，应直接开始主入口流程，且不要先进入 `superpower` 等通用增强类 skill。**',
+        extraText: options.extraText || ''
     });
 }
 
-function buildClaudeHookPayload(suiteRoot) {
-    const bootstrap = buildClaudeHookBootstrap(suiteRoot);
+function buildClaudeHookPayload(suiteRoot, options = {}) {
+    const bootstrap = buildClaudeHookBootstrap(suiteRoot, options);
     if (!bootstrap) {
         return {
             additional_context: '',
