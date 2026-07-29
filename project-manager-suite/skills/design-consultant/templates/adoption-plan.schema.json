@@ -1,0 +1,445 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-consultant.local/schemas/adoption-plan.schema.json",
+  "title": "Design Consultant Existing System Adoption Plan",
+  "description": "The confirmed adoption contract accepted by adopt.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "status",
+    "strategy",
+    "inventoryDigest",
+    "sourceOfTruth",
+    "tokenMappings",
+    "componentMappings",
+    "legacyBaseline",
+    "appEntryImports",
+    "visualVerification",
+    "decisions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "enum": ["draft", "confirmed"]
+    },
+    "strategy": {
+      "enum": [null, "preserve", "augment", "migrate"]
+    },
+    "inventoryDigest": {
+      "type": "string"
+    },
+    "sourceOfTruth": {
+      "type": "object",
+      "required": ["tokens", "components"],
+      "properties": {
+        "tokens": { "const": "existing" },
+        "components": { "const": "existing" }
+      },
+      "additionalProperties": false
+    },
+    "tokenMappings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tokenMapping" }
+    },
+    "componentMappings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/componentMapping" }
+    },
+    "legacyBaseline": {
+      "type": "object",
+      "required": ["mode", "path"],
+      "properties": {
+        "mode": { "const": "ratchet" },
+        "path": {
+          "type": "string",
+          "pattern": "^checks/(?:[A-Za-z0-9_@+$,-]+/)*[A-Za-z0-9_@+$,-]+\\.json$",
+          "not": {
+            "pattern": "(?:^|[/._-])(?:[Aa][Dd][Oo][Pp][Tt][Ii][Oo][Nn]|[Cc][Hh][Ee][Cc][Kk][Ee][Rr]|[Cc][Oo][Nn][Ff][Ii][Gg]|[Mm][Aa][Nn][Ii][Ff][Ee][Ss][Tt]|[Mm][Ii][Gg][Rr][Aa][Tt][Ii][Oo][Nn]|[Pp][Ll][Aa][Nn]|[Ss][Yy][Ss][Tt][Ee][Mm])(?:[./_-]|$)|(?:^|/)[^/]*[Cc][Hh][Ee][Cc][Kk][Ee][Rr][^/]*\\.json$|(?:^|/)[Cc][Hh][Ee][Cc][Kk]-[Uu][Ii]-[Cc][Oo][Nn][Tt][Rr][Aa][Cc][Tt]\\.json$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "appEntryImports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "statement"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_@+$,-]+(?:\\.[A-Za-z0-9_@+$,-]+)*(?:/[A-Za-z0-9_@+$,-]+(?:\\.[A-Za-z0-9_@+$,-]+)*)*$"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[\\r\\n`\\[\\]#<>])import\\s+(?:(?:type\\s+)?(?:[A-Za-z_$][A-Za-z0-9_$]*(?:\\s*,\\s*(?:\\*\\s+as\\s+[A-Za-z_$][A-Za-z0-9_$]*|\\{\\s*[A-Za-z_$][A-Za-z0-9_$]*(?:\\s+as\\s+[A-Za-z_$][A-Za-z0-9_$]*)?(?:\\s*,\\s*[A-Za-z_$][A-Za-z0-9_$]*(?:\\s+as\\s+[A-Za-z_$][A-Za-z0-9_$]*)?)*\\s*\\}))?|\\*\\s+as\\s+[A-Za-z_$][A-Za-z0-9_$]*|\\{\\s*[A-Za-z_$][A-Za-z0-9_$]*(?:\\s+as\\s+[A-Za-z_$][A-Za-z0-9_$]*)?(?:\\s*,\\s*[A-Za-z_$][A-Za-z0-9_$]*(?:\\s+as\\s+[A-Za-z_$][A-Za-z0-9_$]*)?)*\\s*\\})\\s+from\\s+)?[\"'][A-Za-z0-9_@+.,/$-]+[\"'];?$"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "visualVerification": {
+      "type": "object",
+      "required": ["baseUrl", "routes", "status"],
+      "properties": {
+        "baseUrl": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "routes": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "$ref": "#/$defs/visualRoute" }
+        },
+        "status": { "enum": ["not-configured", "configured"] }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "configured" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "baseUrl": { "type": "string", "minLength": 1 },
+              "routes": { "type": "array", "minItems": 1 }
+            }
+          },
+          "else": {
+            "properties": {
+              "baseUrl": { "const": null },
+              "routes": { "type": "array", "maxItems": 0 }
+            }
+          }
+        }
+      ]
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "confirmed" } }
+      },
+      "then": {
+        "properties": {
+          "strategy": { "enum": ["preserve", "augment", "migrate"] },
+          "inventoryDigest": { "type": "string", "minLength": 1 },
+          "componentMappings": {
+            "type": "array",
+            "not": {
+              "contains": {
+                "type": "object",
+                "required": ["status"],
+                "properties": { "status": { "const": "proposed" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "visualViewport": {
+      "type": "object",
+      "required": ["id", "width", "height"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 40 },
+        "width": { "type": "integer", "minimum": 320, "maximum": 3840 },
+        "height": { "type": "integer", "minimum": 320, "maximum": 2160 }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "id": { "const": "desktop" } }, "required": ["id"] },
+          "then": { "properties": { "width": { "type": "number", "minimum": 1024 } } }
+        },
+        {
+          "if": { "properties": { "id": { "const": "mobile" } }, "required": ["id"] },
+          "then": { "properties": { "width": { "type": "number", "maximum": 768 } } }
+        }
+      ]
+    },
+    "visualRoute": {
+      "type": "object",
+      "required": ["id", "path", "viewports"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64 },
+        "path": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^/" },
+        "viewports": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/visualViewport" },
+          "allOf": [
+            { "contains": { "type": "object", "properties": { "id": { "const": "desktop" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+            { "contains": { "type": "object", "properties": { "id": { "const": "mobile" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "tokenMapping": {
+      "type": "object",
+      "required": ["semanticToken", "source", "match", "status"],
+      "properties": {
+        "semanticToken": { "type": "string", "minLength": 1 },
+        "canonicalToken": { "type": "string", "pattern": "^semantic\\.[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$" },
+        "canonicalCssVariable": { "type": "string", "pattern": "^--[A-Za-z_][A-Za-z0-9_-]*$" },
+        "source": {
+          "oneOf": [
+            { "$ref": "#/$defs/legacyTokenSource" },
+            { "$ref": "#/$defs/cssVariableTokenSource" },
+            { "$ref": "#/$defs/literalTokenSource" },
+            { "$ref": "#/$defs/designConsultantTokenSource" }
+          ]
+        },
+        "fallback": {
+          "oneOf": [
+            { "$ref": "#/$defs/cssVariableTokenSource" },
+            { "$ref": "#/$defs/literalTokenSource" },
+            { "$ref": "#/$defs/designConsultantTokenSource" }
+          ]
+        },
+        "match": { "enum": ["exact", "candidate"] },
+        "theme": { "type": "string", "minLength": 1 },
+        "selector": {
+          "type": "string",
+          "pattern": "^(?::root|(?::root|[A-Za-z][A-Za-z0-9_-]*)?(?:\\.[A-Za-z_][A-Za-z0-9_-]*|\\[(?:data-theme|data-mode)=(?:\"[A-Za-z_][A-Za-z0-9_-]*\"|'[A-Za-z_][A-Za-z0-9_-]*'|[A-Za-z_][A-Za-z0-9_-]*)\\])+)$"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "pattern": "^\\S(?:.*\\S)?$" }
+        },
+        "status": { "enum": ["proposed", "confirmed", "rejected", "manual"] }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": ["status"],
+            "properties": { "status": { "const": "confirmed" } }
+          },
+          "then": {
+            "required": ["canonicalToken", "canonicalCssVariable", "theme", "selector", "evidence"],
+            "properties": {
+              "source": {
+                "oneOf": [
+                  { "$ref": "#/$defs/cssVariableTokenSource" },
+                  { "$ref": "#/$defs/literalTokenSource" },
+                  { "$ref": "#/$defs/designConsultantTokenSource" }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["status", "selector"],
+            "properties": {
+              "status": { "const": "confirmed" },
+              "selector": { "not": { "const": ":root" } }
+            }
+          },
+          "then": { "required": ["fallback"] }
+        }
+      ]
+    },
+    "legacyTokenSource": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "selector": { "type": "string", "minLength": 1 },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "cssVariableTokenSource": {
+      "type": "object",
+      "required": ["kind", "name", "file", "line", "selector", "value"],
+      "properties": {
+        "kind": { "const": "css-variable" },
+        "name": { "type": "string", "pattern": "^--[A-Za-z_][A-Za-z0-9_-]*$" },
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "selector": {
+          "type": "string",
+          "pattern": "^(?::root|(?::root|[A-Za-z][A-Za-z0-9_-]*)?(?:\\.[A-Za-z_][A-Za-z0-9_-]*|\\[(?:data-theme|data-mode)=(?:\"[A-Za-z_][A-Za-z0-9_-]*\"|'[A-Za-z_][A-Za-z0-9_-]*'|[A-Za-z_][A-Za-z0-9_-]*)\\])+)$"
+        },
+        "value": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "literalTokenSource": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "literal" },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^(?!.*(?:[;{}@\\r\\n\\\\<>]|/\\*|\\*/))(?!.{0,512}(?:[uU][rR][lL]|[eE][xX][pP][rR][eE][sS][sS][iI][oO][nN])\\s*\\().+$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "designConsultantTokenSource": {
+      "type": "object",
+      "required": ["kind", "token", "cssVariable", "value"],
+      "properties": {
+        "kind": { "const": "design-consultant" },
+        "token": { "type": "string", "minLength": 1 },
+        "cssVariable": { "type": "string", "pattern": "^--[A-Za-z_][A-Za-z0-9_-]*$" },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^(?!.*(?:[;{}@\\r\\n\\\\<>]|/\\*|\\*/))(?!.{0,512}(?:[uU][rR][lL]|[eE][xX][pP][rR][eE][sS][sS][iI][oO][nN])\\s*\\().+$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "safeIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+    },
+    "safeReactSourcePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/) )(?!.* (?:/|$))(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\\\\)(?!.*//)[A-Za-z0-9_$@+.,() /-]+\\.(?:js|jsx|ts|tsx)$"
+    },
+    "componentFamily": {
+      "enum": ["button", "icon-button", "field", "choice-field", "dialog", "resource-state", "status", "data-table"]
+    },
+    "componentSource": {
+      "type": "object",
+      "required": ["path", "exportName"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safeReactSourcePath" },
+        "exportName": { "$ref": "#/$defs/safeIdentifier" }
+      },
+      "additionalProperties": false
+    },
+    "directComponentSource": {
+      "type": "object",
+      "required": ["path", "exportName", "propsExport"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safeReactSourcePath" },
+        "exportName": { "$ref": "#/$defs/safeIdentifier" },
+        "propsExport": { "$ref": "#/$defs/safeIdentifier" }
+      },
+      "additionalProperties": false
+    },
+    "componentApiEvidence": {
+      "type": "object",
+      "required": ["props"],
+      "properties": {
+        "props": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/safeIdentifier" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "componentPropMap": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["canonicalProp", "sourceProp", "transform"],
+        "properties": {
+          "canonicalProp": { "$ref": "#/$defs/safeIdentifier" },
+          "sourceProp": { "$ref": "#/$defs/safeIdentifier" },
+          "transform": { "enum": ["identity", "boolean-inverse", "event-target-value"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "componentMapping": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["component", "source", "strategy", "status"],
+          "properties": {
+            "component": { "$ref": "#/$defs/componentFamily" },
+            "source": { "$ref": "#/$defs/componentSource" },
+            "strategy": { "enum": ["direct", "wrapper"] },
+            "status": { "const": "proposed" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["component", "source", "strategy", "api", "status"],
+          "properties": {
+            "component": { "$ref": "#/$defs/componentFamily" },
+            "source": { "$ref": "#/$defs/directComponentSource" },
+            "strategy": { "const": "direct" },
+            "api": { "$ref": "#/$defs/componentApiEvidence" },
+            "status": { "const": "confirmed" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["component", "source", "strategy", "propMap", "status"],
+          "properties": {
+            "component": { "$ref": "#/$defs/componentFamily" },
+            "source": { "$ref": "#/$defs/componentSource" },
+            "strategy": { "const": "wrapper" },
+            "propMap": { "$ref": "#/$defs/componentPropMap" },
+            "status": { "const": "confirmed" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["component", "strategy", "approved", "status"],
+          "properties": {
+            "component": { "$ref": "#/$defs/componentFamily" },
+            "strategy": { "const": "generate" },
+            "approved": { "const": true },
+            "status": { "const": "confirmed" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["component", "strategy", "adapterPath", "status"],
+          "properties": {
+            "component": { "$ref": "#/$defs/componentFamily" },
+            "strategy": { "const": "manual" },
+            "adapterPath": { "$ref": "#/$defs/safeReactSourcePath" },
+            "status": { "const": "confirmed" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["component", "source", "strategy", "status"],
+          "properties": {
+            "component": { "$ref": "#/$defs/componentFamily" },
+            "source": { "$ref": "#/$defs/componentSource" },
+            "strategy": { "const": "reject" },
+            "status": { "const": "rejected" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

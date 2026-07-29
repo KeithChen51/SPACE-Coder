@@ -1,0 +1,107 @@
+:root {
+  --dc-catalog-bg: #f5f6f8;
+  --dc-catalog-surface: #ffffff;
+  --dc-catalog-surface-muted: #eef1f4;
+  --dc-catalog-surface-subtle: color-mix(in srgb, var(--dc-catalog-surface) 72%, var(--dc-catalog-surface-muted));
+  --dc-catalog-surface-raised: #ffffff;
+  --dc-catalog-surface-inverse: #20252b;
+  --dc-catalog-text: #20252b;
+  --dc-catalog-text-muted: #56616d;
+  --dc-catalog-text-soft: #6b7682;
+  --dc-catalog-text-inverse: #ffffff;
+  --dc-catalog-border: #d9dee4;
+  --dc-catalog-border-strong: #aeb7c1;
+  --dc-catalog-primary: #285f8f;
+  --dc-catalog-primary-hover: #19496f;
+  --dc-catalog-primary-soft: #e6eff7;
+  --dc-catalog-danger: #a6323e;
+  --dc-catalog-danger-soft: #fbeaec;
+  --dc-catalog-warning: #7a5914;
+  --dc-catalog-warning-soft: #fff5d6;
+  --dc-catalog-success: #24653c;
+  --dc-catalog-success-soft: #e7f5eb;
+  --dc-catalog-info: #285f8f;
+  --dc-catalog-info-soft: #e6eff7;
+  --dc-catalog-font-sans: "Segoe UI", "Microsoft YaHei", sans-serif;
+  --dc-catalog-font-display: "Segoe UI", "Microsoft YaHei", sans-serif;
+  --dc-catalog-font-mono: "Cascadia Code", Consolas, monospace;
+  --dc-catalog-text-2xs: 10px;
+  --dc-catalog-text-xs: 11px;
+  --dc-catalog-text-table: 13px;
+  --dc-catalog-text-body: 14px;
+  --dc-catalog-text-subtitle: 16px;
+  --dc-catalog-text-section: 20px;
+  --dc-catalog-text-title: 28px;
+  --dc-catalog-line-tight: 1.16;
+  --dc-catalog-line-title: 1.24;
+  --dc-catalog-line-body: 1.55;
+  --dc-catalog-space-1: 4px;
+  --dc-catalog-space-2: 8px;
+  --dc-catalog-space-3: 12px;
+  --dc-catalog-space-4: 16px;
+  --dc-catalog-space-5: 20px;
+  --dc-catalog-space-6: 24px;
+  --dc-catalog-space-8: 32px;
+  --dc-catalog-space-10: 40px;
+  --dc-catalog-space-12: 48px;
+  --dc-catalog-radius-xs: 2px;
+  --dc-catalog-radius-sm: 4px;
+  --dc-catalog-radius-md: 6px;
+  --dc-catalog-radius-lg: 8px;
+  --dc-catalog-radius-full: 999px;
+  --dc-catalog-control-height: 38px;
+  --dc-catalog-control-radius: 4px;
+  --dc-catalog-border-width: 1px;
+  --dc-catalog-duration-fast: 120ms;
+  --dc-catalog-duration-base: 180ms;
+  --dc-catalog-ease-standard: cubic-bezier(.2, .75, .25, 1);
+  --dc-catalog-shadow-soft: 0 1px 2px rgb(32 37 43 / 5%), 0 8px 22px rgb(32 37 43 / 7%);
+  --dc-catalog-shadow-card: var(--dc-catalog-shadow-soft);
+  --dc-catalog-shadow-overlay: 0 18px 48px rgb(32 37 43 / 16%);
+  --dc-catalog-focus-ring: 0 0 0 3px rgb(40 95 143 / 24%);
+  --dc-catalog-brand-attribution-accent: #4f46e5;
+  font-family: var(--dc-catalog-font-sans);
+  font-size: 15px;
+  line-height: var(--dc-catalog-line-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { min-width: 320px; background: var(--dc-catalog-bg); scroll-behavior: smooth; }
+body { margin: 0; background: var(--dc-catalog-bg); color: var(--dc-catalog-text); }
+button, input, select, textarea { font: inherit; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--dc-catalog-primary); outline-offset: 2px; }
+
+.catalog-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--dc-catalog-border);
+  background: var(--dc-catalog-surface);
+  color: var(--dc-catalog-text);
+}
+
+.brand-lockup { display: flex; align-items: center; gap: var(--dc-catalog-space-3); min-width: 0; }
+.brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--dc-catalog-border-strong);
+  border-radius: 50%;
+  background: var(--dc-catalog-primary-soft);
+  color: var(--dc-catalog-primary-hover);
+  font: 800 var(--dc-catalog-text-xs)/1 var(--dc-catalog-font-display);
+}
+.brand-copy { display: grid; min-width: 0; line-height: 1.15; }
+.brand-copy strong { overflow: hidden; color: var(--dc-catalog-text); font-size: var(--dc-catalog-text-subtitle); text-overflow: ellipsis; white-space: nowrap; }
+.brand-copy small { color: var(--dc-catalog-text-soft); font-size: var(--dc-catalog-text-2xs); font-weight: 700; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

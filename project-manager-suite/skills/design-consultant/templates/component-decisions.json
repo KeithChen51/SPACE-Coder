@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "YYYY-MM-DD",
+  "counts": {
+    "keep": 0,
+    "adjust": 0,
+    "hold": 0
+  },
+  "choices": {
+    "Button": "keep",
+    "DataTable": "keep",
+    "ProjectStatusGroup": "hold"
+  },
+  "notes": {
+    "keep": "Can enter first implementation and token rules.",
+    "adjust": "Can enter preview and discussion, but not final token rules.",
+    "hold": "Do not extract tokens or shared components until explicitly reopened."
+  }
+}
+

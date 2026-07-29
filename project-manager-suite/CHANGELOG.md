@@ -10,6 +10,7 @@
 
 ## [Unreleased]
 
+- 新增完整 `design-consultant` v0.10 技能包（上游 commit `b7667d9`），保留 references、scripts、templates、vendor 与许可证；本次仅提供能力分发，不修改 `ai-project-manager` 路由，也不替换 `03-02-page-designer`
 - 进度页逐帧仿真评审修复：计划就绪待开工不再误报"受阻/状态对不上"（下一步改为提示「开工」）；全部完成后驾驶舱指针置空（missing_cockpit_active_task）纳入良性码；"等你拍板"过滤"无/暂无"伪空项；S2 页面子环节新增"草稿待确认"中间态；收尾态遇安全 WAIVER 时标题行提示有条件放行与豁免时限；警示横幅去 skill 黑话；runtime.md 增补"用户可见字段用业务白话回写"指引
 
 ## [2.1] - 2026-07-16

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN" data-palette="harbor" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:,">
+  <title>设计顾问组件 Catalog</title>
+  <script>
+    try {
+      const palette = localStorage.getItem("dc-palette");
+      const theme = localStorage.getItem("dc-theme");
+      if (palette === "harbor" || palette === "coral") document.documentElement.dataset.palette = palette;
+      if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+    } catch {
+      // File previews and privacy modes can disable storage; HTML defaults remain valid.
+    }
+  </script>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="catalog-foundation.css">
+  <link rel="stylesheet" href="react-runtime/src/styles.css">
+  <link rel="stylesheet" href="component-library.css">
+</head>
+<body>
+  <div id="catalogRoot"></div>
+  <script>
+    window.__DC_CATALOG__ = {
+      visualizationRoot: "visualization-lieflat/"
+    };
+  </script>
+  <script src="component-library.js" defer></script>
+</body>
+</html>
