@@ -1,6 +1,6 @@
 # AI PM Tool Tests
 
-本目录存放套件脚本化能力的最小测试样例，共 4 个测试文件。
+本目录存放 `npm run test:ai-pm` 实际运行的 Node 原生测试，共 8 个测试文件；测试命令以 `project-manager-suite/package.json` 为准。
 
 当前覆盖范围（按测试文件）：
 
@@ -10,14 +10,11 @@
   - 文档一致性断言：对 SKILL / 协议 / PIPELINE 的关键口径做文本检查（多文件计划命名、foundation 目录、link-indexer 伴随调度、baseline 刷新归属、S4 一致性门禁），防止文档被改回旧口径
 - `protocol-alignment.test.mjs` —— `tools/check-protocol-alignment.mjs`：当前套件全量对齐通过、合成 fixture 检出缺失反向链接、非 git 环境安全降级、`--changed` 关联文件提示
 - `page-ledger.test.mjs` —— `page-designer/scripts/page-ledger-io.mjs` / `page-ledger-mutate.mjs` / `page-ledger-query.mjs`：台账创建与恢复、phase 相位图推进与非法跳转拦截、回环 start-loop、BRD 缺失兜底
+- `page-delivery-adapter.test.mjs` —— `page-delivery-adapter.mjs`：confirmed 通用 manifest 到 legacy delivery 的确定性转换、phase 3 / 截图问询 / 用户确认门禁、路径 containment、机器记录和 hostile Markdown 值回归
 - `prd-check.test.mjs` —— `prd-writer/scripts/prd-check.mjs`：structure / crosscheck / set-status / sync-index 各命令，另含 PRD 自查表与 `route-check` 互不污染的回归
-
-当前**未被任何测试直接覆盖**的脚本（改动它们时测试不会报警，需要人工验证）：
-
-- `brd-writer/scripts/ledger-mutate.mjs`、`ledger-render.mjs`（台账写操作与 Markdown 渲染）
-- `doc-governance/scripts/scan-authority-overlap.mjs`
-- `page-designer/scripts/search.py`、`design_system.py`、`core.py`（Python 设计知识库链路）
-- `project-link-indexer/scripts/render-project-links.mjs`（人读 wiki 索引渲染）
+- `progress-dashboard.test.mjs` —— 进度页数据归一化、白话提示和可重建渲染产物
+- `suite-version.test.mjs` —— `CHANGELOG.md`、README 版本历史与 `package.json` 版本字段的一致性门禁
+- `design-consultant-package.test.mjs` —— v0.11 release manifest 的路径集合、SHA-256、字节数、版本锁和导入包禁止目录校验
 
 运行方式：
 
