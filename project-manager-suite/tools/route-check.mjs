@@ -280,6 +280,14 @@ function findMatchingFiles(hostRoot, files, pattern, preferredDirs = []) {
     return collectMatchingCandidates(hostRoot, files, pattern, preferredDirs);
 }
 
+function findExactSlugFileAtPriority(hostRoot, files, prefix, slug, extension, preferredDirs, locationPriority) {
+    if (!slug || !Number.isInteger(locationPriority)) return null;
+    const pattern = new RegExp(`^${escapeRegExp(prefix)}-${escapeRegExp(slug)}${escapeRegExp(extension)}$`);
+    return collectMatchingCandidates(hostRoot, files, pattern, preferredDirs).find(
+        (candidate) => candidate.locationPriority === locationPriority
+    ) || null;
+}
+
 const DESIGN_ARTIFACT_DIRS = {
     brd: ['docs/brd'],
     page: ['src/frontend/page-preview', 'page-preview', '可操作页面'],
@@ -306,14 +314,8 @@ function parseMarkdownTables(content) {
             continue;
         }
 
-        const headerCells = headerLine
-            .split('|')
-            .slice(1, -1)
-            .map((cell) => cell.trim());
-        const separatorCells = separatorLine
-            .split('|')
-            .slice(1, -1)
-            .map((cell) => cell.trim());
+        const headerCells = splitMarkdownTableCells(headerLine);
+        const separatorCells = splitMarkdownTableCells(separatorLine);
 
         if (
             headerCells.length === 0 ||
@@ -332,10 +334,7 @@ function parseMarkdownTables(content) {
                 break;
             }
 
-            const rowCells = rowLine
-                .split('|')
-                .slice(1, -1)
-                .map((cell) => cell.trim());
+            const rowCells = splitMarkdownTableCells(rowLine);
 
             if (rowCells.length === headerCells.length) {
                 rows.push(rowCells);
@@ -351,6 +350,31 @@ function parseMarkdownTables(content) {
     }
 
     return tables;
+}
+
+function splitMarkdownTableCells(line) {
+    const cells = [];
+    let current = '';
+    let escaped = false;
+
+    for (const character of String(line ?? '')) {
+        if (character === '|' && !escaped) {
+            cells.push(current.trim());
+            current = '';
+            continue;
+        }
+
+        current += character;
+        escaped = character === '\\' && !escaped;
+        if (character !== '\\') {
+            escaped = false;
+        }
+    }
+
+    cells.push(current.trim());
+    if (cells[0] === '') cells.shift();
+    if (cells.at(-1) === '') cells.pop();
+    return cells;
 }
 
 function normalizeArtifactPath(rawPath) {
@@ -393,10 +417,11 @@ function extractFilePathColumnValues(content) {
 
         for (const row of table.rows) {
             const rawValue = row[pathIndex];
-            if (!rawValue || isLikelyPlaceholderPath(rawValue)) {
+            const decodedValue = decodeMarkdownEntities(normalizeArtifactPath(rawValue));
+            if (!decodedValue || isLikelyPlaceholderPath(decodedValue)) {
                 continue;
             }
-            values.push(normalizeArtifactPath(rawValue));
+            values.push(decodedValue);
         }
     }
 
@@ -582,71 +607,572 @@ function extractUnresolvedGapCategories(content) {
     if (!content) return [];
 
     const categories = [];
-    const pattern = /-\s+\*\*分类\*\*:\s*`([^`]+)`/g;
-    let match = pattern.exec(content);
-    while (match) {
-        const category = match[1].trim();
+    const blocks = content.split(/^###\s+/m).slice(1);
+    for (const block of blocks) {
+        const categoryMatch = block.match(/-\s+\*\*分类\*\*:\s*`([^`]+)`/);
+        if (!categoryMatch) continue;
+
+        const category = categoryMatch[1].trim();
         if (category === 'design_gap' || category === 'logic_conflict') {
             categories.push(category);
         }
-        match = pattern.exec(content);
+    }
+
+    // Keep compatibility with compact gap files that omit GAP headings.
+    if (blocks.length === 0) {
+        const pattern = /-\s+\*\*分类\*\*:\s*`([^`]+)`/g;
+        let match = pattern.exec(content);
+        while (match) {
+            const category = match[1].trim();
+            if (category === 'design_gap' || category === 'logic_conflict') {
+                categories.push(category);
+            }
+            match = pattern.exec(content);
+        }
     }
 
     return categories;
 }
 
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function deriveBrdSlug(filePath) {
+    const fileName = path.basename(filePath);
+    const match = fileName.match(/^BRD-(.+)\.md$/);
+    if (!match) return null;
+    return match[1].replace(/-\d{8}-\d{4}$/, '');
+}
+
+function selectAuthoritativeBrd(hostRoot, markdownFiles) {
+    const candidates = collectMatchingCandidates(hostRoot, markdownFiles, /^BRD-.+\.md$/, DESIGN_ARTIFACT_DIRS.brd);
+    if (candidates.length === 0) {
+        return {
+            exists: false,
+            ambiguous: false,
+            candidateCount: 0,
+            file: null,
+            slug: null
+        };
+    }
+
+    const preferredPriority = candidates[0].locationPriority ?? 0;
+    const preferredCandidates = candidates.filter((candidate) => (candidate.locationPriority ?? 0) === preferredPriority);
+    const slugs = Array.from(new Set(preferredCandidates.map((candidate) => deriveBrdSlug(candidate.filePath)).filter(Boolean)));
+    if (slugs.length !== 1) {
+        return {
+            exists: true,
+            ambiguous: true,
+            candidateCount: preferredCandidates.length,
+            file: null,
+            slug: null,
+            slugs
+        };
+    }
+
+    const selected = preferredCandidates[0];
+    return {
+        exists: true,
+        ambiguous: false,
+        candidateCount: preferredCandidates.length,
+        file: selected,
+        slug: slugs[0],
+        slugs
+    };
+}
+
+function findExactSlugFile(hostRoot, files, prefix, slug, extension, preferredDirs = []) {
+    if (!slug) return null;
+    const pattern = new RegExp(`^${escapeRegExp(prefix)}-${escapeRegExp(slug)}${escapeRegExp(extension)}$`);
+    return findLatestMatchingFile(hostRoot, files, pattern, preferredDirs);
+}
+
+function extractDeliveryHeader(content, label) {
+    if (!content) return '';
+    const escapedLabel = escapeRegExp(label);
+    return content.match(new RegExp(`^>\\s*${escapedLabel}:\\s*(.*)$`, 'm'))?.[1]?.trim() || '';
+}
+
+function extractDeliveryBullet(content, label) {
+    if (!content) return '';
+    const escapedLabel = escapeRegExp(label);
+    return content.match(new RegExp(`^-\\s*${escapedLabel}:\\s*(.*)$`, 'm'))?.[1]?.trim() || '';
+}
+
+function parsePageDeliveryAdapterMetadata(content) {
+    if (!content) {
+        return { found: false, validJson: false, metadata: null, error: null };
+    }
+
+    const match = content.match(/<!--\s*page-delivery-adapter:v0\.11;base64:([A-Za-z0-9+/=]+)\s*-->/);
+    if (!match) {
+        return { found: false, validJson: false, metadata: null, error: null };
+    }
+
+    try {
+        const metadata = JSON.parse(Buffer.from(match[1], 'base64').toString('utf8'));
+        return { found: true, validJson: true, metadata, error: null };
+    } catch (error) {
+        return { found: true, validJson: false, metadata: null, error: error.message };
+    }
+}
+
+function normalizeComparablePath(hostRoot, rawPath) {
+    const value = normalizeArtifactPath(rawPath);
+    if (!value) return '';
+    return path.resolve(path.isAbsolute(value) ? value : path.join(hostRoot, value));
+}
+
+const PAGE_DELIVERY_ADAPTER = Object.freeze({
+    adapter: 'page-designer',
+    adapterVersion: '0.11.0'
+});
+
+function normalizeSingleLineValue(value) {
+    return decodeMarkdownEntities(String(value ?? ''))
+        .replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function normalizeSingleLineRawValue(value) {
+    return String(value ?? '')
+        .replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function decodeMarkdownEntities(value) {
+    const entityMap = {
+        amp: '&',
+        lt: '<',
+        gt: '>',
+        quot: '"',
+        '#39': "'"
+    };
+    return String(value ?? '')
+        .replace(/&(amp|lt|gt|quot|#39);/g, (entity, name) => entityMap[name] ?? entity)
+        .replace(/\\`/g, '`')
+        .replace(/\\\|/g, '|');
+}
+
+function isContainedPath(rootPath, targetPath) {
+    const relative = path.relative(rootPath, targetPath);
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function resolveRealContainedDirectory(hostRoot, rawPath, decodeRendered = true) {
+    const normalizedPath = normalizeArtifactPath(rawPath);
+    const value = decodeRendered ? decodeMarkdownEntities(normalizedPath) : normalizedPath;
+    if (!value || isLikelyPlaceholderPath(value)) {
+        return { rawPath, realPath: null, valid: false, reason: 'missing_path' };
+    }
+
+    const hostRootReal = fs.realpathSync(hostRoot);
+    const absolutePath = path.resolve(path.isAbsolute(value) ? value : path.join(hostRoot, value));
+    if (!isContainedPath(hostRootReal, absolutePath)) {
+        return { rawPath, realPath: null, valid: false, reason: 'outside_host' };
+    }
+    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isDirectory()) {
+        return { rawPath, realPath: null, valid: false, reason: 'missing_directory' };
+    }
+
+    const realPath = fs.realpathSync(absolutePath);
+    if (!isContainedPath(hostRootReal, realPath)) {
+        return { rawPath, realPath: null, valid: false, reason: 'symlink_escape' };
+    }
+
+    return { rawPath, realPath, valid: true, reason: null };
+}
+
+function resolveRealContainedFile(hostRoot, rawPath, containmentRoot = hostRoot, decodeRendered = true) {
+    const normalizedPath = normalizeArtifactPath(rawPath);
+    const value = decodeRendered ? decodeMarkdownEntities(normalizedPath) : normalizedPath;
+    if (!value || isLikelyPlaceholderPath(value)) {
+        return { rawPath, realPath: null, valid: false, reason: 'missing_path' };
+    }
+
+    const hostRootReal = fs.realpathSync(hostRoot);
+    if (!containmentRoot) {
+        return { rawPath, realPath: null, valid: false, reason: 'missing_containment' };
+    }
+    const containmentRootReal = fs.realpathSync(containmentRoot);
+    if (!isContainedPath(hostRootReal, containmentRootReal)) {
+        return { rawPath, realPath: null, valid: false, reason: 'containment_outside_host' };
+    }
+    const absolutePath = path.resolve(path.isAbsolute(value) ? value : path.join(hostRoot, value));
+    if (!isContainedPath(hostRootReal, absolutePath)) {
+        return { rawPath, realPath: null, valid: false, reason: 'outside_host' };
+    }
+    if (!isContainedPath(containmentRootReal, absolutePath)) {
+        return { rawPath, realPath: null, valid: false, reason: 'outside_containment' };
+    }
+    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+        return { rawPath, realPath: null, valid: false, reason: 'missing_file' };
+    }
+
+    const realPath = fs.realpathSync(absolutePath);
+    if (!isContainedPath(hostRootReal, realPath)) {
+        return { rawPath, realPath: null, valid: false, reason: 'symlink_escape' };
+    }
+    if (!isContainedPath(containmentRootReal, realPath)) {
+        return { rawPath, realPath: null, valid: false, reason: 'outside_containment' };
+    }
+
+    return { rawPath, realPath, valid: true, reason: null };
+}
+
+function resolveRealFileSet(hostRoot, rawPaths, containmentRoot = hostRoot, decodeRendered = true) {
+    const paths = Array.isArray(rawPaths) ? rawPaths : [];
+    const entries = paths.map((rawPath) => resolveRealContainedFile(hostRoot, rawPath, containmentRoot, decodeRendered));
+    const realPaths = [];
+    const duplicates = [];
+    const seen = new Set();
+
+    for (const entry of entries) {
+        if (!entry.valid) continue;
+        if (seen.has(entry.realPath)) {
+            duplicates.push(entry.realPath);
+            continue;
+        }
+        seen.add(entry.realPath);
+        realPaths.push(entry.realPath);
+    }
+
+    const invalidPaths = entries.filter((entry) => !entry.valid);
+    return {
+        rawPaths: paths,
+        entries,
+        realPaths: realPaths.sort(),
+        duplicates,
+        invalidPaths,
+        allExist: paths.length > 0 && invalidPaths.length === 0 && duplicates.length === 0
+    };
+}
+
+function compareRealFileSets(left, right) {
+    return listsEqual(left.realPaths || [], right.realPaths || []) &&
+        left.allExist === true &&
+        right.allExist === true &&
+        (left.duplicates || []).length === 0 &&
+        (right.duplicates || []).length === 0;
+}
+
+function inspectExplainerSelfCheck(content) {
+    const source = String(content || '');
+    const sections = source.split(/^##\s+/m).slice(1);
+    const matchingSections = sections.filter((section) => {
+        const heading = section.split('\n', 1)[0]?.trim() || '';
+        return heading === '一致性自查';
+    });
+    if (matchingSections.length !== 1) {
+        return {
+            tableFound: false,
+            rowCount: 0,
+            requiredRows: 6,
+            allPassed: false,
+            rows: []
+        };
+    }
+
+    const tables = parseMarkdownTables(matchingSections[0]);
+    const matchingTables = tables.filter(
+        (candidate) => candidate.headers.includes('检查项') && candidate.headers.includes('结果')
+    );
+    if (matchingTables.length !== 1) {
+        return {
+            tableFound: false,
+            rowCount: 0,
+            requiredRows: 6,
+            allPassed: false,
+            rows: []
+        };
+    }
+
+    const table = matchingTables[0];
+    if (!table) {
+        return {
+            tableFound: false,
+            rowCount: 0,
+            requiredRows: 6,
+            allPassed: false,
+            rows: []
+        };
+    }
+
+    const resultIndex = table.headers.indexOf('结果');
+    const itemIndex = table.headers.indexOf('检查项');
+    const rows = table.rows.map((row) => ({
+        item: row[itemIndex] || '',
+        result: row[resultIndex] || ''
+    }));
+    return {
+        tableFound: true,
+        rowCount: rows.length,
+        requiredRows: 6,
+        allPassed: rows.length === 6 && rows.every((row) => row.result === '✓'),
+        rows
+    };
+}
+
 function inspectS2Artifacts(hostRoot) {
     const markdownFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.md']);
-    const brd = findLatestMatchingFile(hostRoot, markdownFiles, /^BRD-.+\.md$/, DESIGN_ARTIFACT_DIRS.brd);
-    const pageDelivery = findLatestMatchingFile(hostRoot, markdownFiles, /^page-delivery-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
-    const explainerFlow = findLatestMatchingFile(hostRoot, markdownFiles, /^explainer-flow-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
-    const explainerBInteraction = findLatestMatchingFile(
-        hostRoot,
-        markdownFiles,
-        /^explainer-b-interaction-.+\.md$/,
-        DESIGN_ARTIFACT_DIRS.page
+    const jsonFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, ['.json']);
+    const brdSelection = selectAuthoritativeBrd(hostRoot, markdownFiles);
+    const brd = brdSelection.file;
+    const slug = brdSelection.slug;
+
+    const pageDeliveryCandidates = slug
+        ? findMatchingFiles(
+              hostRoot,
+              markdownFiles,
+              new RegExp(`^page-delivery-${escapeRegExp(slug)}\\.md$`),
+              DESIGN_ARTIFACT_DIRS.page
+          )
+        : [];
+    const pageDelivery = pageDeliveryCandidates[0] || null;
+    const selectedPageArtifactPriority = pageDelivery?.locationPriority ?? null;
+    const findSelectedPageArtifact = (files, prefix, extension) =>
+        findExactSlugFileAtPriority(
+            hostRoot,
+            files,
+            prefix,
+            slug,
+            extension,
+            DESIGN_ARTIFACT_DIRS.page,
+            selectedPageArtifactPriority
+        );
+    const explainerFlow = findSelectedPageArtifact(markdownFiles, 'explainer-flow', '.md');
+    const explainerBInteraction = findSelectedPageArtifact(markdownFiles, 'explainer-b-interaction', '.md');
+    const explainerDelivery = findSelectedPageArtifact(markdownFiles, 'explainer-delivery', '.md');
+    const gapCandidates = slug
+        ? findMatchingFiles(
+              hostRoot,
+              markdownFiles,
+              new RegExp(`^explainer-b-gap-${escapeRegExp(slug)}\\.md$`),
+              DESIGN_ARTIFACT_DIRS.page
+          )
+        : [];
+    const gapPriority = selectedPageArtifactPriority ?? gapCandidates[0]?.locationPriority ?? null;
+    const gapFiles = gapPriority === null
+        ? []
+        : gapCandidates.filter((candidate) => candidate.locationPriority === gapPriority);
+    const ledger = findSelectedPageArtifact(jsonFiles, 'page-ledger', '.json');
+
+    let ledgerRecord = null;
+    let ledgerParseError = null;
+    if (ledger) {
+        try {
+            ledgerRecord = JSON.parse(loadMarkdownFile(ledger.filePath));
+        } catch (error) {
+            ledgerParseError = error.message;
+        }
+    }
+    const ledgerPath = ledger?.filePath || null;
+    const ledgerSlugMatches = Boolean(ledgerRecord && slug && ledgerRecord.slug === slug);
+    const ledgerBrdMatches = Boolean(
+        ledgerRecord &&
+            brd &&
+            normalizeComparablePath(hostRoot, ledgerRecord.brdFile) === normalizeComparablePath(hostRoot, brd.filePath)
     );
-    const explainerDelivery = findLatestMatchingFile(
-        hostRoot,
-        markdownFiles,
-        /^explainer-delivery-.+\.md$/,
-        DESIGN_ARTIFACT_DIRS.page
-    );
-    const gapFiles = findMatchingFiles(hostRoot, markdownFiles, /^explainer-b-gap-.+\.md$/, DESIGN_ARTIFACT_DIRS.page);
+    const ledgerCheck = {
+        exists: Boolean(ledger),
+        path: ledger?.relativePath || null,
+        phase: ledgerRecord?.phase ?? null,
+        screenshotAsked: ledgerRecord?.screenshotAsked ?? null,
+        slug: ledgerRecord?.slug ?? null,
+        slugMatches: ledgerSlugMatches,
+        brdMatches: ledgerBrdMatches,
+        parseError: ledgerParseError,
+        valid:
+            Boolean(ledgerRecord) &&
+            ledgerRecord.phase === 4 &&
+            ledgerRecord.screenshotAsked === true &&
+            ledgerSlugMatches &&
+            ledgerBrdMatches
+    };
 
     const pageDeliveryContent = pageDelivery ? loadMarkdownFile(pageDelivery.filePath) : null;
+    const metadataParse = parsePageDeliveryAdapterMetadata(pageDeliveryContent);
+    const metadata = metadataParse.metadata;
+    const metadataResolvedFiles = Array.isArray(metadata?.resolvedFiles) ? metadata.resolvedFiles : [];
+    const deliveryFilePaths = pageDeliveryContent ? extractFilePathColumnValues(pageDeliveryContent) : [];
+    const metadataProjectRoot = resolveRealContainedDirectory(hostRoot, metadata?.projectRoot, false);
+    const pageContainmentRoot = metadataProjectRoot.valid ? metadataProjectRoot.realPath : null;
+    const pageCodeCheck = resolveRealFileSet(hostRoot, deliveryFilePaths, pageContainmentRoot);
+    const metadataFilesCheck = resolveRealFileSet(hostRoot, metadataResolvedFiles, pageContainmentRoot, false);
+    const resolvedFilesSetMatches = compareRealFileSets(pageCodeCheck, metadataFilesCheck);
+    const visibleProjectSlug = extractDeliveryHeader(pageDeliveryContent, 'Project Slug');
+    const visibleAdapterSource = extractDeliveryHeader(pageDeliveryContent, 'Adapter Source');
+    const visibleManifestStatus = extractDeliveryHeader(pageDeliveryContent, 'Manifest Status');
+    const visibleDirectionConfirmation = extractDeliveryHeader(pageDeliveryContent, '页面方向确认');
+    const visibleConfirmationEvidence = extractDeliveryHeader(pageDeliveryContent, '确认证据');
+    const visibleManifestSource = extractDeliveryBullet(pageDeliveryContent, 'Manifest source');
+    const visibleProjectRoot = extractDeliveryBullet(pageDeliveryContent, '前端工程目录');
+    const metadataAdapterSourceFile = resolveRealContainedFile(hostRoot, metadata?.adapterSource, hostRoot, false);
+    const metadataSourcePathFile = resolveRealContainedFile(hostRoot, metadata?.sourcePath, hostRoot, false);
+    const visibleAdapterSourceFile = resolveRealContainedFile(hostRoot, visibleAdapterSource);
+    const visibleManifestSourceFile = resolveRealContainedFile(hostRoot, visibleManifestSource);
+    const visibleProjectRootDirectory = resolveRealContainedDirectory(hostRoot, visibleProjectRoot);
+    const adapterSourceMatchesVisible = metadataAdapterSourceFile.valid &&
+        visibleAdapterSourceFile.valid &&
+        metadataAdapterSourceFile.realPath === visibleAdapterSourceFile.realPath;
+    const sourcePathMatchesVisible = metadataSourcePathFile.valid &&
+        visibleManifestSourceFile.valid &&
+        metadataSourcePathFile.realPath === visibleManifestSourceFile.realPath;
+    const projectRootMatchesVisible = metadataProjectRoot.valid &&
+        visibleProjectRootDirectory.valid &&
+        metadataProjectRoot.realPath === visibleProjectRootDirectory.realPath;
+    const metadataConfirmationEvidence = normalizeSingleLineRawValue(metadata?.confirmationEvidence);
+    const visibleConfirmationEvidenceNormalized = normalizeSingleLineValue(visibleConfirmationEvidence);
+    const adapterProvenance = {
+        metadataFound: metadataParse.found,
+        metadataValidJson: metadataParse.validJson,
+        adapter: metadata?.adapter || null,
+        adapterVersion: metadata?.adapterVersion || null,
+        adapterSource: metadata?.adapterSource || null,
+        adapterSourceExists: metadataAdapterSourceFile.valid,
+        adapterSourcePath: metadataAdapterSourceFile.realPath,
+        adapterSourceInvalidReason: metadataAdapterSourceFile.reason,
+        adapterSourceMatchesVisible,
+        sourcePath: metadata?.sourcePath || null,
+        sourcePathExists: metadataSourcePathFile.valid,
+        sourcePathInvalidReason: metadataSourcePathFile.reason,
+        visibleManifestSource,
+        visibleManifestSourceExists: visibleManifestSourceFile.valid,
+        visibleManifestSourcePath: visibleManifestSourceFile.realPath,
+        sourcePathMatchesVisible,
+        projectRoot: metadata?.projectRoot || null,
+        projectRootExists: metadataProjectRoot.valid,
+        projectRootPath: metadataProjectRoot.realPath,
+        projectRootInvalidReason: metadataProjectRoot.reason,
+        visibleProjectRoot,
+        visibleProjectRootExists: visibleProjectRootDirectory.valid,
+        visibleProjectRootPath: visibleProjectRootDirectory.realPath,
+        projectRootMatchesVisible,
+        projectSlug: metadata?.projectSlug || null,
+        manifestStatus: metadata?.manifestStatus || null,
+        ledgerPathMatches: Boolean(metadata?.ledgerPath && ledgerPath) &&
+            normalizeComparablePath(hostRoot, metadata.ledgerPath) === normalizeComparablePath(hostRoot, ledgerPath),
+        brdPathMatches: Boolean(metadata?.brdPath && brd) &&
+            normalizeComparablePath(hostRoot, metadata.brdPath) === normalizeComparablePath(hostRoot, brd.filePath),
+        resolvedFilesNonEmpty: metadataResolvedFiles.length > 0,
+        resolvedFilesSetMatches,
+        error: metadataParse.error,
+        valid:
+            metadataParse.found &&
+            metadataParse.validJson &&
+            metadata?.adapter === PAGE_DELIVERY_ADAPTER.adapter &&
+            metadata?.adapterVersion === PAGE_DELIVERY_ADAPTER.adapterVersion &&
+            metadataAdapterSourceFile.valid &&
+            adapterSourceMatchesVisible &&
+            metadataSourcePathFile.valid &&
+            sourcePathMatchesVisible &&
+            metadataProjectRoot.valid &&
+            projectRootMatchesVisible &&
+            metadata?.projectSlug === slug &&
+            metadata?.manifestStatus === 'confirmed' &&
+            metadataResolvedFiles.length > 0 &&
+            resolvedFilesSetMatches &&
+            Boolean(ledgerPath) &&
+            Boolean(brd) &&
+            normalizeComparablePath(hostRoot, metadata.ledgerPath) === normalizeComparablePath(hostRoot, ledgerPath) &&
+            normalizeComparablePath(hostRoot, metadata.brdPath) === normalizeComparablePath(hostRoot, brd.filePath)
+    };
+    const userConfirmation = {
+        projectSlug: visibleProjectSlug,
+        adapterSource: visibleAdapterSource,
+        manifestStatus: visibleManifestStatus,
+        direction: visibleDirectionConfirmation,
+        evidence: visibleConfirmationEvidence,
+        metadataEvidence: metadataConfirmationEvidence,
+        evidenceNormalized: visibleConfirmationEvidenceNormalized,
+        evidenceMatchesMetadata: Boolean(metadataConfirmationEvidence) &&
+            metadataConfirmationEvidence === visibleConfirmationEvidenceNormalized,
+        valid:
+            visibleProjectSlug === slug &&
+            Boolean(visibleAdapterSource) &&
+            visibleManifestStatus === 'confirmed' &&
+            visibleDirectionConfirmation === '已确认' &&
+            Boolean(visibleConfirmationEvidenceNormalized) &&
+            Boolean(metadataConfirmationEvidence) &&
+            metadataConfirmationEvidence === visibleConfirmationEvidenceNormalized
+    };
 
-    const pageCodeCheck = pageDeliveryContent
-        ? listResolvedFiles(hostRoot, extractFilePathColumnValues(pageDeliveryContent))
-        : { files: [], allExist: false };
-
-    const bInteractionStatuses = explainerBInteraction ? extractInteractionStatuses(loadMarkdownFile(explainerBInteraction.filePath)) : [];
-    const unresolvedGapCategories = gapFiles.flatMap((file) => extractUnresolvedGapCategories(loadMarkdownFile(file.filePath)));
-
+    const bInteractionStatuses = explainerBInteraction
+        ? extractInteractionStatuses(loadMarkdownFile(explainerBInteraction.filePath))
+        : [];
     const bInteractionLocked = bInteractionStatuses.length > 0 && bInteractionStatuses.every((status) => status === 'locked');
-
-    const explainerFilesComplete =
-        Boolean(explainerFlow) &&
-        Boolean(explainerBInteraction) &&
-        Boolean(explainerDelivery);
+    const interactionCheck = {
+        statuses: bInteractionStatuses,
+        allLocked: bInteractionLocked,
+        valid: bInteractionLocked
+    };
+    const selfCheck = inspectExplainerSelfCheck(explainerDelivery ? loadMarkdownFile(explainerDelivery.filePath) : null);
+    const unresolvedGapCategories = gapFiles.flatMap((file) => extractUnresolvedGapCategories(loadMarkdownFile(file.filePath)));
+    const explainerFilesComplete = Boolean(explainerFlow) && Boolean(explainerBInteraction) && Boolean(explainerDelivery);
 
     return {
-        brdExists: Boolean(brd),
+        slug,
+        brdExists: brdSelection.exists,
         brdPath: brd?.relativePath || null,
+        brdSelection: {
+            exists: brdSelection.exists,
+            ambiguous: brdSelection.ambiguous,
+            candidateCount: brdSelection.candidateCount,
+            slugs: brdSelection.slugs || [],
+            path: brd?.relativePath || null
+        },
         pageDeliveryExists: Boolean(pageDelivery),
         pageDeliveryPath: pageDelivery?.relativePath || null,
-        pageCodeFiles: pageCodeCheck.files,
+        pageDelivery: {
+            exists: Boolean(pageDelivery),
+            path: pageDelivery?.relativePath || null
+        },
+        ledger: ledgerCheck,
+        adapterProvenance,
+        userConfirmation,
+        pageCodeFiles: pageCodeCheck.realPaths,
         pageCodeFilesAllExist: pageCodeCheck.allExist,
+        pageFiles: {
+            paths: pageCodeCheck.realPaths,
+            deliveryPaths: deliveryFilePaths,
+            allExist: pageCodeCheck.allExist,
+            metadataPaths: metadataResolvedFiles,
+            metadataFiles: metadataFilesCheck.realPaths,
+            metadataFilesAllExist: metadataFilesCheck.allExist,
+            setMatches: resolvedFilesSetMatches,
+            deliveryDuplicates: pageCodeCheck.duplicates,
+            metadataDuplicates: metadataFilesCheck.duplicates,
+            deliveryInvalidPaths: pageCodeCheck.invalidPaths,
+            metadataInvalidPaths: metadataFilesCheck.invalidPaths
+        },
         explainerFilesComplete,
         explainerDeliveryPath: explainerDelivery?.relativePath || null,
+        explainers: {
+            flow: { exists: Boolean(explainerFlow), path: explainerFlow?.relativePath || null },
+            interaction: { exists: Boolean(explainerBInteraction), path: explainerBInteraction?.relativePath || null },
+            delivery: { exists: Boolean(explainerDelivery), path: explainerDelivery?.relativePath || null }
+        },
+        selfCheck,
         bInteractionLocked,
         interactionStatusesLocked: bInteractionLocked,
+        interactions: interactionCheck,
         unresolvedGapCategories,
         pageStageClosed:
-            Boolean(brd) &&
+            brdSelection.exists &&
+            !brdSelection.ambiguous &&
+            Boolean(slug) &&
+            ledgerCheck.valid &&
             Boolean(pageDelivery) &&
+            adapterProvenance.valid &&
+            userConfirmation.valid &&
             pageCodeCheck.allExist &&
+            metadataFilesCheck.allExist &&
+            resolvedFilesSetMatches &&
             explainerFilesComplete &&
+            selfCheck.allPassed &&
             bInteractionLocked &&
             unresolvedGapCategories.length === 0
     };
@@ -1276,14 +1802,30 @@ function buildGateChecks({ targetStage, profileContext, planContext, validationR
         checks.pageStageClosedForPrd = {
             pass: s2Artifacts.pageStageClosed,
             evidence: {
+                slug: s2Artifacts.slug,
                 brdExists: s2Artifacts.brdExists,
                 brdPath: s2Artifacts.brdPath,
+                brdSelection: s2Artifacts.brdSelection,
+                ledger: s2Artifacts.ledger,
+                ledgerPath: s2Artifacts.ledger.path,
+                ledgerPhase: s2Artifacts.ledger.phase,
+                adapterProvenance: s2Artifacts.adapterProvenance,
+                userConfirmation: s2Artifacts.userConfirmation,
                 pageDeliveryExists: s2Artifacts.pageDeliveryExists,
                 pageDeliveryPath: s2Artifacts.pageDeliveryPath,
+                pageDelivery: s2Artifacts.pageDelivery,
+                pageCodeFiles: s2Artifacts.pageCodeFiles,
                 pageCodeFilesAllExist: s2Artifacts.pageCodeFilesAllExist,
+                pageFiles: s2Artifacts.pageFiles,
                 explainerFilesComplete: s2Artifacts.explainerFilesComplete,
                 explainerDeliveryPath: s2Artifacts.explainerDeliveryPath,
+                explainers: s2Artifacts.explainers,
+                explainerPaths: s2Artifacts.explainers,
+                selfCheck: s2Artifacts.selfCheck,
+                selfCheckResult: s2Artifacts.selfCheck,
                 interactionStatusesLocked: s2Artifacts.interactionStatusesLocked,
+                interactions: s2Artifacts.interactions,
+                interactionLockResult: s2Artifacts.interactions,
                 unresolvedGapCategories: s2Artifacts.unresolvedGapCategories
             }
         };

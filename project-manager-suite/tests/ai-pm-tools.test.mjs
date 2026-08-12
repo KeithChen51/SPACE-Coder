@@ -389,6 +389,144 @@ function createHostFixture({ withRules = true, withProfile = true, withPlan = tr
     return hostRoot;
 }
 
+function createCompleteS2PageFixture({ slug = 'demo' } = {}) {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S2',
+            recommended_stage: 'S2',
+            current_round_deliverable: '页面代码 / 页面交付清单 + 已确认项',
+            largest_uncertainty: '页面环节收口'
+        },
+        planOverrides: {
+            current_stage: 'S2',
+            current_goal: '完成页面环节收口',
+            next_tasks: '进入 PRD 环节'
+        },
+        logContent: '记录 S2 阶段推进与页面环节收口'
+    });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const brdPath = path.join(hostRoot, 'docs', 'brd', `BRD-${slug}-20260812-1200.md`);
+    const previewDir = path.join(hostRoot, 'src', 'frontend', 'page-preview');
+    const ledgerPath = path.join(previewDir, `page-ledger-${slug}.json`);
+    const pageFile = path.join(hostRoot, `${slug}-app`, 'src', 'pages', 'home.vue');
+    const manifestPath = path.join(hostRoot, 'design-system', 'page-delivery.json');
+    const pageDeliveryPath = path.join(previewDir, `page-delivery-${slug}.md`);
+    const flowPath = path.join(previewDir, `explainer-flow-${slug}.md`);
+    const interactionPath = path.join(previewDir, `explainer-b-interaction-${slug}.md`);
+    const explainerDeliveryPath = path.join(previewDir, `explainer-delivery-${slug}.md`);
+
+    writeFile(brdPath, `# BRD ${slug}\n`);
+    writeFile(pageFile, '<template><button>home</button></template>\n');
+    writeFile(manifestPath, JSON.stringify({ projectSlug: slug, status: 'confirmed' }, null, 2));
+    writeJsonFile(ledgerPath, {
+        schemaVersion: '2.0.0',
+        slug,
+        brdFile: path.resolve(brdPath),
+        screenshotAsked: true,
+        phase: 4,
+        loopRound: 0,
+        gapFilesConsumed: []
+    });
+
+    const metadata = {
+        schemaVersion: '2.0.0',
+        adapter: 'page-designer',
+        adapterVersion: '0.11.0',
+        projectSlug: slug,
+        manifestStatus: 'confirmed',
+        adapterSource: path.resolve(manifestPath),
+        ledgerPath: path.resolve(ledgerPath),
+        ledgerPhase: 3,
+        brdPath: path.resolve(brdPath),
+        projectRoot: path.resolve(path.dirname(pageFile), '..', '..'),
+        sourcePath: path.resolve(brdPath),
+        confirmationEvidence: '用户确认浏览器预览后的页面方向',
+        techStackSource: 'docs/tech-stack.md',
+        resolvedFiles: [path.resolve(pageFile)]
+    };
+    const machineMetadata = `<!-- page-delivery-adapter:v0.11;base64:${Buffer.from(JSON.stringify(metadata), 'utf8').toString('base64')} -->`;
+    writeFile(
+        pageDeliveryPath,
+        [
+            `# 页面交付清单 - ${slug}`,
+            '',
+            machineMetadata,
+            '',
+            '> Skill: page-designer',
+            `> Project Slug: ${slug}`,
+            `> Adapter Source: ${path.relative(hostRoot, manifestPath).replaceAll(path.sep, '/')}`,
+            '> Manifest Status: confirmed',
+            '> 页面方向确认: 已确认',
+            '> 确认证据: 用户确认浏览器预览后的页面方向',
+            `- Manifest source: ${path.resolve(brdPath)}`,
+            `- 前端工程目录: ${path.resolve(path.dirname(pageFile), '..', '..')}`,
+            '',
+            '| 页面 | 路由 | 文件路径 | 状态 |',
+            '| --- | --- | --- | --- |',
+            `| 首页 | / | ${path.resolve(pageFile)} | 已确认 |`
+        ].join('\n')
+    );
+    writeFile(flowPath, `# 用户流程 ${slug}\n`);
+    writeFile(
+        interactionPath,
+        ['| id | status |', '| --- | --- |', `| ${slug}.home.button.1 | locked |`].join('\n')
+    );
+    const selfChecks = [
+        '所有产物文件路径真实存在',
+        '交互文件中的路由与 page-delivery 一致',
+        '所有语义条目 status = locked',
+        '差异文件无未解决的 design_gap / logic_conflict',
+        '页面布局和可操作元素已基于运行页面证据描述',
+        'mock 样例、预置数据、占位数据未被直接误判为真实系统功能缺失'
+    ];
+    writeFile(
+        explainerDeliveryPath,
+        [
+            `# Page-Explainer 交付清单 - ${slug}`,
+            '',
+            '## 一致性自查',
+            '',
+            '| # | 检查项 | 结果 |',
+            '| --- | --- | :---: |',
+            ...selfChecks.map((item, index) => `| ${index + 1} | ${item} | ✓ |`)
+        ].join('\n')
+    );
+
+    return {
+        hostRoot,
+        slug,
+        brdPath,
+        previewDir,
+        ledgerPath,
+        pageFile,
+        manifestPath,
+        pageDeliveryPath,
+        flowPath,
+        interactionPath,
+        explainerDeliveryPath,
+        metadata
+    };
+}
+
+function rewritePageDeliveryMetadata(fixture, mutate) {
+    const content = readFile(fixture.pageDeliveryPath);
+    const metadataMatch = content.match(/<!-- page-delivery-adapter:v0\.11;base64:([A-Za-z0-9+/=]+) -->/);
+    assert.ok(metadataMatch, 'fixture must contain page-delivery adapter metadata');
+    const metadata = JSON.parse(Buffer.from(metadataMatch[1], 'base64').toString('utf8'));
+    mutate(metadata);
+    const rewrittenMetadata = `<!-- page-delivery-adapter:v0.11;base64:${Buffer.from(JSON.stringify(metadata), 'utf8').toString('base64')} -->`;
+    writeFile(fixture.pageDeliveryPath, content.replace(metadataMatch[0], rewrittenMetadata));
+}
+
+function escapeMarkdownInlineForTest(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('`', '\\`');
+}
+
 test('validate-global-files resolves authority files on a valid host fixture', () => {
     const hostRoot = createHostFixture();
     generateHostRules({ hostRoot, dryRun: false, force: false });
@@ -1050,37 +1188,8 @@ test('route-check asks ai-project-manager to call project-link-indexer after del
 });
 
 test('route-check prefers docs/brd and src/frontend/page-preview over legacy page directories and root-level artifacts', () => {
-    const hostRoot = createHostFixture({
-        profileOverrides: {
-            current_stage: 'S2',
-            recommended_stage: 'S2',
-            current_round_deliverable: '页面代码 / 页面交付清单 + 待确认项',
-            largest_uncertainty: '页面环节待收口'
-        },
-        planOverrides: {
-            current_stage: 'S2',
-            current_goal: '完成页面环节收口',
-            next_tasks: '进入 PRD 环节'
-        },
-        logContent: '记录 S2 阶段推进与页面环节收口'
-    });
-    generateHostRules({ hostRoot, dryRun: false, force: false });
-
-    writeFile(
-        path.join(hostRoot, 'docs', 'brd', 'BRD-demo-20260408-1000.md'),
-        '# BRD\n\n- 页面方向已确认：是\n'
-    );
-    writeFile(
-        path.join(hostRoot, 'src', 'frontend', 'page-preview', 'page-delivery-demo.md'),
-        '# 页面交付清单\n\n| 页面 | 文件路径 |\n|---|---|\n| 首页 | demo-app/src/pages/home.vue |\n'
-    );
-    writeFile(path.join(hostRoot, 'demo-app', 'src', 'pages', 'home.vue'), '<template>home</template>\n');
-    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-flow-demo.md'), '# flow\n');
-    writeFile(
-        path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-b-interaction-demo.md'),
-        '| id | status |\n|---|---|\n| demo.home.button.1 | locked |\n'
-    );
-    writeFile(path.join(hostRoot, 'src', 'frontend', 'page-preview', 'explainer-delivery-demo.md'), '# delivery\n');
+    const fixture = createCompleteS2PageFixture();
+    const { hostRoot } = fixture;
     writeFile(path.join(hostRoot, '可操作页面', 'page-delivery-demo.md'), '# 旧目录页面交付清单\n');
 
     writeFile(
@@ -1097,8 +1206,598 @@ test('route-check prefers docs/brd and src/frontend/page-preview over legacy pag
     assert.equal(result.canEnter, true);
     assert.equal(result.routeTarget.skill, 'prd-chief');
     assert.equal(result.gateChecks.pageStageClosedForPrd.pass, true);
-    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.brdPath, 'docs/brd/BRD-demo-20260408-1000.md');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.brdPath, 'docs/brd/BRD-demo-20260812-1200.md');
     assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageDeliveryPath, 'src/frontend/page-preview/page-delivery-demo.md');
+    assert.notEqual(result.routeTarget.skill, 'design-consultant');
+    assert.ok(!result.routeTarget.followUpSkills?.includes('design-consultant'));
+});
+
+test('S2 page-chief keeps the route closed when the same-slug ledger is absent', () => {
+    const fixture = createCompleteS2PageFixture();
+    fs.unlinkSync(fixture.ledgerPath);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.pass, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.ledger.exists, false);
+});
+
+test('S2 page-chief rejects a same-slug ledger that has not reached phase 4', () => {
+    const fixture = createCompleteS2PageFixture();
+    const ledger = JSON.parse(readFile(fixture.ledgerPath));
+    ledger.phase = 3;
+    writeJsonFile(fixture.ledgerPath, ledger);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.ledger.phase, 3);
+});
+
+test('S2 page-chief rejects a ledger where screenshotAsked is false', () => {
+    const fixture = createCompleteS2PageFixture();
+    const ledger = JSON.parse(readFile(fixture.ledgerPath));
+    ledger.screenshotAsked = false;
+    writeJsonFile(fixture.ledgerPath, ledger);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.ledger.screenshotAsked, false);
+});
+
+test('S2 page-chief rejects a ledger slug that differs from the preferred BRD and delivery', () => {
+    const fixture = createCompleteS2PageFixture();
+    const ledger = JSON.parse(readFile(fixture.ledgerPath));
+    ledger.slug = 'other';
+    writeJsonFile(fixture.ledgerPath, ledger);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.ledger.slugMatches, false);
+});
+
+test('S2 page-chief rejects delivery without page-delivery adapter provenance', () => {
+    const fixture = createCompleteS2PageFixture();
+    const delivery = readFile(fixture.pageDeliveryPath).replace(/<!-- page-delivery-adapter:[\s\S]*? -->\n?/, '');
+    writeFile(fixture.pageDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects adapter metadata with a non-contract adapter id', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.adapter = 'wrong-adapter';
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.adapter, 'wrong-adapter');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects adapter metadata with a non-contract adapter version', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.adapterVersion = '0.10.0';
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.adapterVersion, '0.10.0');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects delivery metadata with a draft manifest status', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.manifestStatus = 'draft';
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.manifestStatus, 'draft');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects a missing adapter manifest source', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.adapterSource = path.join(fixture.hostRoot, 'design-system', 'missing.json');
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.adapterSourceExists, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects a missing adapter source artifact', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.sourcePath = path.join(fixture.hostRoot, 'docs', 'brd', 'missing-source.md');
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.sourcePathExists, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects metadata sourcePath that disagrees with visible Manifest source', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.sourcePath = path.resolve(fixture.manifestPath);
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.sourcePathExists, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.sourcePathMatchesVisible, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects metadata projectRoot that disagrees with visible project root', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.projectRoot = path.resolve(fixture.hostRoot);
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.projectRootExists, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.projectRootMatchesVisible, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects an adapter source that disagrees with visible delivery source', () => {
+    const fixture = createCompleteS2PageFixture();
+    const content = readFile(fixture.pageDeliveryPath).replace(
+        /> Adapter Source: .*\n/,
+        '> Adapter Source: design-system/other.json\n'
+    );
+    writeFile(fixture.pageDeliveryPath, content);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.adapterSourceMatchesVisible, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects delivery without explicit user confirmation evidence', () => {
+    const fixture = createCompleteS2PageFixture();
+    const delivery = readFile(fixture.pageDeliveryPath).replace(/> 确认证据: .*\n/, '> 确认证据: \n');
+    const metadataMatch = delivery.match(/<!-- page-delivery-adapter:v0\.11;base64:([A-Za-z0-9+/=]+) -->/);
+    assert.ok(metadataMatch);
+    const metadata = JSON.parse(Buffer.from(metadataMatch[1], 'base64').toString('utf8'));
+    metadata.confirmationEvidence = '';
+    const rewrittenMetadata = `<!-- page-delivery-adapter:v0.11;base64:${Buffer.from(JSON.stringify(metadata), 'utf8').toString('base64')} -->`;
+    writeFile(fixture.pageDeliveryPath, delivery.replace(metadataMatch[0], rewrittenMetadata));
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.userConfirmation.valid, false);
+});
+
+test('S2 page-chief rejects confirmation metadata that disagrees with visible evidence', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.confirmationEvidence = 'different confirmation';
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.userConfirmation.evidenceMatchesMetadata, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.userConfirmation.valid, false);
+});
+
+test('S2 page-chief accepts confirmation evidence escaped by the page-delivery adapter', () => {
+    const fixture = createCompleteS2PageFixture();
+    const rawEvidence = '用户确认 & <页面> | `方向` >';
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.confirmationEvidence = rawEvidence;
+    });
+    const escapedEvidence = escapeMarkdownInlineForTest(rawEvidence);
+    const deliveryLines = readFile(fixture.pageDeliveryPath).split('\n');
+    const confirmationLineIndex = deliveryLines.findIndex((line) => line.endsWith(fixture.metadata.confirmationEvidence));
+    assert.notEqual(confirmationLineIndex, -1, 'fixture must contain a confirmation evidence header');
+    const confirmationSeparatorIndex = deliveryLines[confirmationLineIndex].indexOf(':');
+    assert.notEqual(confirmationSeparatorIndex, -1, 'confirmation evidence header must contain a separator');
+    deliveryLines[confirmationLineIndex] = `${deliveryLines[confirmationLineIndex].slice(0, confirmationSeparatorIndex + 1)} ${escapedEvidence}`;
+    const delivery = deliveryLines.join('\n');
+    writeFile(fixture.pageDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'prd-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.userConfirmation.evidenceMatchesMetadata, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.userConfirmation.valid, true);
+});
+
+test('S2 page-chief accepts literal HTML entity text after adapter escaping', () => {
+    const fixture = createCompleteS2PageFixture();
+    const rawEvidence = '用户确认 literal &lt; &amp; marker';
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.confirmationEvidence = rawEvidence;
+    });
+    const escapedEvidence = escapeMarkdownInlineForTest(rawEvidence);
+    const deliveryLines = readFile(fixture.pageDeliveryPath).split('\n');
+    const confirmationLineIndex = deliveryLines.findIndex((line) => line.endsWith(fixture.metadata.confirmationEvidence));
+    assert.notEqual(confirmationLineIndex, -1, 'fixture must contain a confirmation evidence header');
+    const confirmationSeparatorIndex = deliveryLines[confirmationLineIndex].indexOf(':');
+    deliveryLines[confirmationLineIndex] = `${deliveryLines[confirmationLineIndex].slice(0, confirmationSeparatorIndex + 1)} ${escapedEvidence}`;
+    writeFile(fixture.pageDeliveryPath, deliveryLines.join('\n'));
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'prd-chief', JSON.stringify(result.gateChecks.pageStageClosedForPrd.evidence));
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.userConfirmation.evidenceMatchesMetadata, true);
+});
+
+test('S2 page-chief accepts adapter source paths escaped by the page-delivery adapter', () => {
+    const fixture = createCompleteS2PageFixture();
+    const hostileManifestPath = path.join(fixture.hostRoot, 'design-system', 'page-delivery-`&.json');
+    writeFile(hostileManifestPath, JSON.stringify({ projectSlug: fixture.slug, status: 'confirmed' }));
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.adapterSource = path.resolve(hostileManifestPath);
+    });
+    const visibleSource = path.relative(fixture.hostRoot, hostileManifestPath).replaceAll(path.sep, '/');
+    const delivery = readFile(fixture.pageDeliveryPath).replace(
+        /> Adapter Source: .*\n/,
+        `> Adapter Source: ${escapeMarkdownInlineForTest(visibleSource)}\n`
+    );
+    writeFile(fixture.pageDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'prd-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.adapterSourceMatchesVisible, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, true);
+});
+
+test('S2 page-chief rejects resolvedFiles metadata with an extra path', () => {
+    const fixture = createCompleteS2PageFixture();
+    const extraPage = path.join(fixture.hostRoot, `${fixture.slug}-app`, 'src', 'pages', 'extra.vue');
+    writeFile(extraPage, '<template>extra</template>\n');
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.resolvedFiles.push(path.resolve(extraPage));
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.setMatches, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects duplicate resolvedFiles metadata', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.resolvedFiles.push(metadata.resolvedFiles[0]);
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.metadataDuplicates.length, 1);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.setMatches, false);
+});
+
+test('S2 page-chief rejects resolvedFiles that escape the host root', () => {
+    const fixture = createCompleteS2PageFixture();
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.resolvedFiles.push(path.resolve(fixture.hostRoot, '..', 'escape.vue'));
+    });
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.metadataInvalidPaths.length, 1);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.setMatches, false);
+});
+
+test('S2 page-chief rejects resolved page files outside metadata projectRoot', () => {
+    const fixture = createCompleteS2PageFixture();
+    const nonPageFile = path.resolve(fixture.hostRoot, 'project-rules.md');
+    assert.equal(fs.existsSync(nonPageFile), true, 'fixture must contain a host-level non-page file');
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.resolvedFiles = [nonPageFile];
+    });
+    const originalDelivery = readFile(fixture.pageDeliveryPath);
+    const delivery = originalDelivery.replace(path.resolve(fixture.pageFile), nonPageFile);
+    assert.notEqual(delivery, originalDelivery, 'delivery must contain the page path to rewrite');
+    writeFile(fixture.pageDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.allExist, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.setMatches, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.projectRootExists, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.adapterProvenance.valid, false);
+});
+
+test('S2 page-chief rejects a delivery that names a missing page file', () => {
+    const fixture = createCompleteS2PageFixture();
+    fs.unlinkSync(fixture.pageFile);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.allExist, false);
+});
+
+test('S2 page-chief accepts adapter-escaped hostile page paths inside projectRoot', () => {
+    const fixture = createCompleteS2PageFixture();
+    const hostilePagePath = path.join(path.dirname(fixture.pageFile), 'home-&-`special`.vue');
+    writeFile(hostilePagePath, '<template><button>hostile</button></template>\n');
+    rewritePageDeliveryMetadata(fixture, (metadata) => {
+        metadata.resolvedFiles = [path.resolve(hostilePagePath)];
+    });
+    const originalDelivery = readFile(fixture.pageDeliveryPath);
+    const escapedPath = escapeMarkdownInlineForTest(path.resolve(hostilePagePath));
+    const delivery = originalDelivery.replace(path.resolve(fixture.pageFile), escapedPath);
+    assert.notEqual(delivery, originalDelivery, 'fixture must contain the original page path to rewrite');
+    writeFile(fixture.pageDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'prd-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.allExist, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.setMatches, true);
+    assert.deepEqual(result.gateChecks.pageStageClosedForPrd.evidence.pageFiles.deliveryPaths, [path.resolve(hostilePagePath)]);
+});
+
+test('S2 page-chief rejects when one same-slug explainer artifact is missing', () => {
+    const fixture = createCompleteS2PageFixture();
+    fs.unlinkSync(fixture.flowPath);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.explainers.flow.exists, false);
+});
+
+test('S2 page-chief does not mix preferred and legacy same-slug explainer artifacts', () => {
+    const fixture = createCompleteS2PageFixture();
+    fs.unlinkSync(fixture.flowPath);
+    const legacyFlowPath = path.join(fixture.hostRoot, 'page-preview', `explainer-flow-${fixture.slug}.md`);
+    writeFile(legacyFlowPath, `# legacy flow ${fixture.slug}\n`);
+
+    assert.equal(fs.existsSync(fixture.pageDeliveryPath), true, 'preferred page-delivery must exist');
+    assert.equal(fs.existsSync(legacyFlowPath), true, 'legacy same-slug flow must exist');
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.explainers.flow.exists, false);
+});
+
+test('S2 page-chief rejects an open interaction status', () => {
+    const fixture = createCompleteS2PageFixture();
+    writeFile(
+        fixture.interactionPath,
+        '| id | status |\n| --- | --- |\n| demo.home.button.1 | open |\n'
+    );
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.interactions.allLocked, false);
+});
+
+test('S2 page-chief rejects a self-check table with a failed result', () => {
+    const fixture = createCompleteS2PageFixture();
+    const delivery = readFile(fixture.explainerDeliveryPath).replace('| 6 |', '| 6 |').replace(/\| ✓ \|\s*$/, '| ✗ |');
+    writeFile(fixture.explainerDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.selfCheck.allPassed, false);
+});
+
+test('S2 page-chief rejects a self-check table with fewer than six rows', () => {
+    const fixture = createCompleteS2PageFixture();
+    const original = readFile(fixture.explainerDeliveryPath);
+    const delivery = original.replace(/\| 6 \|[^\n]*\n?/, '');
+    assert.notEqual(delivery, original, 'fixture must contain the sixth self-check row');
+    writeFile(fixture.explainerDeliveryPath, delivery);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.selfCheck.tableFound, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.selfCheck.rowCount, 5);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.selfCheck.allPassed, false);
+});
+
+test('S2 page-chief ignores a decoy self-check table before the consistency heading', () => {
+    const fixture = createCompleteS2PageFixture();
+    const original = readFile(fixture.explainerDeliveryPath);
+    const decoy = [
+        '| # | 检查项 | 结果 |',
+        '| --- | --- | :---: |',
+        ...Array.from({ length: 6 }, (_, index) => `| ${index + 1} | decoy | ✓ |`),
+        '',
+        '## 一致性自查',
+        '',
+        '| # | 检查项 | 结果 |',
+        '| --- | --- | :---: |',
+        ...Array.from({ length: 6 }, (_, index) => `| ${index + 1} | real | ${index === 5 ? '✗' : '✓'} |`),
+        ''
+    ].join('\n');
+    writeFile(fixture.explainerDeliveryPath, `${original.split('## 一致性自查')[0]}${decoy}`);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.selfCheck.tableFound, true);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.selfCheck.allPassed, false);
+});
+
+test('S2 page-chief rejects an unresolved same-slug design gap', () => {
+    const fixture = createCompleteS2PageFixture();
+    writeFile(
+        path.join(fixture.previewDir, 'explainer-b-gap-demo.md'),
+        '# 页面交互差异\n\n### GAP-001: missing action\n\n- **分类**: `design_gap`\n- **解决记录**: none\n'
+    );
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.deepEqual(result.gateChecks.pageStageClosedForPrd.evidence.unresolvedGapCategories, ['design_gap']);
+});
+
+test('S2 page-chief keeps design gaps blocking when only the resolution note says resolved', () => {
+    const fixture = createCompleteS2PageFixture();
+    writeFile(
+        path.join(fixture.previewDir, 'explainer-b-gap-demo.md'),
+        [
+            '# 页面交互差异',
+            '',
+            '### GAP-001: still missing action',
+            '',
+            '- **分类**: `design_gap`',
+            '- **解决记录**: resolved in a future loop',
+            '',
+            '### GAP-002: closed item',
+            '',
+            '- **分类**: `resolved`',
+            '- **解决记录**: resolved in loop #1'
+        ].join('\n')
+    );
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.deepEqual(result.gateChecks.pageStageClosedForPrd.evidence.unresolvedGapCategories, ['design_gap']);
+});
+
+test('S2 page-chief rejects an unresolved same-slug logic conflict', () => {
+    const fixture = createCompleteS2PageFixture();
+    const category = String.fromCodePoint(0x5206, 0x7c7b);
+    const resolution = String.fromCodePoint(0x89e3, 0x51b3, 0x8bb0, 0x5f55);
+    const gapContent = [
+        '# logic conflict',
+        '',
+        '### GAP-001: route conflict remains',
+        '',
+        `- **${category}**: \`logic_conflict\``,
+        `- **${resolution}**: none`
+    ].join(String.fromCharCode(10));
+    const gapPath = path.join(fixture.previewDir, `explainer-b-gap-${fixture.slug}.md`);
+    writeFile(gapPath, gapContent);
+
+    assert.ok(gapContent.includes(`**${category}**: \`logic_conflict\``), 'gap must contain logic_conflict category');
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.deepEqual(result.gateChecks.pageStageClosedForPrd.evidence.unresolvedGapCategories, ['logic_conflict']);
+});
+
+test('S2 page-chief rejects a ledger whose brdFile points to another real host BRD', () => {
+    const fixture = createCompleteS2PageFixture();
+    const otherBrdPath = path.join(fixture.hostRoot, 'docs', 'archive', `BRD-other-${fixture.slug}.md`);
+    writeFile(otherBrdPath, '# another real BRD\n');
+    const ledger = JSON.parse(readFile(fixture.ledgerPath));
+    ledger.brdFile = path.resolve(otherBrdPath);
+    writeJsonFile(fixture.ledgerPath, ledger);
+
+    assert.equal(fs.existsSync(otherBrdPath), true, 'mismatched BRD target must be a real host file');
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.ledger.brdMatches, false);
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.ledger.valid, false);
+});
+
+test('S2 complete preferred page handoff ignores stale same-slug legacy gaps', () => {
+    const fixture = createCompleteS2PageFixture();
+    const legacyGapPath = path.join(fixture.hostRoot, 'page-preview', `explainer-b-gap-${fixture.slug}.md`);
+    const staleLegacyGap = [
+        '# legacy gap',
+        '',
+        '### GAP-001: stale legacy item',
+        '',
+        `- **${String.fromCodePoint(0x5206, 0x7c7b)}**: \`design_gap\``,
+        `- **${String.fromCodePoint(0x89e3, 0x51b3, 0x8bb0, 0x5f55)}**: none`
+    ].join(String.fromCharCode(10));
+    writeFile(legacyGapPath, staleLegacyGap);
+
+    assert.equal(fs.existsSync(fixture.pageDeliveryPath), true, 'preferred page-delivery must exist');
+    assert.equal(fs.existsSync(legacyGapPath), true, 'legacy stale gap must exist');
+    assert.ok(
+        readFile(legacyGapPath).includes(`**${String.fromCodePoint(0x5206, 0x7c7b)}**: \`design_gap\``),
+        'legacy gap must contain a parser-visible design_gap category'
+    );
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'prd-chief');
+    assert.deepEqual(result.gateChecks.pageStageClosedForPrd.evidence.unresolvedGapCategories, []);
+});
+
+test('S2 page-chief rejects mixed latest timestamps from two BRD slugs', () => {
+    const fixture = createCompleteS2PageFixture();
+    const otherBrd = path.join(fixture.hostRoot, 'docs', 'brd', 'BRD-other-20260813-1200.md');
+    writeFile(otherBrd, '# BRD other\n');
+    const latest = new Date(Date.now() + 60_000);
+    fs.utimesSync(otherBrd, latest, latest);
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.brdSelection.ambiguous, true);
+});
+
+test('S2 page-chief does not combine preferred and legacy directories with different slugs', () => {
+    const fixture = createCompleteS2PageFixture();
+    for (const artifactPath of [fixture.pageDeliveryPath, fixture.flowPath, fixture.interactionPath, fixture.explainerDeliveryPath]) {
+        fs.unlinkSync(artifactPath);
+    }
+
+    const legacyDir = path.join(fixture.hostRoot, 'page-preview');
+    writeFile(
+        path.join(legacyDir, 'page-delivery-other.md'),
+        `# legacy\n\n| 页面 | 文件路径 |\n| --- | --- |\n| 首页 | ${path.resolve(fixture.pageFile)} |\n`
+    );
+    writeFile(path.join(legacyDir, 'explainer-flow-other.md'), '# flow\n');
+    writeFile(path.join(legacyDir, 'explainer-b-interaction-other.md'), '| id | status |\n| --- | --- |\n| x | locked |\n');
+    writeFile(path.join(legacyDir, 'explainer-delivery-other.md'), '# delivery\n');
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'page-chief');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.slug, 'demo');
+    assert.equal(result.gateChecks.pageStageClosedForPrd.evidence.pageDelivery.path, null);
+});
+
+test('S2 complete same-slug page handoff routes to prd-chief without design-consultant', () => {
+    const fixture = createCompleteS2PageFixture();
+
+    const result = routeCheck({ hostRoot: fixture.hostRoot, targetStage: 'S2' });
+
+    assert.equal(result.routeTarget.skill, 'prd-chief');
+    assert.notEqual(result.routeTarget.skill, 'design-consultant');
+    assert.ok(!result.routeTarget.followUpSkills?.includes('design-consultant'));
+    assert.equal(result.gateChecks.pageStageClosedForPrd.pass, true);
 });
 
 test('route-check blocks S2 page work when BRD authority is missing', () => {

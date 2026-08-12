@@ -16,7 +16,7 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 
 **你可以做的事**：读取产物文件内容，基于内容做合格性判断（如检查语义条目是否全部 locked、gap 文件是否有未解决条目）。
 
-**你不做的事**：不画页面、不写交互语义、不产出任何文件、不修改任何子 skill 的产物、不做任何子 skill 的具体工作。子 skill 不感知你的存在——你不向子 skill 传递指令或参数。子 skill 依然直接和用户交互。
+**你不做的事**：不画页面、不写交互语义、不产出任何文件、不生成或修复 page-delivery adapter、不修改任何子 skill 的产物、不做任何子 skill 的具体工作。子 skill 不感知你的存在——你不向子 skill 传递指令或参数。子 skill 依然直接和用户交互。
 
 ## 2) 硬性规则
 
@@ -28,6 +28,7 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 | H4 | 回环次数上限按 `page-ledger-<slug>.json` 的 `loopRound` 判断，达到 3 轮后每次回环都需向用户升级 | 防止无限循环，同时保持事实计数不可回退 |
 | H5 | 不向子 skill 传递任何指令或参数，子 skill 按自身逻辑独立运行 | 子 skill 不感知调度层存在 |
 | H6 | 只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成，不依赖子 skill 的聊天输出或状态标记 | 判断依据是文件事实，不是对话状态 |
+| H7 | page-chief 只读 page-delivery adapter 的机器记录和可见确认，不生成、重跑或修复 adapter 交付 | 保持页面生产与阶段裁决职责分离 |
 
 ## 3) 上游输入
 
@@ -48,13 +49,14 @@ page-chief 不产出任何文件。标记 DONE 前必须确认以下文件存在
 
 | 来源 | 检查文件 | 合格条件 |
 |------|---------|---------|
-| page-designer | `page-ledger-<slug>.json` | phase 达到已交付（4） |
-| page-designer | `page-delivery-<slug>.md` | 存在 |
-| page-designer | delivery 中列出的页面代码文件（位于项目根级工程目录） | 全部存在 |
+| page-designer | `page-ledger-<slug>.json` | 与首选 BRD 的 slug / `brdFile` 一致，`phase = 4` 且 `screenshotAsked = true` |
+| page-designer | `page-delivery-<slug>.md` | 存在同 slug 的 `page-delivery-adapter:v0.11` 机器记录，adapter provenance 有效，`Manifest Status: confirmed` |
+| page-designer | page-delivery 可见确认 | `页面方向确认: 已确认` 且 `确认证据` 与机器记录中的 `confirmationEvidence` 均非空 |
+| page-designer | delivery 中列出的页面代码文件（位于项目根级工程目录） | `文件路径` 列解析出的真实文件全部存在 |
 | page-explainer | `explainer-flow-<slug>.md` | 存在 |
 | page-explainer | `explainer-b-interaction-<slug>.md` | 存在，所有语义条目 status = locked（以各模块「机读表（下游消费）」中的 status 列为权威判定源） |
 | page-explainer | `explainer-b-gap-<slug>.md`（若存在） | 无 design_gap / logic_conflict 未解决条目 |
-| page-explainer | `explainer-delivery-<slug>.md` | 存在，一致性自查全部 ✓ |
+| page-explainer | `explainer-delivery-<slug>.md` | 存在，`检查项` / `结果` 一致性自查表恰好六行且每行结果为 ✓ |
 
 ## 5) 状态机
 
@@ -124,13 +126,14 @@ START
    - 若返回 `{ exists: false }`：说明 page-designer 尚未启动，继续指示用户执行 page-designer
    - 若返回 `{ exists: true }`：读取 `phase`、`loopRound`
    - 若命令报错退出（退出码非 0，stderr 返回 JSON error，如同一目录内发现多份台账 `multiple page ledgers found in the same directory`）：向用户展示错误信息并提示先清理冲突文件，不进入下一步。注意：新旧目录并存台账只会产生 stderr notice 提示（脚本自动用新目录），不算报错
-   - `src/frontend/page-preview/` 中的 `page-delivery-<slug>.md` 是否存在（仅旧项目尚未迁移时，才回退检查根级 `page-preview/`、`可操作页面/` 或根目录同名文件）
-   - delivery 中列出的页面代码文件是否均存在
+   - 从首选 BRD 文件名推导唯一 `<slug>`，只读取同 slug 的 `page-ledger-<slug>.json`、`page-delivery-<slug>.md` 和 explainer 产物（仅旧项目尚未迁移时，才按目录优先级回退）
+   - `page-delivery-<slug>.md` 是否包含 `<!-- page-delivery-adapter:v0.11;base64:<payload> -->`，并校验 adapter provenance、manifest confirmed、页面方向确认与非空确认证据；page-chief 只读这些证据，不能生成或修复 adapter
+   - delivery 中 `文件路径` 列出的页面代码文件是否均为真实存在文件，且机器记录的 `resolvedFiles` 非空
 3. 判定规则：
    - 台账不存在 → page-designer 尚未启动，不进入下一步
-   - 台账存在但 phase 未到已交付（4）→ page-designer 尚未完成，不进入下一步
-   - 台账 phase 已交付，但 delivery 或页面代码文件缺失 → 产物不完整，不进入下一步
-   - 台账 phase 已交付，且 delivery 和页面代码文件齐全 → 进入 Stage 3
+   - 台账不存在、slug / BRD 不一致、`screenshotAsked` 不是 `true` 或 phase 未到已交付（4）→ page-designer 尚未完成，不进入下一步
+   - adapter provenance、确认、真实页面文件、explainer 文件集、interaction locked 或六行全 ✓ 自查任一失败 → 产物不完整，不进入下一步
+   - 同 slug 的台账 phase=4、adapter / 确认 / 页面文件 / explainer 证据全部通过，且 gap 中无未解决 `design_gap` / `logic_conflict` → 进入 Stage 4
 
 ### Stage 3: page-explainer
 
@@ -143,7 +146,7 @@ START
 4. 全部存在后，逐文件检查：
    - interaction 文件中的语义条目 status 是否全部为 `locked`。同一条目的 status 在卡片行和「机读表（下游消费）」里各写一次，**以机读表中的 status 列为权威判定源**；两处不一致时按机读表判定，并提示 page-explainer 修正卡片行
    - 是否存在 gap 文件（`explainer-b-gap-<slug>.md`）
-   - `explainer-delivery-<slug>.md` 一致性自查是否全部 ✓
+   - `explainer-delivery-<slug>.md` 是否存在 `检查项` / `结果` 表，且恰好六行、每一行结果都为 ✓；少于六行或任一 ✗ 均不得收口
 5. 判断结果：
    - 全部 locked + 无 gap 文件（或 gap 中无 `design_gap` / `logic_conflict`）→ 进入 Stage 4
    - 有未解决的 `design_gap` / `logic_conflict` → 进入 Stage 3a
