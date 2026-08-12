@@ -110,7 +110,22 @@ BRD + tech stack
 
 评测证据、source tests、维护产物和 planning workspace 均遵循 `source-only` 政策：评测证据只保留在 design-consultant source，不进入本套件导入的 `skills/design-consultant/` package；导入包也不包含 eval、review、benchmark 或 grading 产物。
 
-当前集成范围仅是 S2 接入。S0、S0.5、S1 以及 S4-S6 的 companion 接口不在本次实现，待 S2 稳定后作为后续套件工作；它们不构成新的路由目标或第二个调度器。
+S2 页面接入之外，套件还通过 `companionActions` 按需加载设计顾问的非 S2 子能力；这些动作不构成新的路由目标或第二个调度器。评测证据、source tests、维护产物和 planning workspace 仍遵循 `source-only` 政策，不进入导入的 `skills/design-consultant/` package。
+
+### 非 S2 设计顾问伴随接入
+
+`ai-project-manager` 先完成阶段判断和 UI/设计适用性判断，再按 `companionActions` 的稳定顺序执行所有 `required: true` 设计动作，最后调用正式阶段 owner。设计结果只是输入，不能改写阶段 owner、正式产物或状态回写；`project-link-indexer` 与设计顾问动作可以在同一轮共存。
+
+| 阶段 | trigger / capability | consumer | mode | 适用边界 |
+|---|---|---|---|---|
+| S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only` | 启动最小字段完成且有页面/UI 意图 |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `dry-run` | 有既有前端或设计系统证据；只可 `extract --dry-run` |
+| S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only` | 有项目 `design-system/` 证据 |
+| S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only` | 有项目 `design-system/` 证据且当前任务是 UI/前端任务 |
+| S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only` | 有 `product-commitments.json` |
+| S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only` | 同时有 commitments 与 `product-acceptance.config.mjs` |
+
+S0/S1/S3 只读；S0.5 不执行 adopt/migrate；S4 不写、删除或更新 baseline；S5 commitments 不是第二个测试 Oracle；S6 不替代可见浏览器执行、runner 报告、`startCommand` 或 baseline 更新。后端/非 UI 任务和 S7 不路由设计顾问。
 
 ---
 
@@ -418,7 +433,7 @@ ledger 0
 
 adapter 只消费 confirmed manifest、phase 3 台账、匹配 BRD slug、`screenshotAsked: true` 和非空确认证据；它不执行 `preview.startCommand`，不写台账或全局套包状态，不调用 `page-chief`，也不把 draft 变成 confirmed。legacy delivery 中的机器记录使用 `page-delivery-adapter:v0.11` Base64 注释，页面路径来自上游校验器的 `resolvedFiles`。
 
-新项目不再以 `MASTER.md` 作为设计权威；旧项目只有在尚未迁移时才可把 `design-system/<slug>/MASTER.md` 当作 fallback 输入。评测证据与 source tests 仅存在于 design-consultant source，导入套件的 package 不包含这些评测产物。当前只实现 S2 接入，S0 / S0.5 / S1 / S4-S6 companion 接口留待后续。
+新项目不再以 `MASTER.md` 作为设计权威；旧项目只有在尚未迁移时才可把 `design-system/<slug>/MASTER.md` 当作 fallback 输入。评测证据与 source tests 仅存在于 design-consultant source，导入套件的 package 不包含这些评测产物。非 S2 companion 接口按上方矩阵生效，仍不改变现有阶段 owner、正式产物或 S2 页面门禁。
 
 ---
 

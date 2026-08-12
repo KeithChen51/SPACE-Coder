@@ -230,7 +230,9 @@ BRD + tech stack
 
 新项目的 canonical `design-system/`（`DESIGN.md`、`tokens/`、`components/manifest.json`、`system.config.json`、`page-delivery.json`）是项目设计事实源。旧项目的 `design-system/<slug>/MASTER.md` 仅作为 legacy fallback 输入读取，不能与 canonical system 并列维护。通用 manifest 必须在真实页面、HTTP(S) 预览/浏览器证据和用户明确确认后才从 `draft` 变为 `confirmed`；S2 adapter 再将它确定性转换为下游消费的 legacy `src/frontend/page-preview/page-delivery-<slug>.md`。adapter 只记录 `preview.startCommand`，不执行命令、不写台账或全局套包状态、不调用 `page-chief`。
 
-评测证据、source tests、维护产物和 planning workspace 遵循 `source-only` 政策：评测证据只在 design-consultant source，不在导入的 `skills/design-consultant/` package。当前仅实现 S2 接入；S0、S0.5、S1、S4-S6 companion 接口是 S2 稳定后的后续套件工作。
+评测证据、source tests、维护产物和 planning workspace 遵循 `source-only` 政策：评测证据只在 design-consultant source，不在导入的 `skills/design-consultant/` package。除 S2 内部接入外，套件现通过 `companionActions` 按需加载 S0/S1 的设计决策、S0.5 的既有系统 dry-run 审计、S3 的设计约束、S4 的 UI 实现检查，以及 S5/S6 的 UI 验收输入与证据；这些动作只向原阶段 owner 提供非权威输入，不改变阶段路由或正式产物。
+
+非 S2 companion 只在对应 UI/设计证据存在时触发：后端/非 UI 任务和 S7 不加载设计顾问。S0.5 只允许 `manage-visual-system extract --dry-run`，S4 只检查不写 baseline，S5 不建立第二个测试 Oracle，S6 不替代可见浏览器执行和 runner 报告。
 
 ## 适用场景
 
@@ -427,4 +429,4 @@ project-manager-suite/
 
 ## 后续产品升级路径
 
-项目评测能力仍属于 design-consultant source 的后续演进；评测证据不会随 v0.11 导入包进入套件。当前集成只覆盖 S2 页面接入，S0 / S0.5 / S1 / S4-S6 companion 接口仍待 S2 稳定后规划，不改变现有阶段 owner 或路由边界。
+项目评测能力仍属于 design-consultant source 的后续演进；评测证据不会随 v0.11 导入包进入套件。当前集成覆盖 S2 页面接入及上述非 S2 companion 子能力，不改变现有阶段 owner、正式产物或路由边界。

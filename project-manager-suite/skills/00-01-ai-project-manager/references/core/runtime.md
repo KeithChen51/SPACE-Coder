@@ -445,6 +445,21 @@ Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`. Companion 
 
 Existing `project-link-indexer` companion rules remain in force; this contract adds no second route target or action channel.
 
+### Design-consultant companion matrix
+
+`design-consultant` is loaded only as a required companion action when the matching UI/design evidence is present. It never becomes a stage route target, follow-up target, dispatcher, formal artifact owner, or status writer.
+
+| Stage | Trigger / capability | Consumer | Mode and applicability |
+|---|---|---|---|
+| S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only`; only after startup minimum is complete and page/UI intent is present |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `dry-run`; only with existing frontend or design-system evidence; may use `manage-visual-system extract --dry-run` only |
+| S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only`; requires project `design-system/` evidence |
+| S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only`; requires project `design-system/` evidence and current UI/frontend task text |
+| S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only`; requires the design commitment input |
+| S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only`; requires both the design commitment and UI acceptance configuration |
+
+The S0/S1/S3 actions are read-only. S0.5 does not adopt or migrate; S4 does not write, prune, or update a baseline; S5 commitments are context rather than a second test oracle; S6 supplies evidence only and does not replace visible-browser execution, the runner-owned report, `startCommand`, or baseline updates. Backend/non-UI tasks and S7 do not route these actions.
+
 ## 4. 协作模式判断
 
 当前产品定位只聚焦 **solo 模式**。
