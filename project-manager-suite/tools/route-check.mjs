@@ -50,6 +50,8 @@ const STAGE_ORDER = [
     STAGE_IDS.S7
 ];
 
+const STATIC_FRONTEND_ENTRYPOINTS = new Set(['index.html', 'public/index.html', 'static/index.html']);
+
 function printUsage() {
     console.log(
         `Usage: node <suite-path>/tools/route-check.mjs <host-project-root> [--target-stage ${STAGE_ORDER.join('|')}] [--json]`
@@ -196,8 +198,20 @@ function normalizePathForMatch(hostRoot, targetPath) {
 }
 
 function shouldIgnoreDir(relativeDir) {
+    const segments = relativeDir.split('/').filter(Boolean);
     return validationPolicy.scan.ignoredDirectories.some((ignored) => {
-        return relativeDir === ignored || relativeDir.startsWith(`${ignored}/`);
+        const ignoredSegments = ignored.split('/').filter(Boolean);
+        if (ignoredSegments.length === 0 || ignoredSegments.length > segments.length) {
+            return false;
+        }
+
+        for (let index = 0; index <= segments.length - ignoredSegments.length; index += 1) {
+            if (ignoredSegments.every((segment, offset) => segments[index + offset] === segment)) {
+                return true;
+            }
+        }
+
+        return false;
     });
 }
 
@@ -1381,6 +1395,15 @@ function hasExistingCodebaseSignal(hostRoot) {
         return true;
     }
 
+    if (
+        [...STATIC_FRONTEND_ENTRYPOINTS].some((relativePath) => {
+            const entrypointPath = path.join(hostRoot, relativePath);
+            return fs.existsSync(entrypointPath) && fs.statSync(entrypointPath).isFile();
+        })
+    ) {
+        return true;
+    }
+
     return ['src', 'app', 'frontend', 'backend', 'server', 'web'].some((relativeDir) =>
         directoryHasCodeFiles(hostRoot, relativeDir)
     );
@@ -1609,25 +1632,27 @@ function isMissingValue(value) {
 
 function hasPageTaskSignal(profileContext, planContext) {
     const deliverable = profileContext.fields.current_round_deliverable || '';
-    const pageFields = [
-        profileContext.fields.coverage_scope,
+    const pageSpecificFields = [
         profileContext.fields.page_primary_user,
         profileContext.fields.page_primary_purpose,
         profileContext.fields.page_positioning_tag
     ];
 
     const textPool = [
+        ...Object.values(profileContext.fields),
         deliverable,
         ...planContext.currentGoal,
         ...planContext.nextTasks,
         ...planContext.inProgressTasks
     ].join(' ');
 
-    if (pageFields.some((value) => !isMissingValue(value))) {
+    if (pageSpecificFields.some((value) => !isMissingValue(value))) {
         return true;
     }
 
-    return /页面|原型|前端|界面|\bUI\b|\bUX\b/.test(textPool);
+    return /页面|原型|前端|界面|网站|落地页|用户界面|\b(?:frontend|front-end|page|screen|website|landing\s+page|UI|UX)\b/i.test(
+        textPool
+    );
 }
 
 function hasExistingFrontendCodeSignal(hostRoot) {
@@ -1644,6 +1669,7 @@ function hasExistingFrontendCodeSignal(hostRoot) {
     return frontendFiles.some((filePath) => {
         const relativePath = normalizePathForMatch(hostRoot, filePath);
         return (
+            STATIC_FRONTEND_ENTRYPOINTS.has(relativePath.toLowerCase()) ||
             /(^|\/)(frontend|web|pages|components|views|app)\//i.test(relativePath) ||
             /^src\/[^/]+\.(vue|tsx|jsx|svelte|astro|html|css)$/i.test(relativePath)
         );
@@ -1674,7 +1700,7 @@ function hasCurrentUiWorkSignal(planContext) {
         .filter(Boolean)
         .join(' ');
 
-    return /(页面|前端|界面|\bUI\b|\bUX\b|frontend|front-end|component|design\s*(system|token)|\bCSS\b|Vue|React|Svelte)/i.test(
+    return /(页面|前端|界面|\bUI\b|\bUX\b|frontend|front-end|design\s*(system|token)|\bCSS\b|Vue|Svelte|\bReact\s+UI\s+component\b)/i.test(
         textPool
     );
 }
@@ -2285,9 +2311,9 @@ const DESIGN_CONSULTANT_ACTIONS = {
     audit_existing_visual_system: {
         capability: 'existing-system-audit',
         consumer: 'project-baseline-auditor',
-        mode: 'dry-run',
+        mode: 'read-only',
         references: ['references/existing-system-adoption.md'],
-        operation: 'manage-visual-system extract --dry-run'
+        operation: null
     },
     plan_design_constraints: {
         capability: 'planning-constraints',
@@ -2395,7 +2421,7 @@ function resolveDesignConsultantActions({ targetStage, gateChecks, profileContex
 }
 
 function resolveCompanionActions({ targetStage, gateChecks, validationResult, profileContext, planContext, hostRoot }) {
-    if (!validationResult.authority[FILE_ROLE_IDS.PROFILE]) {
+    if (!validationResult.authority[FILE_ROLE_IDS.PROFILE] && targetStage !== STAGE_IDS.S0_5) {
         return [];
     }
 

@@ -114,18 +114,18 @@ S2 页面接入之外，套件还通过 `companionActions` 按需加载设计顾
 
 ### 非 S2 设计顾问伴随接入
 
-`ai-project-manager` 先完成阶段判断和 UI/设计适用性判断，再按 `companionActions` 的稳定顺序执行所有 `required: true` 设计动作，最后调用正式阶段 owner。设计结果只是输入，不能改写阶段 owner、正式产物或状态回写；`project-link-indexer` 与设计顾问动作可以在同一轮共存。
+`ai-project-manager` 先完成阶段判断和 UI/设计适用性判断，再按 `companionActions` 的稳定顺序执行所有 `required: true` 设计动作，最后调用正式阶段 owner。设计结果只是输入，不能改写阶段 owner、正式产物或状态回写；`project-link-indexer` 与设计顾问动作可以在同一轮共存，且保持 indexer-first。
 
 | 阶段 | trigger / capability | consumer | mode | 适用边界 |
 |---|---|---|---|---|
 | S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only` | 启动最小字段完成且有页面/UI 意图 |
-| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `dry-run` | 有既有前端或设计系统证据；只可 `extract --dry-run` |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `read-only` | 有既有前端或设计系统证据；读取声明的 references，用宿主正常只读文件/搜索工具形成事实报告和 `preserve` / `augment` / `migrate` 建议 |
 | S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only` | 有项目 `design-system/` 证据 |
 | S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only` | 有项目 `design-system/` 证据且当前任务是 UI/前端任务 |
 | S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only` | 有 `product-commitments.json` |
 | S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only` | 同时有 commitments 与 `product-acceptance.config.mjs` |
 
-S0/S1/S3 只读；S0.5 不执行 adopt/migrate；S4 不写、删除或更新 baseline；S5 commitments 不是第二个测试 Oracle；S6 不替代可见浏览器执行、runner 报告、`startCommand` 或 baseline 更新。后端/非 UI 任务和 S7 不路由设计顾问。
+S0/S1/S0.5/S3 的设计顾问动作只读；S0.5 不初始化或写入 `design-system/`，不执行 `extract`、adopt、migrate、baseline update、`startCommand`、write 或 prune；S4 不写、删除或更新 baseline；S5 commitments 不是第二个测试 Oracle；S6 不替代可见浏览器执行、runner 报告、`startCommand` 或 baseline 更新。与设计顾问共存时，`project-link-indexer` 仍可自行 build / refresh / write 索引。后端/非 UI 任务和 S7 不路由设计顾问。
 
 ---
 

@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
+const REPO_ROOT = path.resolve(SUITE_ROOT, '..');
 const PACKAGE_ROOT = path.join(SUITE_ROOT, 'skills', 'design-consultant');
 const LOCK_PATH = path.join(
     SUITE_ROOT,
@@ -141,4 +143,24 @@ test('v0.11 suite package is locked to the finalized upstream release', () => {
             `${family.id} must declare a non-empty adapter boundary`
         );
     }
+});
+
+test('Git attributes waive whitespace only for the locked design-consultant package', () => {
+    const output = execFileSync(
+        'git',
+        [
+            'check-attr',
+            'whitespace',
+            '--',
+            'project-manager-suite/skills/design-consultant/SKILL.md',
+            'project-manager-suite/tools/route-check.mjs'
+        ],
+        { cwd: REPO_ROOT, encoding: 'utf8' }
+    );
+
+    assert.match(
+        output,
+        /project-manager-suite\/skills\/design-consultant\/SKILL\.md: whitespace: unset/
+    );
+    assert.match(output, /project-manager-suite\/tools\/route-check\.mjs: whitespace: unspecified/);
 });

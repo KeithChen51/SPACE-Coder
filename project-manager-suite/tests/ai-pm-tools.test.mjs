@@ -675,6 +675,56 @@ test('route-check sends code-only existing host to baseline auditor before start
     assert.match(result.nextAction, /project-baseline-auditor/);
 });
 
+test('default route-check infers S0.5 from accepted static frontend entrypoints without a profile', () => {
+    for (const relativePath of ['index.html', 'public/index.html', 'static/index.html']) {
+        const hostRoot = makeTempDir('pm-suite-static-entrypoint-no-profile-');
+        writeFile(path.join(hostRoot, relativePath), '<!doctype html>\n');
+
+        const result = routeCheck({ hostRoot });
+
+        assert.equal(result.recommendedStage, 'S0.5');
+        assert.equal(result.targetStage, 'S0.5');
+        assert.equal(result.canEnter, true);
+        assert.equal(result.routeTarget?.skill, 'project-baseline-auditor');
+        const designActions = result.companionActions.filter((item) => item.skill === 'design-consultant');
+        assert.equal(designActions.length, 1);
+        assertDesignConsultantAction(
+            designActions[0],
+            {
+                trigger: 'audit_existing_visual_system',
+                capability: 'existing-system-audit',
+                consumer: 'project-baseline-auditor',
+                mode: 'read-only'
+            }
+        );
+    }
+});
+
+test('default route-check does not infer S0.5 from ignored or arbitrary nested HTML entrypoints', () => {
+    for (const relativePath of [
+        'node_modules/index.html',
+        '.next/index.html',
+        'dist/index.html',
+        'build/index.html',
+        'docs/index.html'
+    ]) {
+        const hostRoot = makeTempDir('pm-suite-non-entrypoint-html-no-profile-');
+        writeFile(path.join(hostRoot, relativePath), '<!doctype html>\n');
+
+        const result = routeCheck({ hostRoot });
+
+        assert.equal(result.recommendedStage, 'S0');
+        assert.equal(result.targetStage, 'S0');
+        assert.equal(result.canEnter, false);
+        assert.equal(result.routeTarget, null);
+        assert.equal(
+            result.companionActions.some((item) => item.skill === 'design-consultant'),
+            false,
+            `non-entrypoint HTML must not trigger S0.5 inference: ${relativePath}`
+        );
+    }
+});
+
 test('collect-baseline-gaps creates project profile draft and maintenance document gap list from existing code', () => {
     const hostRoot = makeTempDir('pm-suite-baseline-code-only-');
     writeJsonFile(path.join(hostRoot, 'package.json'), {
@@ -1275,12 +1325,264 @@ test('design-consultant companion audits an existing visual system in S0.5 witho
         trigger: 'audit_existing_visual_system',
         capability: 'existing-system-audit',
         consumer: 'project-baseline-auditor',
-        mode: 'dry-run',
-        operation: 'manage-visual-system extract --dry-run'
+        mode: 'read-only'
     });
     assert.match(action.references.join('\n'), /existing-system-adoption\.md/);
-    assert.equal(action.operation.includes('adopt'), false);
-    assert.equal(action.operation.includes('migrate'), false);
+    assert.equal(action.operation, null);
+});
+
+test('S0.5 emits the required design audit for code-only hosts without a profile', () => {
+    const hostRoot = makeTempDir('pm-suite-code-only-s05-no-profile-');
+    writeFile(path.join(hostRoot, 'index.html'), '<!doctype html>\n');
+
+    const result = routeCheck({ hostRoot, targetStage: 'S0.5' });
+
+    assert.equal(result.canEnter, true);
+    assert.equal(result.routeTarget.skill, 'project-baseline-auditor');
+    assertDesignConsultantAction(
+        result.companionActions.find((item) => item.skill === 'design-consultant'),
+        {
+            trigger: 'audit_existing_visual_system',
+            capability: 'existing-system-audit',
+            consumer: 'project-baseline-auditor',
+            mode: 'read-only'
+        }
+    );
+});
+
+test('S0.5 ignores nested dependency and build directory frontend-shaped files', () => {
+    for (const relativePath of [
+        'packages/backend/node_modules/ui/components/Button.tsx',
+        'packages/backend/.next/static/components/Button.tsx',
+        'packages/backend/dist/ui/components/Button.tsx',
+        'packages/backend/build/ui/components/Button.tsx'
+    ]) {
+        const hostRoot = createHostFixture({
+            profileOverrides: {
+                current_stage: 'S0.5',
+                recommended_stage: 'S0.5',
+                coverage_scope: '',
+                page_primary_user: '',
+                page_primary_purpose: '',
+                page_positioning_tag: ''
+            },
+            planOverrides: {
+                current_stage: 'S0.5',
+                current_goal: 'audit backend service',
+                in_progress: '',
+                next_tasks: ''
+            }
+        });
+        writeFile(path.join(hostRoot, relativePath), 'export default {};\n');
+        generateHostRules({ hostRoot, dryRun: false, force: false });
+
+        const result = routeCheck({ hostRoot, targetStage: 'S0.5' });
+        assert.equal(
+            result.companionActions.some((item) => item.skill === 'design-consultant'),
+            false,
+            `nested ignored directory must not trigger design audit: ${relativePath}`
+        );
+    }
+});
+
+test('S0.5 keeps genuine nested frontend source evidence positive', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            coverage_scope: '',
+            page_primary_user: '',
+            page_primary_purpose: '',
+            page_positioning_tag: ''
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: 'audit backend service',
+            in_progress: '',
+            next_tasks: ''
+        }
+    });
+    writeFile(path.join(hostRoot, 'packages', 'web', 'components', 'Button.tsx'), 'export default {};\n');
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S0.5' });
+    assertDesignConsultantAction(
+        result.companionActions.find((item) => item.skill === 'design-consultant'),
+        {
+            trigger: 'audit_existing_visual_system',
+            capability: 'existing-system-audit',
+            consumer: 'project-baseline-auditor',
+            mode: 'read-only'
+        }
+    );
+});
+
+test('S0 and S1 do not treat a non-page coverage scope as design intent', () => {
+    for (const targetStage of ['S0', 'S1']) {
+        const hostRoot = createHostFixture({
+            profileOverrides: {
+                current_stage: targetStage,
+                recommended_stage: targetStage,
+                coverage_scope: 'internal API consumers',
+                page_primary_user: '',
+                page_primary_purpose: '',
+                page_positioning_tag: '',
+                current_round_deliverable: 'backend API'
+            },
+            planOverrides: {
+                current_stage: targetStage,
+                current_goal: 'build backend service',
+                in_progress: 'implement API handlers',
+                next_tasks: 'add database migration'
+            }
+        });
+        generateHostRules({ hostRoot, dryRun: false, force: false });
+
+        const result = routeCheck({ hostRoot, targetStage });
+        assert.equal(
+            result.companionActions.some((item) => item.skill === 'design-consultant'),
+            false,
+            `backend ${targetStage} work must not load the design companion`
+        );
+    }
+});
+
+test('S0 and S1 recognize each required bounded English page keyword', () => {
+    for (const keyword of ['frontend', 'front-end', 'page', 'screen', 'website', 'landing page', 'UI', 'UX']) {
+        for (const targetStage of ['S0', 'S1']) {
+            const hostRoot = createHostFixture({
+                profileOverrides: {
+                    current_stage: targetStage,
+                    recommended_stage: targetStage,
+                    coverage_scope: '',
+                    page_primary_user: '',
+                    page_primary_purpose: '',
+                    page_positioning_tag: '',
+                    current_round_deliverable: 'BRD'
+                },
+                planOverrides: {
+                    current_stage: targetStage,
+                    current_goal: `build ${keyword}`,
+                    in_progress: '',
+                    next_tasks: ''
+                }
+            });
+            generateHostRules({ hostRoot, dryRun: false, force: false });
+
+            const result = routeCheck({ hostRoot, targetStage });
+            assertDesignConsultantAction(
+                result.companionActions.find((item) => item.skill === 'design-consultant'),
+                {
+                    trigger: 'before_brd_design_decision',
+                    capability: 'design-decision',
+                    consumer: 'brd-writer',
+                    mode: 'read-only'
+                }
+            );
+        }
+    }
+});
+
+test('S0 and S1 recognize Chinese page intent with otherwise empty page fields', () => {
+    for (const targetStage of ['S0', 'S1']) {
+        const hostRoot = createHostFixture({
+            profileOverrides: {
+                current_stage: targetStage,
+                recommended_stage: targetStage,
+                coverage_scope: '',
+                page_primary_user: '',
+                page_primary_purpose: '',
+                page_positioning_tag: '',
+                current_round_deliverable: 'BRD'
+            },
+            planOverrides: {
+                current_stage: targetStage,
+                current_goal: '构建管理页面',
+                in_progress: '',
+                next_tasks: ''
+            }
+        });
+        generateHostRules({ hostRoot, dryRun: false, force: false });
+
+        const result = routeCheck({ hostRoot, targetStage });
+        assertDesignConsultantAction(
+            result.companionActions.find((item) => item.skill === 'design-consultant'),
+            {
+                trigger: 'before_brd_design_decision',
+                capability: 'design-decision',
+                consumer: 'brd-writer',
+                mode: 'read-only'
+            }
+        );
+    }
+});
+
+test('S0.5 recognizes root and bounded static/public index.html as frontend evidence', () => {
+    for (const relativePath of ['index.html', 'public/index.html', 'static/index.html']) {
+        const hostRoot = createHostFixture({
+            profileOverrides: {
+                current_stage: 'S0.5',
+                recommended_stage: 'S0.5',
+                coverage_scope: '',
+                page_primary_user: '',
+                page_primary_purpose: '',
+                page_positioning_tag: ''
+            },
+            planOverrides: {
+                current_stage: 'S0.5',
+                current_goal: 'audit backend service',
+                in_progress: '',
+                next_tasks: ''
+            }
+        });
+        writeFile(path.join(hostRoot, relativePath), '<!doctype html>\n');
+        generateHostRules({ hostRoot, dryRun: false, force: false });
+
+        const result = routeCheck({ hostRoot, targetStage: 'S0.5' });
+        assertDesignConsultantAction(
+            result.companionActions.find((item) => item.skill === 'design-consultant'),
+            {
+                trigger: 'audit_existing_visual_system',
+                capability: 'existing-system-audit',
+                consumer: 'project-baseline-auditor',
+                mode: 'read-only'
+            }
+        );
+    }
+});
+
+test('S4 requires explicit UI evidence and ignores bare backend component wording', () => {
+    const cases = [
+        { text: 'implement a component for authentication', expected: false },
+        { text: 'implement a server component for backend auth', expected: false },
+        { text: 'implement a React UI component', expected: true }
+    ];
+
+    for (const { text, expected } of cases) {
+        const hostRoot = createHostFixture({
+            profileOverrides: {
+                current_stage: 'S4',
+                recommended_stage: 'S4',
+                current_round_deliverable: 'implementation'
+            },
+            planOverrides: {
+                current_stage: 'S4',
+                current_goal: text,
+                in_progress: '',
+                next_tasks: ''
+            }
+        });
+        writeDesignConsultantSystem(hostRoot);
+        generateHostRules({ hostRoot, dryRun: false, force: false });
+        writeMultiFileDeliveryPlan(hostRoot);
+
+        const result = routeCheck({ hostRoot, targetStage: 'S4' });
+        assert.equal(
+            result.companionActions.some((item) => item.skill === 'design-consultant'),
+            expected,
+            `unexpected UI companion result for: ${text}`
+        );
+    }
 });
 
 test('design-consultant companion plans constraints in S3 when a canonical design system exists', () => {
@@ -3506,6 +3808,11 @@ test('ai-project-manager runtime dispatches ordered required companion actions a
     const runtime = readFile(
         path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md')
     );
+    const routing = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'routing.md')
+    );
+    const pipeline = readFile(path.join(CURRENT_SUITE_ROOT, 'PIPELINE.md'));
+    const readme = readFile(path.join(CURRENT_SUITE_ROOT, 'README.md'));
 
     assert.match(
         runtime,
@@ -3521,11 +3828,17 @@ test('ai-project-manager runtime dispatches ordered required companion actions a
     assert.match(runtime, /Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`/i);
     assert.match(
         runtime,
-        /must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`/i
+        /design-consultant actions must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`/i
     );
     assert.match(runtime, /`test-case-chief` remains the sole owner of S5 acceptance/i);
     assert.match(runtime, /`test-case-runner` remains the sole owner of S6 test reports/i);
     assert.match(runtime, /existing `project-link-indexer` companion rules remain in force/i);
+    assert.match(runtime, /project-link-indexer.*build \/ refresh.*write/i);
+    assert.match(routing, /project-link-indexer.*build \/ refresh.*write/i);
+    assert.match(pipeline, /project-link-indexer.*build \/ refresh.*write/i);
+    assert.match(readme, /project-link-indexer.*build \/ refresh.*write/i);
+    assert.match(runtime, /indexer-first/i);
+    assert.match(routing, /indexer-first/i);
 });
 
 test('ai-project-manager protocol owns baseline refresh orchestration', () => {

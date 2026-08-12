@@ -441,9 +441,11 @@ For each `required: true` action, load the declared `references` and execute it 
 
 The formal consumer remains the sole owner of the formal stage artifact and status writeback. In particular, `test-case-chief` remains the sole owner of S5 acceptance and `test-case-runner` remains the sole owner of S6 test reports.
 
-Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`. Companion actions must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`.
+Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`. Design-consultant actions must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`.
 
-Existing `project-link-indexer` companion rules remain in force; this contract adds no second route target or action channel.
+Existing `project-link-indexer` companion rules remain in force; it is the indexer-first action when coexisting with design-consultant and may build / refresh / write its own rebuildable index. This contract adds no second route target or action channel.
+
+For `audit_existing_visual_system`, `ai-project-manager` must pass the declared design-consultant references to `project-baseline-auditor`, use the host's normal read-only file/search tools, and return a fact report plus a `preserve` / `augment` / `migrate` recommendation to that formal consumer.
 
 ### Design-consultant companion matrix
 
@@ -452,13 +454,13 @@ Existing `project-link-indexer` companion rules remain in force; this contract a
 | Stage | Trigger / capability | Consumer | Mode and applicability |
 |---|---|---|---|
 | S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only`; only after startup minimum is complete and page/UI intent is present |
-| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `dry-run`; only with existing frontend or design-system evidence; may use `manage-visual-system extract --dry-run` only |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `read-only`; read declared references and inspect the host with normal read-only file/search tools, then report facts and a `preserve` / `augment` / `migrate` recommendation |
 | S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only`; requires project `design-system/` evidence |
 | S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only`; requires project `design-system/` evidence and current UI/frontend task text |
 | S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only`; requires the design commitment input |
 | S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only`; requires both the design commitment and UI acceptance configuration |
 
-The S0/S1/S3 actions are read-only. S0.5 does not adopt or migrate; S4 does not write, prune, or update a baseline; S5 commitments are context rather than a second test oracle; S6 supplies evidence only and does not replace visible-browser execution, the runner-owned report, `startCommand`, or baseline updates. Backend/non-UI tasks and S7 do not route these actions.
+The S0/S1/S0.5/S3 actions are read-only design-consultant actions. The S0.5 action reports facts and recommendations only: it must not initialize or write `design-system/`, execute `extract`, `adopt`, `migrate`, baseline updates, `startCommand`, `write`, or `prune`. S4 does not write, prune, or update a baseline; S5 commitments are context rather than a second test oracle; S6 supplies evidence only and does not replace visible-browser execution, the runner-owned report, `startCommand`, or baseline updates. Backend/non-UI tasks and S7 do not route these actions.
 
 ## 4. 协作模式判断
 
