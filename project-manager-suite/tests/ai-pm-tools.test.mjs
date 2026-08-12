@@ -389,6 +389,27 @@ function createHostFixture({ withRules = true, withProfile = true, withPlan = tr
     return hostRoot;
 }
 
+function writeDesignConsultantSystem(hostRoot, { master = false, commitments = false, acceptance = false } = {}) {
+    const designSystemRoot = path.join(hostRoot, 'design-system');
+    writeFile(
+        path.join(designSystemRoot, master ? 'demo' : '', master ? 'MASTER.md' : 'DESIGN.md'),
+        '# Canonical design system\n'
+    );
+
+    if (commitments) {
+        writeJsonFile(path.join(designSystemRoot, 'checks', 'product-commitments.json'), {
+            commitments: []
+        });
+    }
+
+    if (acceptance) {
+        writeFile(
+            path.join(designSystemRoot, 'checks', 'product-acceptance.config.mjs'),
+            'export default { scenarios: [] };\n'
+        );
+    }
+}
+
 function createCompleteS2PageFixture({ slug = 'demo' } = {}) {
     const hostRoot = createHostFixture({
         profileOverrides: {
@@ -1185,6 +1206,367 @@ test('route-check asks ai-project-manager to call project-link-indexer after del
     assert.equal(linkAction.trigger, 'artifact_files_added_or_split');
     assert.match(linkAction.reason, /开发计划/);
     assert.equal(Object.hasOwn(linkAction, 'mode'), false);
+});
+
+function assertDesignConsultantAction(action, expected) {
+    assert.ok(action, `expected design-consultant action for ${expected.trigger}`);
+    assert.equal(action.skill, 'design-consultant');
+    assert.equal(action.trigger, expected.trigger);
+    assert.equal(action.capability, expected.capability);
+    assert.equal(action.consumer, expected.consumer);
+    assert.equal(action.required, true);
+    assert.equal(action.mode, expected.mode);
+    assert.ok(Array.isArray(action.references));
+    assert.ok(action.references.length > 0);
+    assert.ok(action.references.every((reference) => /^references\//.test(reference)));
+    assert.match(action.reason, /design-consultant/);
+    if (expected.operation) {
+        assert.equal(action.operation, expected.operation);
+    } else {
+        assert.equal(action.operation, null);
+    }
+}
+
+test('design-consultant companion routes the read-only design decision in S0 and S1', () => {
+    for (const targetStage of ['S0', 'S1']) {
+        const hostRoot = createHostFixture({
+            profileOverrides: {
+                current_stage: targetStage,
+                recommended_stage: targetStage
+            },
+            planOverrides: {
+                current_stage: targetStage,
+                current_goal: '确定前端 UI 设计方向'
+            }
+        });
+        generateHostRules({ hostRoot, dryRun: false, force: false });
+
+        const result = routeCheck({ hostRoot, targetStage });
+        const action = result.companionActions.find((item) => item.skill === 'design-consultant');
+
+        assertDesignConsultantAction(action, {
+            trigger: 'before_brd_design_decision',
+            capability: 'design-decision',
+            consumer: 'brd-writer',
+            mode: 'read-only'
+        });
+        assert.notEqual(result.routeTarget?.skill, 'design-consultant');
+    }
+});
+
+test('design-consultant companion audits an existing visual system in S0.5 without writing', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5'
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: '审计既有前端视觉系统'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot, { master: true });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S0.5' });
+    const action = result.companionActions.find((item) => item.skill === 'design-consultant');
+
+    assertDesignConsultantAction(action, {
+        trigger: 'audit_existing_visual_system',
+        capability: 'existing-system-audit',
+        consumer: 'project-baseline-auditor',
+        mode: 'dry-run',
+        operation: 'manage-visual-system extract --dry-run'
+    });
+    assert.match(action.references.join('\n'), /existing-system-adoption\.md/);
+    assert.equal(action.operation.includes('adopt'), false);
+    assert.equal(action.operation.includes('migrate'), false);
+});
+
+test('design-consultant companion plans constraints in S3 when a canonical design system exists', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S3'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '拆分开发任务并接入 design system'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot);
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S3' });
+    const action = result.companionActions.find((item) => item.skill === 'design-consultant');
+
+    assertDesignConsultantAction(action, {
+        trigger: 'plan_design_constraints',
+        capability: 'planning-constraints',
+        consumer: 'delivery-planner',
+        mode: 'read-only'
+    });
+    assert.equal(result.routeTarget.skill, 'delivery-planner');
+});
+
+test('design-consultant companion guards UI implementation in S4 only for a UI task', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S4',
+            recommended_stage: 'S4',
+            current_round_deliverable: 'frontend implementation'
+        },
+        planOverrides: {
+            current_stage: 'S4',
+            current_goal: '实现 frontend UI 页面',
+            in_progress: '接入共享组件与 design tokens',
+            next_tasks: '运行 UI contract checks'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot);
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeMultiFileDeliveryPlan(hostRoot);
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+    const action = result.companionActions.find((item) => item.skill === 'design-consultant');
+
+    assertDesignConsultantAction(action, {
+        trigger: 'guard_ui_implementation',
+        capability: 'implementation-enforcement',
+        consumer: 'coding-standards',
+        mode: 'check-only'
+    });
+    assert.equal(result.routeTarget.skill, 'coding-standards');
+});
+
+test('design-consultant companion derives UI acceptance input in S5 from commitments', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S5',
+            recommended_stage: 'S5'
+        },
+        planOverrides: {
+            current_stage: 'S5',
+            current_goal: '准备 UI 验收用例'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot, { commitments: true });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S5' });
+    const action = result.companionActions.find((item) => item.skill === 'design-consultant');
+
+    assertDesignConsultantAction(action, {
+        trigger: 'derive_ui_acceptance',
+        capability: 'ui-acceptance-input',
+        consumer: 'test-case-chief',
+        mode: 'read-only'
+    });
+    assert.match(action.references.join('\n'), /design-system-enforcement\.md/);
+});
+
+test('design-consultant companion collects UI acceptance evidence in S6 only with both inputs', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S6',
+            recommended_stage: 'S6'
+        },
+        planOverrides: {
+            current_stage: 'S6',
+            current_goal: '收集 UI 验收证据'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot, { commitments: true, acceptance: true });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S6' });
+    const action = result.companionActions.find((item) => item.skill === 'design-consultant');
+
+    assertDesignConsultantAction(action, {
+        trigger: 'collect_ui_acceptance_evidence',
+        capability: 'ui-acceptance-evidence',
+        consumer: 'test-case-runner',
+        mode: 'evidence-only'
+    });
+    assert.equal(result.routeTarget.skill, 'test-case-runner');
+});
+
+test('design-consultant companion stays off for backend startup and baseline projects', () => {
+    const backendStartupRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S1',
+            recommended_stage: 'S1',
+            coverage_scope: '',
+            page_primary_user: '',
+            page_primary_purpose: '',
+            page_positioning_tag: '',
+            current_round_deliverable: 'backend API'
+        },
+        planOverrides: {
+            current_stage: 'S1',
+            current_goal: '实现 backend service',
+            in_progress: '编写 API',
+            next_tasks: '补数据库迁移'
+        }
+    });
+    generateHostRules({ hostRoot: backendStartupRoot, dryRun: false, force: false });
+
+    const backendStartupResult = routeCheck({ hostRoot: backendStartupRoot, targetStage: 'S1' });
+    assert.equal(
+        backendStartupResult.companionActions.some((item) => item.skill === 'design-consultant'),
+        false
+    );
+
+    const backendBaselineRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            coverage_scope: '',
+            page_primary_user: '',
+            page_primary_purpose: '',
+            page_positioning_tag: ''
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: '审计 backend service'
+        }
+    });
+    generateHostRules({ hostRoot: backendBaselineRoot, dryRun: false, force: false });
+
+    const backendBaselineResult = routeCheck({ hostRoot: backendBaselineRoot, targetStage: 'S0.5' });
+    assert.equal(
+        backendBaselineResult.companionActions.some((item) => item.skill === 'design-consultant'),
+        false
+    );
+});
+
+test('design-consultant companion stays off for a backend S4 task even when a design system exists', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S4',
+            recommended_stage: 'S4',
+            current_round_deliverable: 'backend implementation'
+        },
+        planOverrides: {
+            current_stage: 'S4',
+            current_goal: '实现 backend API',
+            in_progress: '编写服务端接口',
+            next_tasks: 'build backend service'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot);
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+    assert.equal(
+        result.companionActions.some((item) => item.skill === 'design-consultant'),
+        false
+    );
+});
+
+test('design-consultant companion ignores backend webhook work in S4 with a canonical design system', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S4',
+            recommended_stage: 'S4',
+            current_round_deliverable: 'backend implementation'
+        },
+        planOverrides: {
+            current_stage: 'S4',
+            current_goal: 'implement backend API',
+            in_progress: 'write service endpoint',
+            next_tasks: 'implement webhook retry endpoint'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot);
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+    assert.equal(
+        result.companionActions.some((item) => item.skill === 'design-consultant'),
+        false
+    );
+});
+
+test('design-consultant companion ignores frontend-shaped files in dependency and build directories during S0.5', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S0.5',
+            recommended_stage: 'S0.5',
+            coverage_scope: '',
+            page_primary_user: '',
+            page_primary_purpose: '',
+            page_positioning_tag: ''
+        },
+        planOverrides: {
+            current_stage: 'S0.5',
+            current_goal: 'audit backend service'
+        }
+    });
+
+    for (const relativePath of [
+        'node_modules/example-ui/index.tsx',
+        '.next/static/app.html',
+        'dist/assets/app.css',
+        'build/generated/view.tsx'
+    ]) {
+        writeFile(path.join(hostRoot, relativePath), 'export default {};');
+    }
+
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S0.5' });
+    assert.equal(
+        result.companionActions.some((item) => item.skill === 'design-consultant'),
+        false
+    );
+});
+
+test('design-consultant companion never routes in S7', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S7',
+            recommended_stage: 'S7'
+        },
+        planOverrides: {
+            current_stage: 'S7',
+            current_goal: '执行 release security scan'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot, { commitments: true, acceptance: true });
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+
+    const result = routeCheck({ hostRoot, targetStage: 'S7' });
+    assert.equal(
+        result.companionActions.some((item) => item.skill === 'design-consultant'),
+        false
+    );
+    assert.equal(result.routeTarget.skill, 'security-scan');
+});
+
+test('design-consultant and project-link-indexer companion actions coexist in stable order', () => {
+    const hostRoot = createHostFixture({
+        profileOverrides: {
+            current_stage: 'S3',
+            recommended_stage: 'S4',
+            current_round_deliverable: 'development plan ready'
+        },
+        planOverrides: {
+            current_stage: 'S3',
+            current_goal: '实现 frontend UI task',
+            in_progress: '接入 design tokens',
+            next_tasks: '开始前端实现'
+        }
+    });
+    writeDesignConsultantSystem(hostRoot);
+    generateHostRules({ hostRoot, dryRun: false, force: false });
+    writeMultiFileDeliveryPlan(hostRoot);
+
+    const result = routeCheck({ hostRoot, targetStage: 'S4' });
+    const skills = result.companionActions.map((item) => item.skill);
+
+    assert.deepEqual(skills, ['project-link-indexer', 'design-consultant']);
+    assert.equal(result.routeTarget.skill, 'coding-standards');
 });
 
 test('route-check prefers docs/brd and src/frontend/page-preview over legacy page directories and root-level artifacts', () => {
@@ -3118,6 +3500,32 @@ test('ai-project-manager protocol defines project-link-indexer companion dispatc
     assert.ok(pipeline.includes('主入口按场景调起 `project-link-indexer`'));
     assert.ok(pipeline.includes('索引器自行决定 build / refresh / noop'));
     assert.ok(skill.includes('run-project-link-indexer.mjs'));
+});
+
+test('ai-project-manager runtime dispatches ordered required companion actions and preserves formal consumer authority', () => {
+    const runtime = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md')
+    );
+
+    assert.match(
+        runtime,
+        /must read the complete `companionActions` array and process every item in array order/i
+    );
+    assert.match(
+        runtime,
+        /for each `required: true` action, load the declared `references` and execute it using its `capability` and `mode`/i
+    );
+    assert.match(runtime, /before invoking its formal `consumer`/i);
+    assert.match(runtime, /non-authoritative input/i);
+    assert.match(runtime, /formal stage artifact and status writeback/i);
+    assert.match(runtime, /Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`/i);
+    assert.match(
+        runtime,
+        /must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`/i
+    );
+    assert.match(runtime, /`test-case-chief` remains the sole owner of S5 acceptance/i);
+    assert.match(runtime, /`test-case-runner` remains the sole owner of S6 test reports/i);
+    assert.match(runtime, /existing `project-link-indexer` companion rules remain in force/i);
 });
 
 test('ai-project-manager protocol owns baseline refresh orchestration', () => {

@@ -1627,7 +1627,56 @@ function hasPageTaskSignal(profileContext, planContext) {
         return true;
     }
 
-    return /页面|原型|前端|界面|UI|UX/.test(textPool);
+    return /页面|原型|前端|界面|\bUI\b|\bUX\b/.test(textPool);
+}
+
+function hasExistingFrontendCodeSignal(hostRoot) {
+    const frontendFiles = walkFiles(hostRoot, validationPolicy.scan.maxDepth, [
+        '.vue',
+        '.tsx',
+        '.jsx',
+        '.svelte',
+        '.astro',
+        '.html',
+        '.css'
+    ]);
+
+    return frontendFiles.some((filePath) => {
+        const relativePath = normalizePathForMatch(hostRoot, filePath);
+        return (
+            /(^|\/)(frontend|web|pages|components|views|app)\//i.test(relativePath) ||
+            /^src\/[^/]+\.(vue|tsx|jsx|svelte|astro|html|css)$/i.test(relativePath)
+        );
+    });
+}
+
+function hasCanonicalDesignSystem(hostRoot) {
+    const designSystemRoot = path.join(hostRoot, 'design-system');
+    if (!fs.existsSync(designSystemRoot) || !fs.statSync(designSystemRoot).isDirectory()) {
+        return false;
+    }
+
+    if (fs.existsSync(path.join(designSystemRoot, 'DESIGN.md'))) {
+        return true;
+    }
+
+    return fs.readdirSync(designSystemRoot, { withFileTypes: true }).some(
+        (entry) => entry.isDirectory() && fs.existsSync(path.join(designSystemRoot, entry.name, 'MASTER.md'))
+    );
+}
+
+function hasCurrentUiWorkSignal(planContext) {
+    const textPool = [
+        ...planContext.currentGoal,
+        ...planContext.inProgressTasks,
+        ...planContext.nextTasks
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return /(页面|前端|界面|\bUI\b|\bUX\b|frontend|front-end|component|design\s*(system|token)|\bCSS\b|Vue|React|Svelte)/i.test(
+        textPool
+    );
 }
 
 function hasSecurityGateSignal(profileContext, planContext) {
@@ -2163,8 +2212,8 @@ function projectLinkIndexerRegistered() {
     return globalCompanionAbilities.some((ability) => ability.skill === 'project-link-indexer');
 }
 
-function resolveCompanionActions({ targetStage, gateChecks, validationResult }) {
-    if (!projectLinkIndexerRegistered() || !validationResult.authority[FILE_ROLE_IDS.PROFILE]) {
+function resolveProjectLinkIndexerActions({ targetStage, gateChecks }) {
+    if (!projectLinkIndexerRegistered()) {
         return [];
     }
 
@@ -2219,6 +2268,141 @@ function resolveCompanionActions({ targetStage, gateChecks, validationResult }) 
     }
 
     return [];
+}
+
+const DESIGN_CONSULTANT_ACTIONS = {
+    before_brd_design_decision: {
+        capability: 'design-decision',
+        consumer: 'brd-writer',
+        mode: 'read-only',
+        references: [
+            'references/design-routing.md',
+            'references/brand-necessity-rubric.md',
+            'references/html-preview-playbook.md'
+        ],
+        operation: null
+    },
+    audit_existing_visual_system: {
+        capability: 'existing-system-audit',
+        consumer: 'project-baseline-auditor',
+        mode: 'dry-run',
+        references: ['references/existing-system-adoption.md'],
+        operation: 'manage-visual-system extract --dry-run'
+    },
+    plan_design_constraints: {
+        capability: 'planning-constraints',
+        consumer: 'delivery-planner',
+        mode: 'read-only',
+        references: [
+            'references/agent-operating-contract.md',
+            'references/design-system-enforcement.md'
+        ],
+        operation: null
+    },
+    guard_ui_implementation: {
+        capability: 'implementation-enforcement',
+        consumer: 'coding-standards',
+        mode: 'check-only',
+        references: ['references/design-system-enforcement.md'],
+        operation: null
+    },
+    derive_ui_acceptance: {
+        capability: 'ui-acceptance-input',
+        consumer: 'test-case-chief',
+        mode: 'read-only',
+        references: ['references/design-system-enforcement.md'],
+        operation: null
+    },
+    collect_ui_acceptance_evidence: {
+        capability: 'ui-acceptance-evidence',
+        consumer: 'test-case-runner',
+        mode: 'evidence-only',
+        references: ['references/design-system-enforcement.md'],
+        operation: null
+    }
+};
+
+function designConsultantRegistered() {
+    return globalCompanionAbilities.some((ability) => ability.skill === 'design-consultant');
+}
+
+function makeDesignConsultantAction(trigger) {
+    const definition = DESIGN_CONSULTANT_ACTIONS[trigger];
+    if (!definition) {
+        throw new Error(`Unknown design-consultant companion trigger: ${trigger}`);
+    }
+
+    return {
+        skill: 'design-consultant',
+        trigger,
+        capability: definition.capability,
+        consumer: definition.consumer,
+        required: true,
+        mode: definition.mode,
+        references: [...definition.references],
+        operation: definition.operation,
+        reason: `ai-project-manager invokes design-consultant ${trigger} and passes the result to ${definition.consumer}`
+    };
+}
+
+function resolveDesignConsultantActions({ targetStage, gateChecks, profileContext, planContext, hostRoot }) {
+    if (!designConsultantRegistered()) {
+        return [];
+    }
+
+    if (
+        [STAGE_IDS.S0, STAGE_IDS.S1].includes(targetStage) &&
+        gateChecks.startupMinimum?.pass &&
+        hasPageTaskSignal(profileContext, planContext)
+    ) {
+        return [makeDesignConsultantAction('before_brd_design_decision')];
+    }
+
+    if (
+        targetStage === STAGE_IDS.S0_5 &&
+        (hasExistingFrontendCodeSignal(hostRoot) || hasCanonicalDesignSystem(hostRoot))
+    ) {
+        return [makeDesignConsultantAction('audit_existing_visual_system')];
+    }
+
+    if (targetStage === STAGE_IDS.S3 && hasCanonicalDesignSystem(hostRoot)) {
+        return [makeDesignConsultantAction('plan_design_constraints')];
+    }
+
+    if (
+        targetStage === STAGE_IDS.S4 &&
+        hasCanonicalDesignSystem(hostRoot) &&
+        hasCurrentUiWorkSignal(planContext)
+    ) {
+        return [makeDesignConsultantAction('guard_ui_implementation')];
+    }
+
+    const commitmentsPath = path.join(hostRoot, 'design-system', 'checks', 'product-commitments.json');
+    if (targetStage === STAGE_IDS.S5 && fs.existsSync(commitmentsPath)) {
+        return [makeDesignConsultantAction('derive_ui_acceptance')];
+    }
+
+    const acceptanceConfigPath = path.join(hostRoot, 'design-system', 'checks', 'product-acceptance.config.mjs');
+    if (
+        targetStage === STAGE_IDS.S6 &&
+        fs.existsSync(commitmentsPath) &&
+        fs.existsSync(acceptanceConfigPath)
+    ) {
+        return [makeDesignConsultantAction('collect_ui_acceptance_evidence')];
+    }
+
+    return [];
+}
+
+function resolveCompanionActions({ targetStage, gateChecks, validationResult, profileContext, planContext, hostRoot }) {
+    if (!validationResult.authority[FILE_ROLE_IDS.PROFILE]) {
+        return [];
+    }
+
+    return [
+        ...resolveProjectLinkIndexerActions({ targetStage, gateChecks }),
+        ...resolveDesignConsultantActions({ targetStage, gateChecks, profileContext, planContext, hostRoot })
+    ];
 }
 
 function resolveNextActionWithContext({ validationResult, targetStage, resolvedRouteTarget, blockers, gateChecks }) {
@@ -2366,7 +2550,10 @@ function routeCheck({ hostRoot, targetStage = '' }) {
     const companionActions = resolveCompanionActions({
         targetStage: resolvedTargetStage,
         gateChecks,
-        validationResult
+        validationResult,
+        profileContext,
+        planContext,
+        hostRoot: resolvedHostRoot
     });
 
     const result = {

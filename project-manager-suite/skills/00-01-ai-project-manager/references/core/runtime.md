@@ -433,6 +433,18 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 
 ---
 
+## Companion action execution contract
+
+The primary entrypoint must read the complete `companionActions` array and process every item in array order; it must not inspect only `project-link-indexer` or only the first action.
+
+For each `required: true` action, load the declared `references` and execute it using its `capability` and `mode` before invoking its formal `consumer`. The design-consultant result is non-authoritative input passed to that consumer.
+
+The formal consumer remains the sole owner of the formal stage artifact and status writeback. In particular, `test-case-chief` remains the sole owner of S5 acceptance and `test-case-runner` remains the sole owner of S6 test reports.
+
+Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`. Companion actions must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`.
+
+Existing `project-link-indexer` companion rules remain in force; this contract adds no second route target or action channel.
+
 ## 4. 协作模式判断
 
 当前产品定位只聚焦 **solo 模式**。
