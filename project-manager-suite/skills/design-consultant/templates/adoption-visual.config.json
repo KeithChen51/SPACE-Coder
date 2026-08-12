@@ -1,0 +1,9 @@
+{
+  "projectIdentity": "dc-project-v1:266a2ea26bb3ac61b99846ac7eaee58d19cf6f14f0f356baead50be4b936cf3b",
+  "baseUrl": null,
+  "routes": [],
+  "baselineDir": "visual-baselines/application-v1",
+  "outputDir": "visual-output/application-v1",
+  "threshold": 0.08,
+  "startCommand": null
+}

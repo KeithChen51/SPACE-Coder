@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "1.0.0",
+  "purpose": "为面向普通用户的产品选择设计路线、页面模板和增长模式提供稳定索引；不替代项目事实、既有设计系统或阶段交付物。",
+  "references": {
+    "routing": "references/consumer-product-routing.md",
+    "pageTemplates": "references/consumer-page-templates.md",
+    "growthPatterns": "references/growth-conversion-patterns.md",
+    "uxContract": "references/consumer-ux-contract.md"
+  },
+  "selectionPolicy": {
+    "primaryArchetypeCount": 1,
+    "maximumSecondaryOverlays": 2,
+    "precedence": [
+      "existing-design-system",
+      "explicit-product-constraints",
+      "primary-consumer-archetype",
+      "secondary-overlays",
+      "default-visual-baseline"
+    ]
+  },
+  "archetypes": [
+    {
+      "id": "commerce-retail",
+      "name": "零售与品牌电商",
+      "signals": ["商品目录", "购物车", "结算", "库存或促销"],
+      "primaryJobs": ["发现商品", "判断是否值得购买", "完成下单"],
+      "requiredFlowIds": ["browse-to-purchase", "purchase-to-order-status"],
+      "templateIds": ["discovery-feed", "search-results", "item-detail", "cart-checkout", "account-orders-history", "ratings-trust-support"],
+      "growthPatternIds": ["value-cta", "product-demo", "social-proof", "pricing-comparison"],
+      "uxRisks": ["促销信息压过商品判断", "价格和履约条件出现过晚", "移动端结算步骤过长"],
+      "avoid": ["伪造稀缺和倒计时", "隐藏运费或退款条件", "用首页长故事替代商品入口"],
+      "evidenceRequired": ["价格与优惠口径", "库存和履约状态", "退款与售后规则"]
+    },
+    {
+      "id": "marketplace-local-service",
+      "name": "平台与本地服务",
+      "signals": ["多供给方", "区域或距离", "撮合", "服务评价"],
+      "primaryJobs": ["筛选合适供给", "比较可信度", "发起预约或询价"],
+      "requiredFlowIds": ["location-to-provider", "provider-to-contact"],
+      "templateIds": ["discovery-feed", "search-results", "item-detail", "comparison-decision", "booking-schedule", "ratings-trust-support"],
+      "growthPatternIds": ["marketplace-directory", "social-proof", "lead-signup"],
+      "uxRisks": ["距离和可用性不透明", "平台与服务方责任混淆", "列表排序缺少解释"],
+      "avoid": ["默认隐藏服务范围", "只展示综合评分不展示样本量", "强制注册后才可查看核心信息"],
+      "evidenceRequired": ["服务区域", "供给方资质", "评价来源与平台保障"]
+    },
+    {
+      "id": "content-media",
+      "name": "内容与媒体",
+      "signals": ["文章或视频流", "栏目", "推荐", "阅读或观看"],
+      "primaryJobs": ["快速找到感兴趣内容", "持续消费内容", "保存或关注"],
+      "requiredFlowIds": ["discover-to-consume", "consume-to-retain"],
+      "templateIds": ["discovery-feed", "search-results", "item-detail", "content-community", "subscription-paywall"],
+      "growthPatternIds": ["story-immersive", "social-proof", "lead-signup"],
+      "uxRisks": ["信息密度失控", "自动播放打断任务", "付费边界出现过晚"],
+      "avoid": ["标题党替代内容摘要", "无限滚动且无法恢复位置", "把广告伪装成正文"],
+      "evidenceRequired": ["内容来源", "推荐依据", "版权与订阅边界"]
+    },
+    {
+      "id": "social-community",
+      "name": "社交与社区",
+      "signals": ["用户关系", "动态", "互动", "群组或话题"],
+      "primaryJobs": ["理解社区氛围", "参与互动", "管理关系与隐私"],
+      "requiredFlowIds": ["discover-to-participate", "participate-to-return"],
+      "templateIds": ["discovery-feed", "search-results", "content-community", "auth-onboarding", "ratings-trust-support"],
+      "growthPatternIds": ["social-proof", "lead-signup", "story-immersive"],
+      "uxRisks": ["公开范围不清楚", "骚扰与滥用入口不足", "互动指标诱导焦虑"],
+      "avoid": ["默认公开敏感资料", "用暗黑模式强迫邀请联系人", "隐藏举报和屏蔽"],
+      "evidenceRequired": ["内容治理规则", "隐私默认值", "举报与申诉路径"]
+    },
+    {
+      "id": "education-learning",
+      "name": "教育与学习",
+      "signals": ["课程", "学习进度", "练习", "证书或辅导"],
+      "primaryJobs": ["判断课程是否适合", "完成学习任务", "理解进步和下一步"],
+      "requiredFlowIds": ["evaluate-to-enroll", "learn-to-progress"],
+      "templateIds": ["discovery-feed", "item-detail", "comparison-decision", "auth-onboarding", "content-community", "account-orders-history"],
+      "growthPatternIds": ["product-demo", "social-proof", "pricing-comparison", "lead-signup"],
+      "uxRisks": ["学习目标与课程结构脱节", "进度反馈只剩百分比", "营销承诺夸大结果"],
+      "avoid": ["伪造就业或成绩保证", "用连续签到惩罚正常中断", "隐藏课程先修条件"],
+      "evidenceRequired": ["课程结构", "讲师或内容资质", "学习结果口径"]
+    },
+    {
+      "id": "health-wellbeing",
+      "name": "健康与身心管理",
+      "signals": ["健康记录", "症状或指标", "训练计划", "医疗或生活建议"],
+      "primaryJobs": ["安全理解自身状态", "记录和执行计划", "在需要时获得专业帮助"],
+      "requiredFlowIds": ["assess-to-action", "track-to-review"],
+      "templateIds": ["auth-onboarding", "item-detail", "booking-schedule", "account-orders-history", "ratings-trust-support"],
+      "growthPatternIds": ["value-cta", "product-demo", "social-proof"],
+      "uxRisks": ["把一般建议误解为诊断", "敏感数据暴露", "异常状态缺少升级路径"],
+      "avoid": ["制造健康恐慌", "无证据的疗效承诺", "以默认同意扩大数据用途"],
+      "evidenceRequired": ["专业来源与免责声明", "数据权限", "紧急和转诊路径"]
+    },
+    {
+      "id": "personal-finance-payment",
+      "name": "个人财务与支付",
+      "signals": ["账户余额", "转账或付款", "预算", "投资或借贷"],
+      "primaryJobs": ["确认资金状态", "安全完成交易", "理解费用与风险"],
+      "requiredFlowIds": ["review-to-transact", "transact-to-confirm"],
+      "templateIds": ["auth-onboarding", "comparison-decision", "cart-checkout", "account-orders-history", "ratings-trust-support"],
+      "growthPatternIds": ["value-cta", "pricing-comparison", "social-proof"],
+      "uxRisks": ["金额与单位误读", "不可逆操作确认不足", "收益与风险表达失衡"],
+      "avoid": ["预选高风险选项", "隐藏手续费", "用庆祝动效淡化交易风险"],
+      "evidenceRequired": ["费用明细", "风险等级", "交易状态与凭证"]
+    },
+    {
+      "id": "subscription-membership",
+      "name": "订阅与会员",
+      "signals": ["套餐", "试用", "周期扣费", "会员权益"],
+      "primaryJobs": ["比较权益", "理解长期成本", "管理续订或退出"],
+      "requiredFlowIds": ["evaluate-to-subscribe", "subscribe-to-manage"],
+      "templateIds": ["comparison-decision", "subscription-paywall", "auth-onboarding", "account-orders-history", "ratings-trust-support"],
+      "growthPatternIds": ["pricing-comparison", "value-cta", "product-demo", "social-proof"],
+      "uxRisks": ["计费周期混淆", "取消入口隐蔽", "免费试用条件不透明"],
+      "avoid": ["默认勾选自动续费", "用低价月均值掩盖一次性扣款", "设置不对等取消障碍"],
+      "evidenceRequired": ["完整价格周期", "试用与续费日期", "取消及退款规则"]
+    },
+    {
+      "id": "booking-travel-visit",
+      "name": "预订、出行与到访",
+      "signals": ["日期时段", "人数或资源", "行程", "到店到访"],
+      "primaryJobs": ["确认可用性", "比较时间与总价", "完成并管理预订"],
+      "requiredFlowIds": ["availability-to-booking", "booking-to-arrival"],
+      "templateIds": ["search-results", "item-detail", "comparison-decision", "booking-schedule", "cart-checkout", "account-orders-history"],
+      "growthPatternIds": ["marketplace-directory", "social-proof", "pricing-comparison"],
+      "uxRisks": ["时区或日期歧义", "附加费用出现过晚", "变更和取消条件难找"],
+      "avoid": ["制造虚假余量", "默认添加保险或增值项", "隐藏不可退款条件"],
+      "evidenceRequired": ["实时或声明式可用性", "总价构成", "变更取消政策"]
+    },
+    {
+      "id": "creator-personal-brand",
+      "name": "创作者与个人品牌",
+      "signals": ["作品集", "个人观点", "服务或数字产品", "关注订阅"],
+      "primaryJobs": ["快速理解人物与价值", "浏览代表作品", "建立联系或购买"],
+      "requiredFlowIds": ["identity-to-proof", "proof-to-conversion"],
+      "templateIds": ["app-launch-waitlist", "item-detail", "content-community", "subscription-paywall", "ratings-trust-support"],
+      "growthPatternIds": ["story-immersive", "social-proof", "lead-signup", "value-cta"],
+      "uxRisks": ["视觉表达压过信息可读性", "身份与商业关系不透明", "联系路径碎片化"],
+      "avoid": ["复制模板化个人叙事", "过度动画阻断阅读", "伪造客户或媒体背书"],
+      "evidenceRequired": ["作品归属", "合作或客户证据", "明确联系与交易主体"]
+    },
+    {
+      "id": "gaming-entertainment",
+      "name": "游戏与互动娱乐",
+      "signals": ["玩法循环", "角色或收藏", "排行", "虚拟消费"],
+      "primaryJobs": ["理解玩法和投入", "快速开始", "持续获得反馈与成长"],
+      "requiredFlowIds": ["learn-to-play", "play-to-progress"],
+      "templateIds": ["app-launch-waitlist", "auth-onboarding", "discovery-feed", "item-detail", "content-community", "account-orders-history"],
+      "growthPatternIds": ["product-demo", "story-immersive", "social-proof", "launch-app-download"],
+      "uxRisks": ["规则和付费概率不透明", "反馈过载", "未成年人保护不足"],
+      "avoid": ["混淆付费货币与真实金额", "利用损失厌恶强迫回流", "未经确认连续购买"],
+      "evidenceRequired": ["玩法与概率说明", "消费记录", "年龄与监护机制"]
+    },
+    {
+      "id": "consumer-utility-iot",
+      "name": "个人工具与智能设备",
+      "signals": ["单一高频工具", "设备连接", "实时状态", "自动化"],
+      "primaryJobs": ["快速完成核心操作", "确认设备或任务状态", "诊断并恢复异常"],
+      "requiredFlowIds": ["setup-to-control", "monitor-to-recover"],
+      "templateIds": ["auth-onboarding", "item-detail", "account-orders-history", "ratings-trust-support", "app-launch-waitlist"],
+      "growthPatternIds": ["product-demo", "value-cta", "launch-app-download"],
+      "uxRisks": ["在线离线状态混淆", "自动化后果不可预测", "错误恢复只给故障码"],
+      "avoid": ["用装饰性仪表盘替代核心控制", "默认授予不必要权限", "隐藏本地与云端依赖"],
+      "evidenceRequired": ["连接与同步状态", "权限用途", "故障恢复和数据归属"]
+    }
+  ],
+  "pageTemplates": [
+    { "id": "discovery-feed", "summary": "通过分类、推荐或连续内容帮助用户发现候选项。" },
+    { "id": "search-results", "summary": "把查询、筛选、排序和结果解释组织为可比较的检索界面。" },
+    { "id": "item-detail", "summary": "集中呈现单一商品、服务、内容或对象的价值、证据和行动。" },
+    { "id": "comparison-decision", "summary": "并列关键差异、代价和约束，帮助用户作出选择。" },
+    { "id": "cart-checkout", "summary": "承载订单复核、支付或提交前确认及结果反馈。" },
+    { "id": "booking-schedule", "summary": "处理日期、时段、资源可用性和预约确认。" },
+    { "id": "auth-onboarding", "summary": "以最少必要信息完成身份建立、授权和首次配置。" },
+    { "id": "subscription-paywall", "summary": "解释付费价值、套餐边界、计费周期和退出条件。" },
+    { "id": "account-orders-history", "summary": "组织账户、订单、记录、权益与后续管理。" },
+    { "id": "content-community", "summary": "支持内容消费、互动、创作及社区治理入口。" },
+    { "id": "ratings-trust-support", "summary": "呈现评价证据、保障说明、帮助与争议处理路径。" },
+    { "id": "app-launch-waitlist", "summary": "用于产品发布、应用下载、资格申请或候补登记。" }
+  ],
+  "growthPatterns": [
+    { "id": "value-cta", "summary": "先明确用户价值和适用对象，再提供主行动。", "historicalPatternIds": [1, 4, 5, 31, 32] },
+    { "id": "product-demo", "summary": "通过真实界面、流程或结果展示产品如何工作。", "historicalPatternIds": [3, 9, 21, 28, 29, 30, 34] },
+    { "id": "social-proof", "summary": "用可核验的用户、案例、评价或规模证据降低不确定性。", "historicalPatternIds": [2, 19, 20, 33] },
+    { "id": "pricing-comparison", "summary": "透明比较价格、权益、周期与限制。", "historicalPatternIds": [6, 8, 13, 14] },
+    { "id": "lead-signup", "summary": "以明确交换价值收集最少必要的联系或注册信息。", "historicalPatternIds": [7, 16, 18, 23, 24, 25] },
+    { "id": "launch-app-download", "summary": "围绕上线、下载、安装和跨设备衔接组织转化。", "historicalPatternIds": [12, 15] },
+    { "id": "marketplace-directory", "summary": "用类目、位置、筛选和供给证据支持目录式发现。", "historicalPatternIds": [22] },
+    { "id": "story-immersive", "summary": "以叙事和沉浸表达建立理解，但保持可控节奏和清晰行动。", "historicalPatternIds": [10, 11, 17, 26, 27] }
+  ]
+}

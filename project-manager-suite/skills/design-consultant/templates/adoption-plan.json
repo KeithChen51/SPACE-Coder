@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "draft",
+  "strategy": null,
+  "inventoryDigest": "",
+  "sourceOfTruth": {
+    "tokens": "existing",
+    "components": "existing"
+  },
+  "tokenMappings": [],
+  "componentMappings": [],
+  "legacyBaseline": {
+    "mode": "ratchet",
+    "path": "checks/ui-contract-baseline.json"
+  },
+  "appEntryImports": [],
+  "visualVerification": {
+    "baseUrl": null,
+    "routes": [],
+    "status": "not-configured"
+  },
+  "decisions": []
+}

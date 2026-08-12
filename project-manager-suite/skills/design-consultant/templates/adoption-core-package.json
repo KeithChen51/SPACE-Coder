@@ -1,0 +1,17 @@
+{
+  "name": "design-consultant-adapted-system-core",
+  "version": "0.10.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "adoption:check": "node checks/check-adoption-contract.mjs --root .",
+    "ui:baseline": "node checks/check-ui-contract.mjs --write-baseline",
+    "ui:check": "node checks/check-ui-contract.mjs",
+    "guard:ui": "node checks/check-ui-contract.mjs"
+  },
+  "dependencies": {
+    "ajv": "8.17.1",
+    "css-tree": "3.2.1",
+    "typescript": "7.0.2"
+  }
+}

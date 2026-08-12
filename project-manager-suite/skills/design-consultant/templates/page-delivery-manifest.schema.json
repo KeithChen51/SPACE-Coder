@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-consultant.local/schemas/page-delivery-manifest.schema.json",
+  "title": "Design Consultant Page Delivery Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "projectSlug",
+    "source",
+    "designSystemPath",
+    "projectRoot",
+    "pages",
+    "preview",
+    "mockScope",
+    "compositionKitId",
+    "commitmentIds"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "status": { "enum": ["draft", "confirmed"] },
+    "projectSlug": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "path"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "designSystemPath": { "type": "string", "minLength": 1 },
+    "projectRoot": { "type": "string", "minLength": 1 },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "route", "file"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "title": { "type": "string", "minLength": 1 },
+          "route": { "type": "string", "minLength": 1 },
+          "file": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startCommand", "baseUrl", "startedBy", "verification", "evidence"],
+      "properties": {
+        "startCommand": { "type": ["string", "null"] },
+        "baseUrl": { "type": ["string", "null"] },
+        "startedBy": { "enum": ["user", "host-runner", null] },
+        "verification": { "enum": ["not-run", "passed", "failed"] },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "result"],
+            "properties": {
+              "type": { "type": "string", "minLength": 1 },
+              "result": { "enum": ["passed", "failed"] },
+              "url": { "type": "string" },
+              "viewport": { "type": "string" },
+              "path": { "type": "string" },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "mockScope": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "affects"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "affects": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "compositionKitId": { "type": "string", "minLength": 1 },
+    "commitmentIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}
