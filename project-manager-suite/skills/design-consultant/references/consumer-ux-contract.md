@@ -42,6 +42,12 @@
 - Payment：区分拒付、超时、处理中和未知结果；未知时先查订单，不诱导重复付款。
 - Booking：时段失效时保留联系人和其他选择，说明原因并提供相邻可用时段。
 - Upload：显示单项进度和失败原因，允许重试失败项，不要求全部重传；离开前说明后台上传状态。
+
+## 用户可见数据与文案
+
+- 读取 `references/user-facing-content-boundary.md`。页面不得直接显示数据库字段、API field、raw enum、内部状态码、对象 dump、debug/mock/placeholder 文案、服务端异常或源码路径。
+- 状态、类型、金额、时间、权限、错误和空值必须经过 presentation mapping；未知值使用安全业务 fallback，不能回退为内部原值。
+- loading、empty、partial、error、success 与恢复状态都要检查 visible text；移动端不能因为空间不足改为展示内部缩写或代码值。
 - Subscription changes：显示生效时间、权益变化、差价和撤销条件；失败保持原套餐有效并给出恢复路径。
 - 弱网、离线、权限不足和会话过期都必须有页面内反馈，恢复后尽量继续原任务。
 
@@ -54,4 +60,4 @@
 
 ## 验收最小视口
 
-至少验证一个桌面视口和一个移动视口；包含浅色/深色主题（若项目声明支持）、键盘路径、loading、empty、partial、error、success、返回恢复，以及真实项目要求的支付、预约、上传或订阅恢复场景。检查证据由阶段测试产物保存，本 skill 只提供规则和判定依据。
+至少验证一个桌面视口和一个移动视口；包含浅色/深色主题（若项目声明支持）、键盘路径、loading、empty、partial、error、success、返回恢复，以及真实项目要求的支付、预约、上传或订阅恢复场景。每个场景同时检查用户可见文案、控件名称、placeholder 与展示值是否符合内容边界。检查证据由阶段测试产物保存，本 skill 只提供规则和判定依据。

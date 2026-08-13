@@ -18,10 +18,10 @@ const LOCK_PATH = path.join(
     'design-consultant-lock.json'
 );
 const EXPECTED_RELEASE_MANIFEST_SHA256 =
-    'f3c99b18370308047cc0a86572ccbc991a74fe475125fd74fc89985efe10d675';
-const EXPECTED_SOURCE_COMMIT = '0f9c9f5dbe3aca26513be1466f8a4fea5cf1eb3f';
-const EXPECTED_RELEASE_FILE_COUNT = 167;
-const EXPECTED_RELEASE_BYTES = 5431127;
+    '0efb571158769b30653d9020b824e3d42bc4bc7285cc9306352bfe72160b67e8';
+const EXPECTED_SOURCE_COMMIT = 'dd37e91edbd88a4de4c72d853e40a43497962d84';
+const EXPECTED_RELEASE_FILE_COUNT = 168;
+const EXPECTED_RELEASE_BYTES = 5442811;
 const EXPECTED_CONSUMER_FAMILIES = new Set([
     'consumer-navigation',
     'discovery-card',
@@ -53,13 +53,13 @@ function listFiles(root) {
     return files;
 }
 
-test('v0.11 suite package is locked to the finalized upstream release', () => {
+test('v0.11.1 suite package is locked to the finalized upstream release', () => {
     assert.ok(fs.existsSync(LOCK_PATH), `missing package lock: ${LOCK_PATH}`);
     const lock = readJson(LOCK_PATH);
 
     assert.equal(lock.schemaVersion, 1);
     assert.equal(lock.skill, 'design-consultant');
-    assert.equal(lock.version, '0.11.0');
+    assert.equal(lock.version, '0.11.1');
     assert.equal(lock.sourceRepository, 'KeithChen51/universal-design-components-and-skills');
     assert.ok(/^[0-9a-f]{40}$/.test(lock.sourceCommit));
     assert.equal(lock.sourceCommit, EXPECTED_SOURCE_COMMIT);
@@ -95,6 +95,7 @@ test('v0.11 suite package is locked to the finalized upstream release', () => {
         'SKILL.md',
         'references/consumer-product-routing.md',
         'references/page-production-contract.md',
+        'references/user-facing-content-boundary.md',
         'templates/consumer-product-manifest.json',
         'templates/page-delivery-manifest.schema.json',
         'scripts/page-delivery-contract.mjs'
@@ -143,6 +144,21 @@ test('v0.11 suite package is locked to the finalized upstream release', () => {
             `${family.id} must declare a non-empty adapter boundary`
         );
     }
+
+    const contentBoundary = fs.readFileSync(
+        path.join(PACKAGE_ROOT, 'references', 'user-facing-content-boundary.md'),
+        'utf8'
+    );
+    assert.match(contentBoundary, /internal-data-exposure/);
+    assert.match(contentBoundary, /engineering-copy/);
+    assert.match(contentBoundary, /desktop/i);
+    assert.match(contentBoundary, /mobile/i);
+
+    const enforcement = fs.readFileSync(
+        path.join(PACKAGE_ROOT, 'references', 'design-system-enforcement.md'),
+        'utf8'
+    );
+    assert.match(enforcement, /user-facing-content-boundary\.md/);
 });
 
 test('Git attributes waive whitespace only for the locked design-consultant package', () => {

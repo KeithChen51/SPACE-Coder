@@ -21,7 +21,7 @@
 先用一句话读任务，防止套用错误模板：
 
 ```text
-我把这个任务理解为：[产品/页面类型]，面向[用户/角色]，核心目标是[业务目标]，当前适合走[default/customize/design-system/review]主模式，并命中[host-native/admin-data-workspace/agent-process-ui/data-visualization/preview_decision/enforcement]横向判断。
+我把这个任务理解为：[产品/页面类型]，面向[用户/角色]，核心目标是[业务目标]，当前适合走[default/customize/design-system/review]主模式，并命中[consumer-product/growth-conversion/host-native/admin-data-workspace/agent-process-ui/data-visualization/composition_kit/preview_decision/enforcement]横向判断。
 ```
 
 ### 2. 路由到最小必要模式
@@ -55,6 +55,7 @@ Composition Kit
 - States: [loading/empty/error/success/disabled/permission denied/partial data]
 - Responsive contract: [桌面/窄屏/移动端区域行为]
 - Acceptance commitments: [稳定 kebab-case ID + 可观察结果；覆盖已承诺的主流程、键盘、未保存提醒、状态和响应式行为]
+- Content boundary: [读取 `references/user-facing-content-boundary.md`；列出 presentation mapping、未知值 fallback，以及不得进入用户界面的内部字段和工程文案]
 - HTML preview decision: [yes/no + reason]
 - Enforcement: [token/CSS/shared component/icon/a11y checks]
 - Visualization decision: [none / 需要 Visualization Kit]
@@ -97,6 +98,7 @@ Composition Kit 的 `Component families` 必须同时给出 Manifest family id�
 - 哪些 raw HTML 禁止直接写。
 - 是否需要补静态检查或回归测试。
 - 哪些 Composition Kit 承诺要写入 `checks/product-commitments.json`，分别由哪个代码锚点和 Playwright 场景验收；场景实现写入 `checks/product-acceptance.config.mjs`。
+- 用户可见数据是否全部经过展示映射，错误、空值和未知枚举是否使用业务文案；静态 `internal-data-exposure` / `engineering-copy` 与真实页面 product acceptance 都必须通过。
 
 进入实现后，Acceptance commitment 的 ID 是设计承诺、代码实现与真实产品验收之间的连接键。`checks/product-commitments.json` 是机器可读事实源，每条记录必须包含 `source / requirement / required / implementationStatus / codeRefs / scenarioIds / waiver`。必选项只有在 `implementationStatus=implemented`、代码锚点真实存在且至少绑定一个场景时才可交付；豁免必须写明原因和批准人。每个场景也必须归属于至少一条承诺。开发中可以只跑 `npm run verify:system`；只有生成目录中的 `npm run verify` 全部通过，才能把前端实现标记为完成。
 

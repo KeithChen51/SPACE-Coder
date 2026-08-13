@@ -24,6 +24,7 @@ description: Use this skill when entering frontend design or UI implementation r
 13. 品牌署名默认纳入项目级组件能力，但按两个就绪门槛延后介入：视觉系统确认前不得展示或讨论 `BrandAttribution`，不得询问其位置、颜色、材质或重点色，也不得让默认品牌蓝参与色板决策；此时只记录 `status="deferred"`。视觉系统基本确认后，读取背景明度、系统重点色、明暗模式和界面密度，只给一个署名样式首选与一个安全 fallback；默认品牌方案的 AI 独立色为 `#3D63FF`，但只能在此阶段之后推荐。产品形态、Shell / 导航和主要页面清单基本确认后，再推荐桌面、移动、认证 / 授权位置及响应式迁移。用户确认后统一写入项目 `system.config.json`、`DESIGN.md` 与 token，业务页面不得散传配置。六张辅助字形蒙版以企业原素材为结构来源，当前正式版本使用已经审批的平滑轮廓，不得改用 UI 字体或自行重绘。完整状态机、正式灰阶、材质、重点色、资产完整性和落位规则见 `references/brand-attribution-placement.md`。
 14. C 端设计使用 `consumer-product` 与 `growth-conversion` 横向模式补充 Composition Kit，不取代主模式。营销信号不等于需要完整品牌设计系统；仍按项目状态、品牌证据和维护成本选择设计深度。
 15. 用户明确要求真实页面、可运行原型或 S2 页面交付时，读取 `references/page-production-contract.md` 并维护通用 Page Delivery Manifest；`startCommand` 只记录建议，不由本 skill 执行。
+16. 页面设计、实现守门与产品验收都必须读取 `references/user-facing-content-boundary.md`：内部字段、raw enum、调试值和工程文案不得直接进入用户可见内容，必须经过展示映射、格式化与安全 fallback。
 
 ## 快速路由
 
@@ -36,6 +37,7 @@ description: Use this skill when entering frontend design or UI implementation r
 | 新产品/新页面定义 | `references/brand-necessity-rubric.md`, `references/design-routing.md`, `references/design-system-intake.md` | 设计投入分级与下一步建议 |
 | C 端产品定义、关键旅程或移动体验 | `references/consumer-product-routing.md`, `templates/consumer-product-manifest.json`, `references/consumer-ux-contract.md` | 一个主产品类型、最多两个叠加类型、旅程与体验风险 |
 | C 端页面结构与状态设计 | `references/consumer-page-templates.md`, `references/consumer-ux-contract.md`, `references/page-templates.md` | 补全 C 端字段的 Composition Kit 与验收承诺 |
+| 用户可见数据与文案边界 | `references/user-facing-content-boundary.md`, `references/design-system-enforcement.md`, `scripts/check-ui-contract.mjs`, `scripts/product-acceptance.mjs` | 展示映射、工程文案阻断、静态证据与真实页面验收 |
 | 真实页面、可运行原型或 S2 页面交付 | `references/page-production-contract.md`, `templates/page-delivery-manifest.schema.json`, `scripts/page-delivery-contract.mjs` | 真实页面文件、外部预览地址、验证证据与通用交付清单 |
 | 获客、落地页、定价、候补或 App 下载 | `references/growth-conversion-patterns.md`, `references/consumer-ux-contract.md` | 证据、主次 CTA、移动退化和反暗黑模式约束 |
 | 页面/流程/前端建议需要组合式落地 | `references/agent-operating-contract.md`, `references/page-templates.md`, `references/component-kit-selection.md`, `references/component-family-boundaries.md`, `templates/component-manifest.json` | Composition Kit 与项目组件 ID 清单 |
@@ -68,7 +70,7 @@ description: Use this skill when entering frontend design or UI implementation r
 7. 既有系统只有在用户确认 adoption plan 后才能执行 `adopt`；`migrate` 也不得自动改写业务代码。
 8. 完善生成的 `DESIGN.md` 与 `system.config.json`，明确已确认项、草案项、token 导入和组件入口。
 9. greenfield 只编辑 `tokens/tokens.json`；既有系统以现有 token 为上游事实源，经 bridge 接入 canonical runtime。Catalog 只消费 canonical runtime + bridge。
-10. 把 Composition Kit 中已承诺的主流程、键盘、未保存提醒、状态与响应式行为登记到 `checks/product-commitments.json`；同一稳定 ID 必须记录实现状态、代码位置和 Playwright 场景 ID，场景实现放在 `checks/product-acceptance.config.mjs`。必选承诺仍为 `planned / in-progress`、缺少有效代码锚点、缺少场景，或未提供审批信息却标为 `waived` 时，最终验收必须失败。
+10. 把 Composition Kit 中已承诺的主流程、键盘、未保存提醒、状态、响应式行为和用户可见内容边界登记到 `checks/product-commitments.json`；同一稳定 ID 必须记录实现状态、代码位置和 Playwright 场景 ID，场景实现放在 `checks/product-acceptance.config.mjs`。必选承诺仍为 `planned / in-progress`、缺少有效代码锚点、缺少场景，或未提供审批信息却标为 `waived` 时，最终验收必须失败。
 11. 开发中可执行 `npm run verify:system`；正式前端交付必须在生成的 `design-system/` 中执行 `npm run verify`。全量包校验 Catalog 与视觉基线；按需 Kit 校验 `kit.json`、Manifest、运行时与业务承诺。任一必需脚本、场景或检查失败都不得声称完成。
 
 默认命令：
@@ -192,7 +194,7 @@ node <skill-path>/scripts/manage-visual-system.mjs init --target <project-path> 
 - `scripts/visual-regression.mjs`
 - `scripts/check-visualization-module.mjs`
 
-优先检查 Token 三类生成产物是否同步、组件 Manifest 与 export 是否一致、业务代码是否绕过共享组件、Catalog bundle 是否漂移、关键配色是否达到 AA、可视化契约与本地运行时是否完整，以及四类视口下是否通过视觉和交互回归。正式交付只认 `npm run verify` 的完整结果，不能用其中某几项通过替代产品场景验收。PowerShell 检查仅作为兼容入口，跨平台 CI 以 Node 守门为准。
+优先检查 Token 三类生成产物是否同步、组件 Manifest 与 export 是否一致、业务代码是否绕过共享组件、Catalog bundle 是否漂移、关键配色是否达到 AA、用户可见内容是否泄漏内部值或工程文案、可视化契约与本地运行时是否完整，以及四类视口下是否通过视觉和交互回归。正式交付只认 `npm run verify` 的完整结果，不能用其中某几项通过替代产品场景验收。PowerShell 检查仅作为兼容入口，跨平台 CI 以 Node 守门为准。
 
 ### composition_kit 横向流程
 
@@ -209,7 +211,7 @@ node <skill-path>/scripts/manage-visual-system.mjs init --target <project-path> 
 
 选择组件时必须先读取 `templates/component-manifest.json` 的 `availability`：`runtime-ready` 才能从统一入口直接 import；`evidence-only` 只能作为移植依据；`contract-only` 只能作为设计与验收契约；`external-required` 必须使用清单批准的成熟 adapter，禁止手写近似实现。默认 React 运行时已提供 `SearchableSelect` 与 `MultiSelectField`，业务页不得直接拼装只有 combobox/listbox 外观、却缺少完整键盘和活动项管理的半成品。
 
-Composition Kit 确认后，把其中实际使用的 family id 作为 `--components` 参数写入项目。Skill 保留 27 个 family 的全量 Library，其中 23 个可按需生成运行时；项目 `components/kit.json`、裁剪后的 Manifest 和运行时只保留最终选择及依赖。选择 Checkbox/Radio/Switch/Select/MultiSelect、Tooltip/Popover/ActionMenu/Dialog、InlineNotice/Toast，或决定桌面 `DataTable` 的移动端承载方式前，先读取 `references/component-family-boundaries.md`。裸 `init` 的 `full / legacy-full` 只用于旧项目兼容或明确的 Library 维护任务。
+Composition Kit 确认后，把其中实际使用的 family id 作为 `--components` 参数写入项目。Skill 保留 33 个 family 的全量 Library，其中 23 个为 `runtime-ready`、可按需生成运行时；其余 family 必须遵守 Manifest 的 `contract-only / external-required` 边界。项目 `components/kit.json`、裁剪后的 Manifest 和运行时只保留最终选择及依赖。选择 Checkbox/Radio/Switch/Select/MultiSelect、Tooltip/Popover/ActionMenu/Dialog、InlineNotice/Toast，或决定桌面 `DataTable` 的移动端承载方式前，先读取 `references/component-family-boundaries.md`。裸 `init` 的 `full / legacy-full` 只用于旧项目兼容或明确的 Library 维护任务。
 
 如果页面包含图表，在 Composition Kit 后追加 `Visualization Kit`，不要把图型名称直接当作需求。
 
@@ -274,4 +276,4 @@ Composition Kit 确认后，把其中实际使用的 family id 作为 `--compone
 
 ## 交付边界
 
-这个 skill 负责初始化和维护项目本地视觉系统，并提供设计判断、默认规范、客制化方法、既有系统接入、宿主环境规则、Agent UI 信息语法、数据可视化选型与真实模板运行时、UX 核查、HTML 预览决策和工程守门。v0.10 在保留 v0.9 全部命令的基础上，为 React 既有系统提供 canonical runtime + bridge、adoption-specific package、`projectIdentity` 绑定、`fileClosure v3` 来源闭包、不可变 generation/current 视觉基线和 legacy ratchet；非 React 项目获得可独立安装的 core 检查包，但不得声称或生成 React adapter。`startCommand` 永远只是建议，目标服务必须由用户手工启动并通过 external baseUrl 接入；不存在任何执行它的 allow 开关。真实 v0.9 greenfield lock 必须经显式 `migrate-lock` 验证后才能进入 v0.10 `update`。资料不足时必须保持 `draft`，不能伪装成最终设计系统。
+这个 skill 负责初始化和维护项目本地视觉系统，并提供设计判断、默认规范、客制化方法、既有系统接入、宿主环境规则、Agent UI 信息语法、数据可视化选型与真实模板运行时、UX 核查、HTML 预览决策和工程守门。当前发布版 v0.11.1；为避免让既有项目无确认升级，生成目录、lock、CLI 与模板中的 `0.10.0` 仍表示兼容的设计系统契约版本，不是 Skill 发布版本。该契约为 React 既有系统提供 canonical runtime + bridge、adoption-specific package、`projectIdentity` 绑定、`fileClosure v3` 来源闭包、不可变 generation/current 视觉基线和 legacy ratchet；非 React 项目获得可独立安装的 core 检查包，但不得声称或生成 React adapter。`startCommand` 永远只是建议，目标服务必须由用户手工启动并通过 external baseUrl 接入；不存在任何执行它的 allow 开关。真实 v0.9 greenfield lock 必须经显式 `migrate-lock` 验证后才能进入兼容契约的 `update`。资料不足时必须保持 `draft`，不能伪装成最终设计系统。

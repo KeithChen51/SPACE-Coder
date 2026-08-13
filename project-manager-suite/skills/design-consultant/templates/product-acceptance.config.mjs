@@ -8,6 +8,7 @@ export default {
   commitmentContract,
 
   // 服务由用户手工启动；run 直接用 Playwright 验证真实业务路径。
+  // 运行器会在每个场景截图前自动阻断内部字段、raw enum、调试值和工程文案泄漏。
   scenarios: [],
 };
 

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "skill": "design-consultant",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "sourceRepository": "KeithChen51/universal-design-components-and-skills",
-  "sourceCommit": "0f9c9f5dbe3aca26513be1466f8a4fea5cf1eb3f",
-  "releaseManifestSha256": "f3c99b18370308047cc0a86572ccbc991a74fe475125fd74fc89985efe10d675",
-  "fileCount": 167,
+  "sourceCommit": "dd37e91edbd88a4de4c72d853e40a43497962d84",
+  "releaseManifestSha256": "0efb571158769b30653d9020b824e3d42bc4bc7285cc9306352bfe72160b67e8",
+  "fileCount": 168,
   "importedPath": "project-manager-suite/skills/design-consultant",
   "releaseManifest": {
     "schemaVersion": 1,
@@ -23,20 +23,20 @@
       "visualizationRuntime": "vendor/runtime-libs"
     },
     "summary": {
-      "fileCount": 167,
-      "bytes": 5431127
+      "fileCount": 168,
+      "bytes": 5442811
     }
   },
   "files": [
     {
       "path": "SKILL.md",
-      "bytes": 25340,
-      "sha256": "f73e2fd0bb6ae5efa3a192c7a620924db04da2408df6c6a8dda8128dda4f8b15"
+      "bytes": 26216,
+      "sha256": "6743eb9426b1f57c8010c84f1110baa58fc925dd144ebf19cce1cdbb4d8988a2"
     },
     {
       "path": "references/agent-operating-contract.md",
-      "bytes": 7972,
-      "sha256": "6daceed008a0047e2bec8355276cb7adfe3fe8f3fa5805aa7b2d25be73914c7f"
+      "bytes": 8428,
+      "sha256": "e816c8329d35bddcd7972bd611b87129352da536aac7514406daf8654fa415d5"
     },
     {
       "path": "references/agent-process-ui.md",
@@ -55,8 +55,8 @@
     },
     {
       "path": "references/brand-necessity-rubric.md",
-      "bytes": 3130,
-      "sha256": "9c81d2fa600d99dffbe7e28911c591abcfeab031694336cb7be8353ddac1029f"
+      "bytes": 3184,
+      "sha256": "dac3076a41ff3d4e7663e14be8bf6b8510c40a25e318f2a586cf5307f6f8b25f"
     },
     {
       "path": "references/component-family-boundaries.md",
@@ -85,8 +85,8 @@
     },
     {
       "path": "references/consumer-ux-contract.md",
-      "bytes": 4232,
-      "sha256": "215d7ef70c2119cb21cafe96479b82241fb6da99e21db243c37932e759a491a4"
+      "bytes": 4925,
+      "sha256": "4cc1de4bdae7ebf6a86e3e0f24c5d3c1b2636c6dbcabc5edc1236c2c326680fb"
     },
     {
       "path": "references/customization-playbook.md",
@@ -110,8 +110,8 @@
     },
     {
       "path": "references/design-system-enforcement.md",
-      "bytes": 12286,
-      "sha256": "55b894eff5da5a8fbed38cb774b9ad34076b08c4f6191de15f4e23bdad6838eb"
+      "bytes": 13384,
+      "sha256": "1897103064508edc7a860b6e32efb07ae0555f8b4d5da84bd7a9cb14b59f73e1"
     },
     {
       "path": "references/design-system-intake.md",
@@ -162,6 +162,11 @@
       "path": "references/project-visual-system-workflow.md",
       "bytes": 10653,
       "sha256": "b072c68ea9aa9a6d613c3b8df0147ea79f555a18b16cacf8d2d0ebf80b5c9b9a"
+    },
+    {
+      "path": "references/user-facing-content-boundary.md",
+      "bytes": 3528,
+      "sha256": "d3532bda77a381fb99269dbb83d5b43fa162236f29635fb5799b518a52ecb3e0"
     },
     {
       "path": "references/ux-review-checklist.md",
@@ -255,8 +260,8 @@
     },
     {
       "path": "scripts/check-ui-contract.mjs",
-      "bytes": 80532,
-      "sha256": "9e59a5b248130c058f22cf4358672708905d3ee32591d536c256f94b5be82324"
+      "bytes": 82341,
+      "sha256": "ba1f937ba3f7c67f5a0be05bc2033308bd119a050d6140a70997af08a78cc059"
     },
     {
       "path": "scripts/check-visualization-module.mjs",
@@ -275,8 +280,8 @@
     },
     {
       "path": "scripts/manage-visual-system.mjs",
-      "bytes": 146410,
-      "sha256": "ea0485c1fa75925f23c7c48f7bec3e054759a60db1d3c51943b2d022add078a1"
+      "bytes": 146492,
+      "sha256": "8f650d60954b71a48ac8562e51963379368136aa6830dd65cfe0beae1d5fe28a"
     },
     {
       "path": "scripts/page-delivery-contract.mjs",
@@ -285,8 +290,8 @@
     },
     {
       "path": "scripts/product-acceptance.mjs",
-      "bytes": 17212,
-      "sha256": "f07a1631468321125136aa333b17d28aa6a32ae8aaf0786375eca0a84547ecff"
+      "bytes": 18863,
+      "sha256": "31595ecf3b7a011a002da673f6ccab6c99a396523e0354a3977888adaa2b26aa"
     },
     {
       "path": "scripts/sync-lieflat-module.mjs",
@@ -300,8 +305,8 @@
     },
     {
       "path": "scripts/text-content.mjs",
-      "bytes": 231,
-      "sha256": "3df241efcc94081657e17e2fcdefe34e2e28225a8d375c34fab03500c06de871"
+      "bytes": 1555,
+      "sha256": "a4f876f7dbaed087175df5b2783ac2789f2c9ab05a91758978a692f5e06c094b"
     },
     {
       "path": "scripts/verify-project.mjs",
@@ -510,8 +515,8 @@
     },
     {
       "path": "templates/product-acceptance.config.mjs",
-      "bytes": 774,
-      "sha256": "bb42b40641ac507c3ead21f11630147435876d38630b3461d55c8a1876e9bbf0"
+      "bytes": 887,
+      "sha256": "7658b0bd272a48c530a47ace1e8209cf478963bf1e796bd265e8ff0eb3304a24"
     },
     {
       "path": "templates/product-commitments.json",

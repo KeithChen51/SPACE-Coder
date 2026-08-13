@@ -5,6 +5,7 @@ import { link, lstat, mkdir, open, readFile, readdir, realpath, rename, rm, rmdi
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
+import { findUserFacingContentLeaks } from "./text-content.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SOURCE_EXTENSIONS = new Set([".css", ".scss", ".less", ".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte", ".html"]);
@@ -313,6 +314,17 @@ function matches(text, pattern) {
   return [...text.matchAll(pattern)];
 }
 
+function userFacingLiteralFragments(source) {
+  const fragments = [];
+  for (const match of matches(source, /<([A-Za-z][A-Za-z0-9.-]*)\b[^<>]*>([^<>{}]+)<\/\1\s*>/g)) {
+    fragments.push({ text: match[2], index: match.index + match[0].indexOf(match[2]) });
+  }
+  for (const match of matches(source, /\b(?:aria-label|alt|label|placeholder|title)\s*=\s*["']([^"']+)["']/g)) {
+    fragments.push({ text: match[1], index: match.index + match[0].indexOf(match[1]) });
+  }
+  return fragments;
+}
+
 function stripComments(text) {
   return text
     .replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " "))
@@ -343,6 +355,19 @@ function checkFile(file, text, definitions, issues, implementationFiles) {
   }
 
   if (!JSX_EXTENSIONS.has(extension)) return;
+  for (const fragment of userFacingLiteralFragments(source)) {
+    for (const leak of findUserFacingContentLeaks(fragment.text)) {
+      const match = { 0: leak.matched, index: fragment.index + leak.index };
+      if (leak.rule === "engineering-copy") {
+        addIssue(issues, file.relativePath, source, match, leak.rule, "Engineering or diagnostic copy is rendered in a user-facing surface.", "Replace it with task-oriented product copy that explains the user outcome and recovery action.");
+      } else {
+        addIssue(issues, file.relativePath, source, match, leak.rule, "An internal field name, enum, identifier, or raw value is rendered to users.", "Map internal values through a presentation model, business label dictionary, formatter, and safe unknown fallback.");
+      }
+    }
+  }
+  for (const match of matches(source, /\{\s*(?:JSON\.stringify\s*\([^{}]+\)|(?:[A-Za-z_$][\w$]*\.)+(?:(?:internal|debug|raw)[A-Za-z0-9_$]*|[A-Za-z0-9_$]+_[A-Za-z0-9_$]+))\s*\}/g)) {
+    addIssue(issues, file.relativePath, source, match, "internal-data-exposure", "A raw object or internal property is rendered directly in JSX.", "Create a presentation mapping and render only approved business labels, formatted values, and a safe unknown fallback.");
+  }
   for (const match of matches(source, /<(?:div|span)\b[^>]*\bonClick\s*=/g)) {
     addIssue(issues, file.relativePath, source, match, "non-interactive-click", "A div or span is being used as an interactive control.", "Use Button, IconButton, or a semantic link so keyboard and focus behavior are preserved.");
   }

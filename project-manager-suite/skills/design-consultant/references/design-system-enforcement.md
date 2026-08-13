@@ -40,6 +40,7 @@
 9. 组件与可视化必须位于同一个 Catalog，通过二级菜单切换，并共用 token、字体、容器、圆角和导航外壳。
 10. Composition Kit 中所有可验证承诺必须使用稳定 ID 登记到 `product-commitments.json`，并同时绑定真实代码锚点与业务页场景。
 11. 正式交付必须执行一键最终验收；局部 Token、组件或 Catalog 检查通过不能替代业务页验收。
+12. 读取 `references/user-facing-content-boundary.md`：内部字段和值、raw enum、debug/mock/placeholder 与异常原文必须在展示层转换；静态扫描和真实页面可见内容验收都通过后才能交付。
 
 ## 既有系统守门
 
@@ -91,6 +92,13 @@
 ### 页面模板
 
 - 高密度数据工作台：页面外层不滚动，结果区内部滚动，分页保持可见。
+
+### 用户可见数据与文案
+
+- API DTO、数据库模型和状态机值不得直接进入 JSX、模板、表格列、tooltip、Toast、空状态或错误页；组件只消费 presentation mapping 产生的业务标签、格式化值和安全 fallback。
+- 业务上必须展示的订单号、交易凭证或设备编号要有明确名称、用途和脱敏规则；没有需求证据时默认不展示。
+- `check-ui-contract.mjs` 报告 `internal-data-exposure` 与 `engineering-copy`；`product-acceptance.mjs` 在截图前检查真实页面 visible text、控件名称、placeholder、title、alt 与表单值。
+- desktop、mobile 和 loading、empty、partial、error、success、恢复状态都要覆盖；未知枚举、空值、长 ID、服务端错误与部分数据必须作为测试输入。
 - 移动端宽表：提供记录卡片或关键列策略。
 - 筛选、分页、tab、排序等运营上下文应可恢复，优先进入 URL。
 
@@ -128,11 +136,11 @@
 - `checks/check-design-system-contract.ps1`：检查散落颜色、非语义点击元素、直接图标导入、直接表格/select/dialog 等常见绕过。
 - `checks/check-visualization-module.mjs`：检查 48 个 preset、6 个真实 Gallery、来源版本、Editorial Utility 模式、共享 Catalog 外壳、主题桥、键盘补丁、本地运行时和 token 引用的一致性。
 - `checks/check-component-runtime.mjs`：校验 23 个默认 React 运行时家族的实现路径、export、状态、API、Manifest、四级可用性和 barrel 一致性。
-- `checks/check-ui-contract.mjs`：跨平台扫描未定义 token、散落色值、外部 UI 直引、原生 table/select/dialog、非语义点击和无名称图标按钮；输出文件、行号与修复建议。
+- `checks/check-ui-contract.mjs`：跨平台扫描未定义 token、散落色值、外部 UI 直引、原生 table/select/dialog、非语义点击、无名称图标按钮、内部值直出和工程文案；输出文件、行号与修复建议。
 - `checks/check-adoption-contract.mjs`：校验确认状态、`projectIdentity`、token bridge、canonical runtime、adoption-specific package、动态产物与 `fileClosure v3`。
 - `checks/build-component-catalog.mjs`：构建或检查真实组件 Catalog bundle，阻止提交过期产物。
 - `checks/visual-regression.mjs`：执行桌面、窄屏、移动端和 reduced-motion 的截图差异、非空像素、布局与关键交互检查。
-- `checks/product-acceptance.mjs`：加载承诺契约与项目场景，校验实现状态、代码锚点、豁免信息和场景双向关联，并在手工启动的真实应用上执行 Playwright 验收和生成报告。
+- `checks/product-acceptance.mjs`：加载承诺契约与项目场景，校验实现状态、代码锚点、豁免信息和场景双向关联，在手工启动的真实应用上检查用户可见内容边界、执行 Playwright 验收并生成报告。
 - `checks/verify-project.mjs`：按项目类型串行执行所有适用系统检查，最后强制执行产品验收；缺脚本、空场景或任一失败都返回非零退出码。
 - `checks/text-content.mjs`：统一 LF/CRLF 的比较与哈希口径，供可视化同步和校验复用。
 

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { lstat, mkdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { findUserFacingContentLeaks } from "./text-content.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const SCRIPT_DIR = dirname(SCRIPT_PATH);
@@ -230,6 +231,36 @@ function collectBrowserErrors(page) {
   return errors;
 }
 
+async function collectVisibleUserContent(page) {
+  return page.evaluate(() => {
+    const visible = (element) => {
+      const style = window.getComputedStyle(element);
+      const rectangle = element.getBoundingClientRect();
+      return style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity) !== 0
+        && rectangle.width > 0 && rectangle.height > 0;
+    };
+    const samples = [document.body?.innerText ?? ""];
+    for (const element of document.querySelectorAll("[aria-label], [alt], [placeholder], [title], input, select, textarea")) {
+      if (!visible(element)) continue;
+      for (const attribute of ["aria-label", "alt", "placeholder", "title"]) {
+        const value = element.getAttribute(attribute);
+        if (value) samples.push(value);
+      }
+      if ("value" in element && typeof element.value === "string" && element.value) samples.push(element.value);
+    }
+    return samples;
+  });
+}
+
+async function assertUserFacingContentBoundary(page, scenarioId) {
+  const samples = await collectVisibleUserContent(page);
+  const leaks = samples.flatMap((sample) => findUserFacingContentLeaks(sample));
+  const unique = [...new Map(leaks.map((leak) => [`${leak.rule}:${leak.matched}`, leak])).values()];
+  if (unique.length === 0) return;
+  const evidence = unique.slice(0, 8).map(({ rule, matched }) => `${rule}=${JSON.stringify(matched)}`).join(" | ");
+  throw new Error(`场景 ${scenarioId} 的用户可见内容包含 internal data or engineering copy：${evidence}`);
+}
+
 export async function runProductAcceptance(definition, options = {}) {
   const config = validateAcceptanceDefinition(definition, { requireExecutable: true });
   await validateCommitmentCodeReferences(config.commitments, options);
@@ -254,6 +285,7 @@ export async function runProductAcceptance(definition, options = {}) {
         }
         await scenario.run({ page, context, assert });
         if (page.isClosed()) throw new Error(`场景 ${scenario.id} 在验收结束前关闭了页面。`);
+        await assertUserFacingContentBoundary(page, scenario.id);
         const finalUrl = new URL(page.url());
         if (finalUrl.origin !== target.origin) throw new Error(`场景 ${scenario.id} 离开了配置 origin：${page.url()}`);
         const horizontalOverflow = await page.evaluate(() => (

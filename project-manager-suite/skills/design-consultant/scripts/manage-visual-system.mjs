@@ -485,6 +485,7 @@ const ADOPTION_PORTABLE_CHECK_SPECS = [
   { source: "scripts/adoption/token-bridge.mjs", destination: "checks/adoption/token-bridge.mjs" },
   { source: "scripts/adoption/visual-route-contract.mjs", destination: "checks/adoption/visual-route-contract.mjs" },
   { source: "scripts/check-adoption-contract.mjs", destination: "checks/check-adoption-contract.mjs" },
+  { source: "scripts/text-content.mjs", destination: "checks/text-content.mjs" },
   { source: "scripts/check-ui-contract.mjs", destination: "checks/check-ui-contract.mjs" },
 ];
 const ADOPTION_TOKEN_CHECK_SPECS = [
