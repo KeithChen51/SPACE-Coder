@@ -20,6 +20,8 @@
 4. 只有已确认计划可以执行 `adopt`。未确认、证据不完整、映射冲突或来源漂移都必须失败关闭。
 5. `migrate` 也只生成分批计划、bridge 与已批准 adapter；绝不自动改写业务 import、CSS class、组件 props 或页面实现。
 
+对外输出的接入建议使用固定状态契约：`recommendation` 只能是 `preserve`、`augment` 或 `migrate`，`status` 必须为 `proposed`，并明确 `requiresUserConfirmation: true`。这三个字段表达的是待确认建议，不是写入、替换或迁移授权；只有用户确认后，才能把对应计划更新为 `confirmed` 并执行后续命令。
+
 ## 策略选择
 
 ### `preserve`

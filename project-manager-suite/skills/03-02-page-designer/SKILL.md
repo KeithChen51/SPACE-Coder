@@ -7,7 +7,7 @@ description: S2 页面设计与页面交付执行器。page-designer 仍是套�
 
 ## 1. 责任边界
 
-`page-designer` 仍负责 S2 的正式交付和套包门禁：读取 BRD 与技术栈、维护页面台账、询问截图、调用设计顾问完成设计系统和页面生产、要求用户确认页面方向、生成兼容的 `page-delivery-<slug>.md`，并把交付交给 `page-explainer`。
+`page-designer` 仍负责 S2 的正式交付和套包门禁：读取 BRD 与技术栈、维护页面台账、询问截图、调用设计顾问完成设计系统和页面生产、要求用户确认页面方向、生成兼容的 `page-delivery-<slug>.md`，并把交付交给 `page-explainer`。`page-explainer` 的流程和交互语义文件由其自身独占产出；page-designer 只负责交接，不代写或修复。
 
 设计顾问 v0.11 是 `page-designer` 的内部设计与页面生产核心，不是第二个项目调度器。它负责设计事实、Token、组件契约、Composition Kit、页面状态、预览证据和通用 Page Delivery Manifest；它不负责套包阶段判断、台账、用户确认、回环计数或下游路由。
 
@@ -19,6 +19,14 @@ description: S2 页面设计与页面交付执行器。page-designer 仍是套�
 - stack CSV、旧的 `search.py` 和 React 性能参考只提供实现兼容指导，不得覆盖 BRD、宿主技术栈或已确认的设计事实。
 
 ## 2. 启动前门禁
+
+在任何 `boot`、台账推进、设计顾问调用、页面代码 / 设计系统 / 交付文件写入前，先在宿主项目根目录运行 S2 路由门禁：
+
+```bash
+node <suite-path>/tools/route-check.mjs <host-project-root> --target-stage S2 --json
+```
+
+只有当返回结果同时满足 `canEnter = true` 且 `routeTarget.skill = page-chief` 时，才允许继续本节后续的台账查询、`boot` 和页面生产。若 `canEnter = false` 或目标不是 `page-chief`，必须在任何 `boot` 或写入前停止，只展示并遵循结果中的 `nextAction`；不得用 `recommendedStage`、`targetStage` 或伴随动作替代失败门禁。
 
 每次启动先查询台账：
 
@@ -100,6 +108,8 @@ ledger 0
 - mock 范围是显式数组，不能把 mock 宣称为真实后端能力；
 - Composition Kit 和承诺 ID 已记录，承诺可在后续实现和测试中追踪；
 - 用户确认依据以非空文字传给适配器，并写入 legacy delivery。
+
+phase `4` 完成后，page-designer 的职责只到交接为止：把已验证的 page delivery 和台账状态交给 `page-chief`，再提示进入 `page-explainer`。不得在 phase `4` 创建、补写或修复 `explainer-flow-*`、`explainer-b-interaction-*`、`explainer-b-gap-*`、`explainer-delivery-*` 或其中的流程、交互语义和 gap 结论；这些文件和结论始终由 `page-explainer` 独占。
 
 适配器命令：
 
@@ -190,6 +200,7 @@ node <suite-path>/skills/03-02-page-designer/scripts/page-ledger-mutate.mjs star
 6. 把 contract-only 组件、mock 数据或 React runtime 宣称为宿主已有运行时能力；
 7. 生成没有真实绝对文件路径、预览证据、mock 范围或承诺 ID 的交付清单；
 8. 因替换设计知识库而改变 `page-chief`、`page-explainer`、foundation 或 PRD 的正式交接协议。
+9. 创建、修复或代写任何 `page-explainer` 权威文件，或在 phase `4` 继续执行交接以外的页面环节工作。
 
 ## 8. 质量红线
 

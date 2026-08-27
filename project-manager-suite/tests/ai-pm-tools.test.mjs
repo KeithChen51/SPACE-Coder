@@ -3720,6 +3720,39 @@ test('skill docs avoid stale lifecycle filenames and unreachable stage names', (
     assert.match(pageDesignerSkill, /--persist[^\n]*--output-dir\s+<宿主项目>/);
 });
 
+test('design consultant suite handoff preserves route gates and S2 ownership', () => {
+    const runtime = readFile(
+        path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'references', 'core', 'runtime.md')
+    );
+    const pageDesigner = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '03-02-page-designer', 'SKILL.md'));
+    const pageChief = readFile(path.join(CURRENT_SUITE_ROOT, 'skills', '03-01-page-chief', 'SKILL.md'));
+
+    assert.match(runtime, /`canEnter = false` 是硬停止/);
+    assert.match(runtime, /`nextAction` 恢复/);
+    assert.match(runtime, /canEnter` is false.*no companion action may be loaded or executed/);
+
+    assert.match(pageDesigner, /tools\/route-check\.mjs <host-project-root> --target-stage S2 --json/);
+    assert.match(pageDesigner, /canEnter = true.*routeTarget\.skill = page-chief/);
+    assert.match(pageDesigner, /phase `4` 完成后，page-designer 的职责只到交接为止/);
+    assert.match(pageDesigner, /不得在 phase `4` 创建、补写或修复/);
+
+    const recoverySteps = [
+        '有效的 HTTP(S) 预览地址',
+        '用户明确确认页面方向',
+        '标记为 `confirmed`',
+        '运行 `page-delivery-adapter`',
+        '推进页面台账到 phase `4`',
+        '交接给 `page-explainer`',
+        'page-chief 才能标记 `DONE`'
+    ];
+    let previous = -1;
+    for (const step of recoverySteps) {
+        const current = pageChief.indexOf(step);
+        assert.ok(current > previous, `S2 recovery step is missing or out of order: ${step}`);
+        previous = current;
+    }
+});
+
 test('ai-project-manager protocol points to multi-file delivery plans', () => {
     const files = [
         path.join(CURRENT_SUITE_ROOT, 'skills', '00-01-ai-project-manager', 'assets', 'global-files', 'execution-plan.md'),

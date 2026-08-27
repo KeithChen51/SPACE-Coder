@@ -213,9 +213,9 @@ node .agent/project-manager-suite/tools/render-progress-dashboard.mjs <host-proj
 - 只有在 foundation 完成后，才允许调用 `prd-writer` 反推并沉淀完整 PRD
 - 未经页面环节收口或未完成 foundation，不允许把 PRD 当作权威版本继续推进
 
-### S2 设计顾问接入（v0.11.1）
+### S2 设计顾问接入（v0.11.2）
 
-设计顾问定义并维护项目设计事实；套包决定其何时介入以及由谁交付阶段产物。S2 的正式负责人仍是 `page-designer`，`design-consultant v0.11.1` 是其内部设计治理与页面生产核心，不是第二个调度器。套包继续保留 page-designer 的阶段 owner、唯一 page ledger、截图问询、预览证据、用户逐页确认、page-explainer 交接和 downstream 门禁：只有 `page-chief` 判定页面环节 DONE，才进入 `foundation-builder` / `prd-writer`。
+设计顾问定义并维护项目设计事实；套包决定其何时介入以及由谁交付阶段产物。S2 的正式负责人仍是 `page-designer`，`design-consultant v0.11.2` 是其内部设计治理与页面生产核心，不是第二个调度器。套包继续保留 page-designer 的阶段 owner、唯一 page ledger、截图问询、预览证据、用户逐页确认、page-explainer 交接和 downstream 门禁：只有 `page-chief` 判定页面环节 DONE，才进入 `foundation-builder` / `prd-writer`。
 
 标准 artifact flow：
 
@@ -266,7 +266,7 @@ BRD + tech stack
 | 01-01 | `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单                                             | S0.5                 |
 | 02-01 | `brd-writer`               | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策                                             | S1                   |
 | 03-01 | `page-chief`               | 观察页面环节文件状态，调度`page-designer -> page-explainer` 并控制是否回环                           | S2 页面环节          |
-| 03-02 | `page-designer`            | S2 正式 owner；调用内部 `design-consultant v0.11.1` 维护 canonical design-system、生产真实页面，并管理台账与 legacy 页面交付清单 | S2 首轮              |
+| 03-02 | `page-designer`            | S2 正式 owner；调用内部 `design-consultant v0.11.2` 维护 canonical design-system、生产真实页面，并管理台账与 legacy 页面交付清单 | S2 首轮              |
 | 03-03 | `page-explainer`           | 基于页面代码沉淀流程、交互语义与 gap 文件，并完成页面环节收口                                          | S2 页面确认后        |
 | 04-01 | `prd-chief`                | 在页面环节收口后调度`foundation-builder -> prd-writer`，控制 PRD 环节推进                            | S2 PRD 环节          |
 | 04-02 | `foundation-builder`       | 基于已确认页面反推术语表、Schema、API 和 foundation 交付清单                                           | S2 页面环节收口后    |
@@ -309,8 +309,8 @@ project-manager-suite/
 │   ├── 01-01-project-baseline-auditor/ # 既有项目画像与关键文件缺口诊断（S0.5）
 │   ├── 02-01-brd-writer/              # 业务需求文档 / BRD 收敛（S1）
 │   ├── 03-01-page-chief/              # S2 页面环节调度
-│   ├── 03-02-page-designer/           # S2 页面 owner（内部调用 design-consultant v0.11.1 + adapter）
-│   ├── design-consultant/             # v0.11.1 导入包（内部能力，不是独立路由目标）
+│   ├── 03-02-page-designer/           # S2 页面 owner（内部调用 design-consultant v0.11.2 + adapter）
+│   ├── design-consultant/             # v0.11.2 导入包（内部能力，不是独立路由目标）
 │   ├── 03-03-page-explainer/          # 页面交互语义与 gap 收口
 │   ├── 04-01-prd-chief/               # S2 PRD 环节调度
 │   ├── 04-02-foundation-builder/      # 术语表 / Schema / API 技术地基设计
@@ -429,4 +429,4 @@ project-manager-suite/
 
 ## 后续产品升级路径
 
-项目评测能力仍属于 design-consultant source 的后续演进；评测证据不会随 v0.11.1 导入包进入套件。当前集成覆盖 S2 页面接入及上述非 S2 companion 子能力，不改变现有阶段 owner、正式产物或路由边界。
+项目评测能力仍属于 design-consultant source 的后续演进；评测证据不会随 v0.11.2 导入包进入套件。当前集成覆盖 S2 页面接入及上述非 S2 companion 子能力，不改变现有阶段 owner、正式产物或路由边界。

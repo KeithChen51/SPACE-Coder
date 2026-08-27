@@ -314,13 +314,58 @@ function matches(text, pattern) {
   return [...text.matchAll(pattern)];
 }
 
-function userFacingLiteralFragments(source) {
+function userFacingJsxFragments(source) {
   const fragments = [];
-  for (const match of matches(source, /<([A-Za-z][A-Za-z0-9.-]*)\b[^<>]*>([^<>{}]+)<\/\1\s*>/g)) {
-    fragments.push({ text: match[2], index: match.index + match[0].indexOf(match[2]) });
+  const seen = new Set();
+  const push = (text, index) => {
+    if (!text) return;
+    const key = `${index}:${text}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    fragments.push({ text, index });
+  };
+  const pushExpression = (expression, index) => {
+    const trimmed = expression.trim();
+    const trimOffset = expression.indexOf(trimmed);
+    // Direct values are rendered as-is, so suspicious field names matter.
+    // Conditions and formatter expressions are not raw output; for those we
+    // inspect only literal fallbacks such as 'PAYMENT_RETRY_PENDING'.
+    if (/^[A-Za-z_$][\w$]*(?:(?:\?\.)?[A-Za-z_$][\w$]*|\[[^\[\]{}]+\])*$/.test(trimmed)) {
+      push(trimmed, index + trimOffset);
+    }
+    for (const literal of matches(expression, /(["'`])([^"'`]*?)\1/g)) {
+      push(literal[2], index + literal.index + 1);
+    }
+  };
+  const pushMixed = (body, index) => {
+    let cursor = 0;
+    for (const expression of matches(body, /\{([^{}]+)\}/g)) {
+      push(body.slice(cursor, expression.index), index + cursor);
+      const expressionIndex = index + expression.index + expression[0].indexOf(expression[1]);
+      pushExpression(expression[1], expressionIndex);
+      cursor = expression.index + expression[0].length;
+    }
+    push(body.slice(cursor), index + cursor);
+  };
+
+  // Direct JSX children, including mixed text and expression containers.
+  for (const match of matches(source, /<([A-Za-z][A-Za-z0-9.-]*)\b[^<>]*>([^<>]+)<\/\1\s*>/g)) {
+    const bodyIndex = match.index + match[0].indexOf(match[2]);
+    pushMixed(match[2], bodyIndex);
+  }
+  // Literal children around nested JSX are not covered by the paired-element
+  // pattern above, for example: <p>DEBUG: <strong>{message}</strong></p>.
+  for (const match of matches(source, /<\/?[A-Za-z][^<>]*>([^<>{}]+)(?=[<{])/g)) {
+    push(match[1], match.index + match[0].indexOf(match[1]));
+  }
+  for (const match of matches(source, /\}([^<>{}]+)(?=<\/?[A-Za-z])/g)) {
+    push(match[1], match.index + match[0].indexOf(match[1]));
   }
   for (const match of matches(source, /\b(?:aria-label|alt|label|placeholder|title)\s*=\s*["']([^"']+)["']/g)) {
-    fragments.push({ text: match[1], index: match.index + match[0].indexOf(match[1]) });
+    push(match[1], match.index + match[0].indexOf(match[1]));
+  }
+  for (const match of matches(source, /\b(?:aria-label|alt|label|placeholder|title)\s*=\s*\{([^{}]+)\}/g)) {
+    pushExpression(match[1], match.index + match[0].indexOf(match[1]));
   }
   return fragments;
 }
@@ -355,7 +400,7 @@ function checkFile(file, text, definitions, issues, implementationFiles) {
   }
 
   if (!JSX_EXTENSIONS.has(extension)) return;
-  for (const fragment of userFacingLiteralFragments(source)) {
+  for (const fragment of userFacingJsxFragments(source)) {
     for (const leak of findUserFacingContentLeaks(fragment.text)) {
       const match = { 0: leak.matched, index: fragment.index + leak.index };
       if (leak.rule === "engineering-copy") {

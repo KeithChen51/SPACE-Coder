@@ -18,10 +18,10 @@ const LOCK_PATH = path.join(
     'design-consultant-lock.json'
 );
 const EXPECTED_RELEASE_MANIFEST_SHA256 =
-    '0efb571158769b30653d9020b824e3d42bc4bc7285cc9306352bfe72160b67e8';
-const EXPECTED_SOURCE_COMMIT = 'dd37e91edbd88a4de4c72d853e40a43497962d84';
+    'ae2cbc0c37d67c28a8a6ccbab5c73a83ba44be51d459cfadb7e07b292ab4feef';
+const EXPECTED_SOURCE_COMMIT = '211858fd57cf3a89f0be536045ee69b469fe55a7';
 const EXPECTED_RELEASE_FILE_COUNT = 168;
-const EXPECTED_RELEASE_BYTES = 5442811;
+const EXPECTED_RELEASE_BYTES = 5446030;
 const EXPECTED_CONSUMER_FAMILIES = new Set([
     'consumer-navigation',
     'discovery-card',
@@ -53,13 +53,13 @@ function listFiles(root) {
     return files;
 }
 
-test('v0.11.1 suite package is locked to the finalized upstream release', () => {
+test('v0.11.2 suite package is locked to the finalized upstream release', () => {
     assert.ok(fs.existsSync(LOCK_PATH), `missing package lock: ${LOCK_PATH}`);
     const lock = readJson(LOCK_PATH);
 
     assert.equal(lock.schemaVersion, 1);
     assert.equal(lock.skill, 'design-consultant');
-    assert.equal(lock.version, '0.11.1');
+    assert.equal(lock.version, '0.11.2');
     assert.equal(lock.sourceRepository, 'KeithChen51/universal-design-components-and-skills');
     assert.ok(/^[0-9a-f]{40}$/.test(lock.sourceCommit));
     assert.equal(lock.sourceCommit, EXPECTED_SOURCE_COMMIT);

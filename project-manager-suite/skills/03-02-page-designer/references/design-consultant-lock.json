@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "skill": "design-consultant",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "sourceRepository": "KeithChen51/universal-design-components-and-skills",
-  "sourceCommit": "dd37e91edbd88a4de4c72d853e40a43497962d84",
-  "releaseManifestSha256": "0efb571158769b30653d9020b824e3d42bc4bc7285cc9306352bfe72160b67e8",
+  "sourceCommit": "211858fd57cf3a89f0be536045ee69b469fe55a7",
+  "releaseManifestSha256": "ae2cbc0c37d67c28a8a6ccbab5c73a83ba44be51d459cfadb7e07b292ab4feef",
   "fileCount": 168,
   "importedPath": "project-manager-suite/skills/design-consultant",
   "releaseManifest": {
@@ -24,14 +24,14 @@
     },
     "summary": {
       "fileCount": 168,
-      "bytes": 5442811
+      "bytes": 5446030
     }
   },
   "files": [
     {
       "path": "SKILL.md",
-      "bytes": 26216,
-      "sha256": "6743eb9426b1f57c8010c84f1110baa58fc925dd144ebf19cce1cdbb4d8988a2"
+      "bytes": 26725,
+      "sha256": "81c338d1abbd768ecfba1009e27fdd3acff0510e57f4824e5520f16530a7c7c0"
     },
     {
       "path": "references/agent-operating-contract.md",
@@ -120,8 +120,8 @@
     },
     {
       "path": "references/existing-system-adoption.md",
-      "bytes": 6134,
-      "sha256": "9823068b86dc989734924f168e55021823f9176ad6867dba4e71f1595d3fd80b"
+      "bytes": 6508,
+      "sha256": "a6e63367505f3c0a5ab2660aa9878a3f42425bf7d4ea77c6e4c84fdafb94da98"
     },
     {
       "path": "references/external-component-adoption.md",
@@ -150,8 +150,8 @@
     },
     {
       "path": "references/page-production-contract.md",
-      "bytes": 3274,
-      "sha256": "5dea439105087219b9480e81eb94cc8ba3e14dc813a3ae0d2291a57ff8dac29f"
+      "bytes": 3526,
+      "sha256": "1d6eaafca9260cb7519a993efa54ed5585f7c345c7338c9715b3e48fd7d67fd8"
     },
     {
       "path": "references/page-templates.md",
@@ -260,8 +260,8 @@
     },
     {
       "path": "scripts/check-ui-contract.mjs",
-      "bytes": 82341,
-      "sha256": "ba1f937ba3f7c67f5a0be05bc2033308bd119a050d6140a70997af08a78cc059"
+      "bytes": 84315,
+      "sha256": "b948ba742c8d35d344960f402bbf2c908d0df950bb3cfdcc93f61f7e209b28a1"
     },
     {
       "path": "scripts/check-visualization-module.mjs",
@@ -305,8 +305,8 @@
     },
     {
       "path": "scripts/text-content.mjs",
-      "bytes": 1555,
-      "sha256": "a4f876f7dbaed087175df5b2783ac2789f2c9ab05a91758978a692f5e06c094b"
+      "bytes": 1665,
+      "sha256": "1ccb23f9a8f400ab3a2776b9ceea3d0785c7aa2a15db0e458a3494e6b689cd9e"
     },
     {
       "path": "scripts/verify-project.mjs",

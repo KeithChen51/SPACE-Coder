@@ -25,6 +25,8 @@ description: Use this skill when entering frontend design or UI implementation r
 14. C 端设计使用 `consumer-product` 与 `growth-conversion` 横向模式补充 Composition Kit，不取代主模式。营销信号不等于需要完整品牌设计系统；仍按项目状态、品牌证据和维护成本选择设计深度。
 15. 用户明确要求真实页面、可运行原型或 S2 页面交付时，读取 `references/page-production-contract.md` 并维护通用 Page Delivery Manifest；`startCommand` 只记录建议，不由本 skill 执行。
 16. 页面设计、实现守门与产品验收都必须读取 `references/user-facing-content-boundary.md`：内部字段、raw enum、调试值和工程文案不得直接进入用户可见内容，必须经过展示映射、格式化与安全 fallback。
+17. 被外部流程路由时，先验证可核验的 route evidence（目标阶段、route target、`canEnter`、负责人或能力）。证据缺失、`canEnter=false` 或目标不匹配时，只返回阻断原因和 `nextAction`，不得执行脚手架、页面写入、适配或验收，也不得自行调度下一阶段。
+18. `internal` / `admin` 只改变信息密度和工作流语境，不降低视觉系统约束；所有界面仍必须继承已确认 Token、共享组件入口和无障碍契约。
 
 ## 快速路由
 
@@ -276,4 +278,4 @@ Composition Kit 确认后，把其中实际使用的 family id 作为 `--compone
 
 ## 交付边界
 
-这个 skill 负责初始化和维护项目本地视觉系统，并提供设计判断、默认规范、客制化方法、既有系统接入、宿主环境规则、Agent UI 信息语法、数据可视化选型与真实模板运行时、UX 核查、HTML 预览决策和工程守门。当前发布版 v0.11.1；为避免让既有项目无确认升级，生成目录、lock、CLI 与模板中的 `0.10.0` 仍表示兼容的设计系统契约版本，不是 Skill 发布版本。该契约为 React 既有系统提供 canonical runtime + bridge、adoption-specific package、`projectIdentity` 绑定、`fileClosure v3` 来源闭包、不可变 generation/current 视觉基线和 legacy ratchet；非 React 项目获得可独立安装的 core 检查包，但不得声称或生成 React adapter。`startCommand` 永远只是建议，目标服务必须由用户手工启动并通过 external baseUrl 接入；不存在任何执行它的 allow 开关。真实 v0.9 greenfield lock 必须经显式 `migrate-lock` 验证后才能进入兼容契约的 `update`。资料不足时必须保持 `draft`，不能伪装成最终设计系统。
+这个 skill 负责初始化和维护项目本地视觉系统，并提供设计判断、默认规范、客制化方法、既有系统接入、宿主环境规则、Agent UI 信息语法、数据可视化选型与真实模板运行时、UX 核查、HTML 预览决策和工程守门。当前发布版 v0.11.2；为避免让既有项目无确认升级，生成目录、lock、CLI 与模板中的 `0.10.0` 仍表示兼容的设计系统契约版本，不是 Skill 发布版本。该契约为 React 既有系统提供 canonical runtime + bridge、adoption-specific package、`projectIdentity` 绑定、`fileClosure v3` 来源闭包、不可变 generation/current 视觉基线和 legacy ratchet；非 React 项目获得可独立安装的 core 检查包，但不得声称或生成 React adapter。`startCommand` 永远只是建议，目标服务必须由用户手工启动并通过 external baseUrl 接入；不存在任何执行它的 allow 开关。真实 v0.9 greenfield lock 必须经显式 `migrate-lock` 验证后才能进入兼容契约的 `update`。资料不足时必须保持 `draft`，不能伪装成最终设计系统。

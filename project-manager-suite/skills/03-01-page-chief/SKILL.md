@@ -30,6 +30,20 @@ description: Use when BRD 已确认，需要判断页面环节（page-designer �
 | H6 | 只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成，不依赖子 skill 的聊天输出或状态标记 | 判断依据是文件事实，不是对话状态 |
 | H7 | page-chief 只读 page-delivery adapter 的机器记录和可见确认，不生成、重跑或修复 adapter 交付 | 保持页面生产与阶段裁决职责分离 |
 
+### S2 交付恢复顺序
+
+页面环节被阻断后，只能从第一个未满足的条件继续恢复，不得跳过前置证据。固定顺序为：
+
+1. 由用户或明确的 host runner 提供有效的 HTTP(S) 预览地址，并记录通过的预览验证证据。
+2. 用户明确确认页面方向，并留下非空的确认依据。
+3. 由 page-designer 将通用页面清单标记为 `confirmed`。
+4. 由 page-designer 运行 `page-delivery-adapter`，生成 legacy `page-delivery-<slug>.md`。
+5. 由 page-designer 推进页面台账到 phase `4`。
+6. page-chief 读取并确认上述证据后，交接给 `page-explainer`；由 page-explainer 产出流程、交互语义和交付自查结果，并处理未解决 gap。
+7. 只有 explainer 产物齐全、语义全部 `locked`、未解决的 `design_gap` / `logic_conflict` 已清零且自查表六行全为 ✓ 时，page-chief 才能标记 `DONE`。
+
+page-chief 只观察和裁决这条顺序，不生成或修复 manifest、adapter、台账或 explainer 文件。
+
 ## 3) 上游输入
 
 | 来源 | 文件 | 必需 | 用途 |

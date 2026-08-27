@@ -192,6 +192,12 @@ node <suite-path>/tools/route-check.mjs <host-project-root> [--target-stage S0.5
 
 若工具可用，本步骤应优先读取 `route-check.mjs` 的阶段判断、门禁结果、阻断原因与下一步建议；主入口负责解释结果、补齐脚本尚未覆盖的业务判断，并决定如何与用户沟通。
 
+**门禁结果就是执行授权：**
+
+- 每次拿到 `route-check.mjs` 结果后，先判断 `canEnter`，再决定是否加载或执行任何阶段能力。
+- `canEnter = false` 是硬停止：不得执行请求中的目标阶段交付，也不得执行任何设计顾问伴随动作。此时 `targetStage`、`recommendedStage`、`routeTarget` 和 `companionActions` 只能作为诊断信息，不能覆盖失败门禁。
+- 阻断时只按 `nextAction` 恢复；若 `nextAction` 指向某个恢复负责人，只允许该负责人修复当前阻断，并在修复后重新运行门禁。门禁重新通过前，不得提前进入目标阶段或继续伴随能力。
+
 进入子能力的必要条件（**全部满足**才进入）：
 1. 当前阶段足够明确
 2. 主入口已建立最小统一上下文
@@ -435,9 +441,9 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 
 ## Companion action execution contract
 
-The primary entrypoint must read the complete `companionActions` array and process every item in array order; it must not inspect only `project-link-indexer` or only the first action.
+The primary entrypoint must read the complete `companionActions` array and process every item in array order after `canEnter` is true; it must not inspect only `project-link-indexer` or only the first action. When `canEnter` is false, the array is diagnostic only and no companion action may be loaded or executed.
 
-For each `required: true` action, load the declared `references` and execute it using its `capability` and `mode` before invoking its formal `consumer`. The design-consultant result is non-authoritative input passed to that consumer.
+For each `required: true` action, load the declared `references` and execute it using its `capability` and `mode` before invoking its formal `consumer`, but only after `canEnter` is true. The design-consultant result is non-authoritative input passed to that consumer.
 
 The formal consumer remains the sole owner of the formal stage artifact and status writeback. In particular, `test-case-chief` remains the sole owner of S5 acceptance and `test-case-runner` remains the sole owner of S6 test reports.
 

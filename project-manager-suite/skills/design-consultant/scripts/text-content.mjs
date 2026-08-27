@@ -9,7 +9,7 @@ export function sameTextContent(current, expected) {
 const USER_FACING_CONTENT_PATTERNS = Object.freeze([
   {
     rule: "engineering-copy",
-    pattern: /\b(?:TODO|FIXME|DEBUG|mock(?:ed)?[ -]?data|test[ -]?fixture|internal[ -]?only|development[ -]?only|API[ -]?(?:response|error)|stack[ -]?trace|undefined|null|NaN|\[object Object\])\b/giu,
+    pattern: /\b(?:TODO|FIXME|DEBUG|mock(?:ed)?[ -]?data|test[ -]?fixture|internal[ -]?only|development[ -]?only|API[ -]+(?:response|error)|stack[ -]?trace|undefined|null|NaN|\[object Object\])\b/giu,
   },
   {
     rule: "engineering-copy",
@@ -17,7 +17,7 @@ const USER_FACING_CONTENT_PATTERNS = Object.freeze([
   },
   {
     rule: "internal-data-exposure",
-    pattern: /\b(?:[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|(?:internal|debug|raw)[A-Z][A-Za-z0-9]*|(?:status|error|response|trace|request|user|account|order|payment|subscription)(?:Id|Code|Key|Type|Value))\b/gu,
+    pattern: /\b(?:[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|(?:internal|debug|raw)[A-Z][A-Za-z0-9]*|(?:api|http|request|response|error|trace|transport|server|backend|network)(?:Response|Error|Payload|Data)|(?:status|error|response|trace|request|user|account|order|payment|subscription|api)(?:Id|Code|Key|Type|Value))\b/gu,
   },
   {
     rule: "internal-data-exposure",
