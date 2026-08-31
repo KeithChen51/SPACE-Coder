@@ -221,7 +221,16 @@ function releaseUnreleased(changelog, version, today) {
     if (parsed.unreleased.bullets.length === 0 && !meaningfulParagraph) {
         throw new Error('Unreleased 段没有任何变更条目，没有可发版的内容');
     }
-    if (parsed.released.some((entry) => entry.version === version)) {
+    const requestedPackageVersion = normalizePackageVersion(version);
+    const duplicateVersion = parsed.released.some((entry) => {
+        if (entry.version === version) return true;
+        try {
+            return normalizePackageVersion(entry.version) === requestedPackageVersion;
+        } catch {
+            return false;
+        }
+    });
+    if (duplicateVersion) {
         throw new Error(`版本 ${version} 已存在于 CHANGELOG`);
     }
 

@@ -146,6 +146,17 @@ test('version normalization supports X.Y and X.Y.Z while rejecting ambiguous for
     assert.throws(() => normalizePackageVersion('2'), /X\.Y/);
 });
 
+test('release mode rejects semantically duplicate X.Y and X.Y.0 versions', () => {
+    const suiteRoot = makeFixtureSuite();
+    assert.throws(() => syncSuiteVersion({ suiteRoot, release: '2.0.0' }), /已存在/);
+
+    const changelogPath = path.join(suiteRoot, 'CHANGELOG.md');
+    const changelog = fs.readFileSync(changelogPath, 'utf8').replace('## [2.0]', '## [2.0.0]');
+    fs.writeFileSync(changelogPath, changelog, 'utf8');
+
+    assert.throws(() => syncSuiteVersion({ suiteRoot, release: '2.0' }), /已存在/);
+});
+
 test('release mode refuses to release an empty Unreleased section', () => {
     const suiteRoot = makeFixtureSuite();
     syncSuiteVersion({ suiteRoot, release: '2.1' });
