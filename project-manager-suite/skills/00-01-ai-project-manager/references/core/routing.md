@@ -85,6 +85,22 @@
 | `coding-standards` (涉及代码/结构/SQL/测试时加载) | `skills/06-01-coding-standards/` |
 | `project-devlog` (每轮有实质产出、阶段切换、需要收口时加载) | `skills/00-02-project-devlog/` |
 | `project-link-indexer` (阶段产物形成/拆分后，或需要文件关系、坏链、回链、孤立文件、影响范围诊断时加载) | `skills/00-03-project-link-indexer/` |
+| `design-consultant` (仅在 UI/设计信号命中时作为伴随能力加载，不改变阶段归属) | `skills/design-consultant/` |
+
+### design-consultant 伴随路由
+
+`route-check.mjs` 将命中的设计顾问动作放入有序 `companionActions`；主入口先按数组顺序执行所有 `required: true` 动作，再调用当前阶段的正式 consumer。设计结果只能作为非权威输入，正式阶段 owner 仍独占交付物和状态回写；`design-consultant` 不是 route target、follow-up、dispatcher 或正式产物写入者。它可以与 `project-link-indexer` 同时返回，顺序保持稳定。
+
+| 阶段 | trigger / capability | consumer | mode | 触发边界 |
+|---|---|---|---|---|
+| S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only` | 启动最小字段完成且存在页面/UI 意图 |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `read-only` | 存在既有前端或设计系统证据；读取声明的 references 并用宿主正常的只读文件/搜索工具形成事实报告和 `preserve` / `augment` / `migrate` 建议 |
+| S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only` | 存在项目 `design-system/` 证据 |
+| S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only` | 存在项目 `design-system/` 证据且当前任务文本包含 UI/前端工作 |
+| S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only` | 存在 `design-system/checks/product-commitments.json` |
+| S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only` | 同时存在 commitments 与 `product-acceptance.config.mjs` |
+
+后续边界固定：S0/S1/S0.5/S3 的设计顾问动作只读；S0.5 不初始化或写入 `design-system/`，不执行 `extract`、adopt、migrate、baseline update、`startCommand`、write 或 prune；S4 不写、删除或更新 baseline；S5 的 commitments 不是第二个测试 Oracle；S6 只提供证据，不替代可见浏览器执行、runner 报告、`startCommand` 或 baseline 更新。与 `project-link-indexer` 共存时保持 indexer-first，索引器仍可自行 build / refresh / write 索引。后端/非 UI 任务和 S7 不加载设计顾问伴随动作。
 
 | 阶段推进能力（随阶段变化而转移） | 所属阶段 | 默认实现路径 |
 |----------------------------------|----------|--------------|

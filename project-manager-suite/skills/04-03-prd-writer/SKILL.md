@@ -36,7 +36,7 @@ description: 面向 AI 编程的 PRD 撰写。适用于 ai-project-manager/prd-c
 |---|------|------|------|
 | 1 | `BRD-<slug>-*.md` | brd-writer | 产品背景、使用者画像、业务模型 |
 | 2 | `page-delivery-<slug>.md` | page-designer | 页面路由表、文件路径清单 |
-| 3 | 页面代码文件（Vue 3 组件） | page-designer | 从 delivery 中列出的路径逐个读取 |
+| 3 | 页面代码文件（技术栈以 page-delivery 声明为准） | page-designer | 从 delivery 中列出的路径逐个读取 |
 | 4 | `explainer-flow-<slug>.md` | page-explainer | 用户流程全貌 |
 | 5 | `explainer-b-interaction-<slug>.md` | page-explainer | 结构化交互语义（仅消费 locked 条目） |
 | 6 | `explainer-delivery-<slug>.md` | page-explainer | 入口索引：产物清单、流程 → 产物映射、本环节一致性自查结论 |
@@ -170,7 +170,7 @@ Phase 5: 一致性自查
 8. 对 schema / api 主文件：stat 同名子目录是否存在
    - 存在（拆分模式）→ 从 foundation-delivery 的"拆分子文件"列读清单，逐个校验每个子文件存在；任一缺失则**中止**，提示用户补齐 delivery 或重跑 foundation-builder
    - 不存在（单文件模式）→ 跳过子文件校验
-9. 从 page-delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+9. 从 page-delivery 中提取页面文件路径列表，逐个读取技术栈以 page-delivery 声明为准的页面代码
 10. 从 BRD 读取：产品背景、使用者画像
 
 ## 8) 状态标记（强制）

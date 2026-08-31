@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "draft",
+  "projectSlug": "consumer-demo",
+  "source": {
+    "type": "brief",
+    "path": "docs/brd/BRD-consumer-demo.md"
+  },
+  "designSystemPath": "design-system/DESIGN.md",
+  "projectRoot": "frontend-app",
+  "pages": [],
+  "preview": {
+    "startCommand": "npm run dev",
+    "baseUrl": null,
+    "startedBy": null,
+    "verification": "not-run",
+    "evidence": []
+  },
+  "mockScope": [],
+  "compositionKitId": "CK-consumer-demo-001",
+  "commitmentIds": []
+}

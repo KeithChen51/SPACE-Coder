@@ -116,6 +116,17 @@ const globalCompanionAbilities = [
             'need_file_relationship_diagnosis',
             'need_impact_lookup'
         ]
+    },
+    {
+        skill: 'design-consultant',
+        triggers: [
+            'before_brd_design_decision',
+            'audit_existing_visual_system',
+            'plan_design_constraints',
+            'guard_ui_implementation',
+            'derive_ui_acceptance',
+            'collect_ui_acceptance_evidence'
+        ]
     }
 ];
 

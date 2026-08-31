@@ -1,0 +1,35 @@
+{
+  "name": "design-consultant-adapted-system",
+  "version": "0.10.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "adoption:check": "node checks/check-adoption-contract.mjs --root .",
+    "ui:baseline": "node checks/check-ui-contract.mjs --write-baseline",
+    "ui:check": "node checks/check-ui-contract.mjs",
+    "catalog:build": "node checks/build-component-catalog.mjs build",
+    "catalog:check": "node checks/build-component-catalog.mjs check",
+    "guard:ui": "node checks/check-ui-contract.mjs",
+    "visual:inspect": "node checks/visual-regression.mjs inspect --config checks/adoption-visual.config.json",
+    "visual:test": "node checks/visual-regression.mjs test --config checks/adoption-visual.config.json",
+    "product:acceptance": "node checks/product-acceptance.mjs test --config checks/product-acceptance.config.mjs --project-root ..",
+    "verify:system": "node checks/verify-project.mjs system",
+    "verify:product": "node checks/verify-project.mjs product",
+    "verify": "node checks/verify-project.mjs final"
+  },
+  "dependencies": {
+    "ajv": "8.17.1",
+    "css-tree": "3.2.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "7.0.2"
+  },
+  "devDependencies": {
+    "@babel/parser": "7.28.5",
+    "@babel/traverse": "7.28.5",
+    "esbuild": "0.28.1",
+    "pixelmatch": "7.2.0",
+    "playwright": "1.62.0",
+    "pngjs": "7.0.0"
+  }
+}

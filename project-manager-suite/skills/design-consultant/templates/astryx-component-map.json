@@ -1,0 +1,4547 @@
+{
+  "schema_version": "0.1",
+  "source": {
+    "name": "Astryx",
+    "core_package": "@astryxdesign/core",
+    "cli_package": "@astryxdesign/cli",
+    "version": "0.1.4",
+    "license": "MIT",
+    "source_command": "npx astryx --json component --list",
+    "generated_at": "2026-07-09",
+    "notes": [
+      "Covers every component returned by Astryx CLI v0.1.4 component --list.",
+      "Maps capability and semantics, not source code or props.",
+      "Do not treat Astryx as the default runtime dependency for the department kit."
+    ]
+  },
+  "mapping_types": {
+    "direct_map": "名称和语义基本一致，可作为我们组件族的直接候选。",
+    "semantic_map": "能力一致但命名、API、token 和实现按我们技术方案重建。",
+    "pattern_only": "只吸收交互、信息架构、可访问性模式，暂不进入首批 runtime。",
+    "defer": "有效但非通用高频，后续按项目需求再评估。",
+    "reject": "不适合吸收。当前版本没有 reject 项。"
+  },
+  "summary": {
+    "total_components": 149,
+    "by_mapping_type": {
+      "semantic_map": 128,
+      "pattern_only": 7,
+      "direct_map": 6,
+      "defer": 8
+    },
+    "by_priority": {
+      "P1": 69,
+      "P0": 34,
+      "P3": 16,
+      "P2": 30
+    },
+    "by_family": {
+      "agent-output": 8,
+      "app-frame": 13,
+      "media": 4,
+      "content": 21,
+      "status": 4,
+      "navigation": 2,
+      "button": 5,
+      "field": 28,
+      "container": 9,
+      "agent-input": 3,
+      "agent-event-row": 1,
+      "command-palette": 7,
+      "overlay": 7,
+      "dialog": 3,
+      "layout": 10,
+      "resource-state": 6,
+      "list": 10,
+      "data-table": 4,
+      "theme": 3,
+      "accessibility": 1
+    }
+  },
+  "entries": [
+    {
+      "astryx_component": "ChatMessageBubble",
+      "astryx_group": "多气泡组中的位置。控制发送者侧的圆角缩减。",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "UserMessageBubble",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "AppShell",
+      "astryx_group": "AppShell",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/AppShell",
+      "our_component": "AppFrame",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "AspectRatio",
+      "astryx_group": "AspectRatio",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/AspectRatio",
+      "our_component": "AspectRatio",
+      "our_family": "media",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P3",
+      "implementation_strategy": "defer_until_media_or_gallery_need",
+      "capabilities_to_absorb": [
+        "media ratio",
+        "thumbnail state",
+        "gallery pattern"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "radius-card",
+        "spacing"
+      ],
+      "must_have_states": [
+        "loaded",
+        "loading",
+        "error"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "Avatar",
+      "astryx_group": "Avatar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Avatar",
+      "our_component": "Avatar",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "AvatarGroup",
+      "astryx_group": "Avatar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/AvatarGroup",
+      "our_component": "Avatar",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "AvatarGroupOverflow",
+      "astryx_group": "Avatar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/AvatarGroup",
+      "our_component": "Avatar",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "AvatarStatusDot",
+      "astryx_group": "Avatar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Avatar",
+      "our_component": "Avatar",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Badge",
+      "astryx_group": "Badge",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Badge",
+      "our_component": "StatusBadge",
+      "our_family": "status",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_status_primitives",
+      "capabilities_to_absorb": [
+        "stable semantic status",
+        "compact metadata",
+        "count and filter chips"
+      ],
+      "tokens_needed": [
+        "status-success",
+        "status-warning",
+        "status-danger",
+        "status-info"
+      ],
+      "must_have_states": [
+        "success",
+        "warning",
+        "danger",
+        "info",
+        "neutral"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Banner",
+      "astryx_group": "Banner",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Banner",
+      "our_component": "Banner",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Blockquote",
+      "astryx_group": "Blockquote",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Blockquote",
+      "our_component": "Blockquote",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "BreadcrumbItem",
+      "astryx_group": "Breadcrumbs",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Breadcrumbs",
+      "our_component": "Breadcrumbs",
+      "our_family": "navigation",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "part_of_navigation",
+      "capabilities_to_absorb": [
+        "current route state",
+        "router adapter",
+        "hierarchy"
+      ],
+      "tokens_needed": [
+        "link-color",
+        "text-muted",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "current",
+        "hover",
+        "focus-visible",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Breadcrumbs",
+      "astryx_group": "Breadcrumbs",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Breadcrumbs",
+      "our_component": "Breadcrumbs",
+      "our_family": "navigation",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_link_or_navigation_component",
+      "capabilities_to_absorb": [
+        "current route state",
+        "router adapter",
+        "hierarchy"
+      ],
+      "tokens_needed": [
+        "link-color",
+        "text-muted",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "current",
+        "hover",
+        "focus-visible",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Button",
+      "astryx_group": "Button",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Button",
+      "our_component": "Button",
+      "our_family": "button",
+      "mapping_type": "direct_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_component",
+      "capabilities_to_absorb": [
+        "variants",
+        "sizes",
+        "loading",
+        "disabled",
+        "accessible name"
+      ],
+      "tokens_needed": [
+        "color-action",
+        "height-control",
+        "radius-control",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "loading"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "ButtonGroup",
+      "astryx_group": "Button",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/ButtonGroup",
+      "our_component": "ButtonGroup",
+      "our_family": "button",
+      "mapping_type": "direct_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_component",
+      "capabilities_to_absorb": [
+        "variants",
+        "sizes",
+        "loading",
+        "disabled",
+        "accessible name"
+      ],
+      "tokens_needed": [
+        "color-action",
+        "height-control",
+        "radius-control",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "loading"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "IconButton",
+      "astryx_group": "Button",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/IconButton",
+      "our_component": "IconButton",
+      "our_family": "button",
+      "mapping_type": "direct_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_component",
+      "capabilities_to_absorb": [
+        "variants",
+        "sizes",
+        "loading",
+        "disabled",
+        "accessible name"
+      ],
+      "tokens_needed": [
+        "color-action",
+        "height-control",
+        "radius-control",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "loading"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "ToggleButton",
+      "astryx_group": "Button",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/ToggleButton",
+      "our_component": "ToggleButton",
+      "our_family": "button",
+      "mapping_type": "direct_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_component",
+      "capabilities_to_absorb": [
+        "variants",
+        "sizes",
+        "loading",
+        "disabled",
+        "accessible name"
+      ],
+      "tokens_needed": [
+        "color-action",
+        "height-control",
+        "radius-control",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "loading"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "ToggleButtonGroup",
+      "astryx_group": "Button",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/ToggleButton",
+      "our_component": "ToggleButtonGroup",
+      "our_family": "button",
+      "mapping_type": "direct_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_component",
+      "capabilities_to_absorb": [
+        "variants",
+        "sizes",
+        "loading",
+        "disabled",
+        "accessible name"
+      ],
+      "tokens_needed": [
+        "color-action",
+        "height-control",
+        "radius-control",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "loading"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "Calendar",
+      "astryx_group": "Calendar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Calendar",
+      "our_component": "Calendar",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Card",
+      "astryx_group": "Card",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Card",
+      "our_component": "Card",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ClickableCard",
+      "astryx_group": "Card",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/ClickableCard",
+      "our_component": "ClickableCard",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SelectableCard",
+      "astryx_group": "Card",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SelectableCard",
+      "our_component": "SelectableCard",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Carousel",
+      "astryx_group": "Carousel",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Carousel",
+      "our_component": "Carousel",
+      "our_family": "media",
+      "mapping_type": "defer",
+      "adoption_priority": "P3",
+      "implementation_strategy": "defer_until_project_need",
+      "capabilities_to_absorb": [
+        "media ratio",
+        "thumbnail state",
+        "gallery pattern"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "radius-card",
+        "spacing"
+      ],
+      "must_have_states": [
+        "loaded",
+        "loading",
+        "error"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "ChatComposer",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentComposer",
+      "our_family": "agent-input",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "composer input",
+        "control row",
+        "attached context",
+        "send or stop action"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "empty",
+        "typing",
+        "submitting",
+        "disabled",
+        "approval blocking"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatComposerDrawer",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "ChatComposerDrawer",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatComposerInput",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentComposerInput",
+      "our_family": "agent-input",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "composer input",
+        "control row",
+        "attached context",
+        "send or stop action"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "empty",
+        "typing",
+        "submitting",
+        "disabled",
+        "approval blocking"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatDictationButton",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "ChatDictationButton",
+      "our_family": "content",
+      "mapping_type": "defer",
+      "adoption_priority": "P3",
+      "implementation_strategy": "defer_until_voice_input",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "ChatLayout",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentChatLayout",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatLayoutScrollButton",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "ScrollToLatestButton",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatMessage",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentMessage",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatMessageList",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentMessageList",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatMessageMetadata",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentMessageMeta",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatSendButton",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentSendButton",
+      "our_family": "agent-input",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "composer input",
+        "control row",
+        "attached context",
+        "send or stop action"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "empty",
+        "typing",
+        "submitting",
+        "disabled",
+        "approval blocking"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatSystemMessage",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentSystemMessage",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatTokenizedText",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "TokenizedText",
+      "our_family": "agent-output",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_agent_ui_component",
+      "capabilities_to_absorb": [
+        "document flow",
+        "message metadata",
+        "streaming state",
+        "artifact panel slot"
+      ],
+      "tokens_needed": [
+        "surface",
+        "spacing",
+        "text-muted",
+        "status-color"
+      ],
+      "must_have_states": [
+        "user",
+        "assistant",
+        "system",
+        "streaming",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ChatToolCalls",
+      "astryx_group": "Chat",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Chat",
+      "our_component": "AgentEventRow",
+      "our_family": "agent-event-row",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_agent_event_component",
+      "capabilities_to_absorb": [
+        "tool call grouping",
+        "low-emphasis event rows",
+        "collapsed technical detail"
+      ],
+      "tokens_needed": [
+        "text-muted",
+        "status-color",
+        "spacing-compact"
+      ],
+      "must_have_states": [
+        "pending",
+        "running",
+        "success",
+        "warning",
+        "error",
+        "collapsed"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CheckboxInput",
+      "astryx_group": "Checkbox",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CheckboxInput",
+      "our_component": "CheckboxInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CheckboxList",
+      "astryx_group": "Checkbox",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CheckboxList",
+      "our_component": "CheckboxList",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CheckboxListItem",
+      "astryx_group": "Checkbox",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CheckboxList",
+      "our_component": "CheckboxListItem",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_field",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Citation",
+      "astryx_group": "Citation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Citation",
+      "our_component": "Citation",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CodeBlock",
+      "astryx_group": "CodeBlock",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CodeBlock",
+      "our_component": "CodeBlock",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Collapsible",
+      "astryx_group": "Collapsible",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Collapsible",
+      "our_component": "Collapsible",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CollapsibleGroup",
+      "astryx_group": "Collapsible",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Collapsible",
+      "our_component": "CollapsibleGroup",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPalette",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPalette",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_command_palette_library",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPaletteEmpty",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPaletteEmpty",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_command_palette_library",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPaletteFooter",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPaletteFooter",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPaletteGroup",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPaletteGroup",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_command_palette_library",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPaletteInput",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPaletteInput",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_command_palette_library",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPaletteItem",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPaletteItem",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "part_of_command_palette",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "CommandPaletteList",
+      "astryx_group": "CommandPalette",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/CommandPalette",
+      "our_component": "CommandPaletteList",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_command_palette_library",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ContextMenu",
+      "astryx_group": "ContextMenu",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/ContextMenu",
+      "our_component": "ContextMenu",
+      "our_family": "overlay",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_overlay_library",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "DateInput",
+      "astryx_group": "DateInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/DateInput",
+      "our_component": "DateInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "DateRangeInput",
+      "astryx_group": "DateInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/DateRangeInput",
+      "our_component": "DateRangeInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "DateTimeInput",
+      "astryx_group": "DateInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/DateTimeInput",
+      "our_component": "DateTimeInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "AlertDialog",
+      "astryx_group": "Dialog",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/AlertDialog",
+      "our_component": "ConfirmDialog",
+      "our_family": "dialog",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_accessible_dialog_component",
+      "capabilities_to_absorb": [
+        "focus trap",
+        "Escape close",
+        "return focus",
+        "background inert"
+      ],
+      "tokens_needed": [
+        "surface",
+        "shadow",
+        "radius-panel",
+        "spacing",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "open",
+        "closing",
+        "loading",
+        "error",
+        "unsaved changes"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Dialog",
+      "astryx_group": "Dialog",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Dialog",
+      "our_component": "Dialog",
+      "our_family": "dialog",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_accessible_dialog_component",
+      "capabilities_to_absorb": [
+        "focus trap",
+        "Escape close",
+        "return focus",
+        "background inert"
+      ],
+      "tokens_needed": [
+        "surface",
+        "shadow",
+        "radius-panel",
+        "spacing",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "open",
+        "closing",
+        "loading",
+        "error",
+        "unsaved changes"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "DialogHeader",
+      "astryx_group": "Dialog",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Dialog",
+      "our_component": "DialogHeader",
+      "our_family": "dialog",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "part_of_dialog",
+      "capabilities_to_absorb": [
+        "focus trap",
+        "Escape close",
+        "return focus",
+        "background inert"
+      ],
+      "tokens_needed": [
+        "surface",
+        "shadow",
+        "radius-panel",
+        "spacing",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "open",
+        "closing",
+        "loading",
+        "error",
+        "unsaved changes"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Divider",
+      "astryx_group": "Divider",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Divider",
+      "our_component": "Divider",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "DropdownMenu",
+      "astryx_group": "DropdownMenu",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/DropdownMenu",
+      "our_component": "DropdownMenu",
+      "our_family": "overlay",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_overlay_library",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "DropdownMenuItem",
+      "astryx_group": "DropdownMenu",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/DropdownMenu",
+      "our_component": "DropdownMenuItem",
+      "our_family": "overlay",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_overlay",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "EmptyState",
+      "astryx_group": "EmptyState",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/EmptyState",
+      "our_component": "ResourcePanel",
+      "our_family": "resource-state",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_resource_state_component",
+      "capabilities_to_absorb": [
+        "nearby feedback",
+        "empty explanation",
+        "recoverable error copy"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "text-muted",
+        "status-color",
+        "skeleton-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Field",
+      "astryx_group": "Field",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Field",
+      "our_component": "FieldShell",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "FieldLabel",
+      "astryx_group": "Field",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Field",
+      "our_component": "FieldLabel",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "part_of_field",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "FieldStatus",
+      "astryx_group": "Field",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/FieldStatus",
+      "our_component": "FieldStatus",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "part_of_field",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "InputGroup",
+      "astryx_group": "Field",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/InputGroup",
+      "our_component": "InputGroup",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "InputGroupText",
+      "astryx_group": "Field",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/InputGroup",
+      "our_component": "InputGroupText",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "FileInput",
+      "astryx_group": "FileInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/FileInput",
+      "our_component": "FileInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TypeaheadItem",
+      "astryx_group": "Group label for visual grouping.",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Typeahead",
+      "our_component": "TypeaheadItem",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_list",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "HoverCard",
+      "astryx_group": "HoverCard",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/HoverCard",
+      "our_component": "HoverCard",
+      "our_family": "container",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "Icon",
+      "astryx_group": "Icon",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Icon",
+      "our_component": "Icon",
+      "our_family": "status",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_status_primitives",
+      "capabilities_to_absorb": [
+        "stable semantic status",
+        "compact metadata",
+        "count and filter chips"
+      ],
+      "tokens_needed": [
+        "status-success",
+        "status-warning",
+        "status-danger",
+        "status-info"
+      ],
+      "must_have_states": [
+        "success",
+        "warning",
+        "danger",
+        "info",
+        "neutral"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Item",
+      "astryx_group": "Item",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Item",
+      "our_component": "Item",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_list",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Kbd",
+      "astryx_group": "Kbd",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Kbd",
+      "our_component": "Kbd",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Center",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Center",
+      "our_component": "Center",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "FormLayout",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/FormLayout",
+      "our_component": "FormLayout",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Grid",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Grid",
+      "our_component": "Grid",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "GridSpan",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Grid",
+      "our_component": "GridSpan",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Layout",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Layout",
+      "our_component": "Layout",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "LayoutContent",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Layout",
+      "our_component": "LayoutContent",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "LayoutFooter",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Layout",
+      "our_component": "LayoutFooter",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "LayoutHeader",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Layout",
+      "our_component": "LayoutHeader",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "part_of_content",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "LayoutPanel",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Layout",
+      "our_component": "InspectorPanel",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Section",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Section",
+      "our_component": "Section",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Stack",
+      "astryx_group": "Layout",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Stack",
+      "our_component": "Stack",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Lightbox",
+      "astryx_group": "Lightbox",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Lightbox",
+      "our_component": "Lightbox",
+      "our_family": "media",
+      "mapping_type": "defer",
+      "adoption_priority": "P3",
+      "implementation_strategy": "defer_until_project_need",
+      "capabilities_to_absorb": [
+        "media ratio",
+        "thumbnail state",
+        "gallery pattern"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "radius-card",
+        "spacing"
+      ],
+      "must_have_states": [
+        "loaded",
+        "loading",
+        "error"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "Link",
+      "astryx_group": "Link",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Link",
+      "our_component": "Link",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "List",
+      "astryx_group": "List",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/List",
+      "our_component": "List",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_list_component",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ListItem",
+      "astryx_group": "List",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/List",
+      "our_component": "ListItem",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_list",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Markdown",
+      "astryx_group": "Markdown",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Markdown",
+      "our_component": "Markdown",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "MetadataList",
+      "astryx_group": "MetadataList",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/MetadataList",
+      "our_component": "MetadataList",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_list_component",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "MetadataListItem",
+      "astryx_group": "MetadataList",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/MetadataList",
+      "our_component": "MetadataListItem",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_list",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "MoreMenu",
+      "astryx_group": "MoreMenu",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/MoreMenu",
+      "our_component": "MoreMenu",
+      "our_family": "overlay",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_overlay_library",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "MobileNav",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/MobileNav",
+      "our_component": "MobileNav",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "NavIcon",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/NavIcon",
+      "our_component": "NavIcon",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SideNav",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SideNav",
+      "our_component": "SideNav",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SideNavCollapseButton",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SideNav",
+      "our_component": "SideNavCollapseButton",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SideNavHeading",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SideNav",
+      "our_component": "SideNavHeading",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SideNavItem",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SideNav",
+      "our_component": "SideNavItem",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_app_frame",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SideNavSection",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SideNav",
+      "our_component": "SideNavSection",
+      "our_family": "container",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_container_component",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TopNav",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNav",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TopNavHeading",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNavHeading",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TopNavItem",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNavItem",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_app_frame",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TopNavMegaMenu",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNavMegaMenu",
+      "our_family": "app-frame",
+      "mapping_type": "defer",
+      "adoption_priority": "P1",
+      "implementation_strategy": "defer_until_project_need",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "TopNavMegaMenuFeaturedCard",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNavMegaMenuFeaturedCard",
+      "our_family": "container",
+      "mapping_type": "defer",
+      "adoption_priority": "P2",
+      "implementation_strategy": "defer_until_project_need",
+      "capabilities_to_absorb": [
+        "surface variants",
+        "selection or click state"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "radius-card",
+        "shadow",
+        "spacing"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "TopNavMegaMenuItem",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNavMegaMenuItem",
+      "our_family": "app-frame",
+      "mapping_type": "defer",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_app_frame",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "TopNavMenu",
+      "astryx_group": "Navigation",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TopNav",
+      "our_component": "TopNavMenu",
+      "our_family": "app-frame",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_navigation_or_frame_component",
+      "capabilities_to_absorb": [
+        "frame slots",
+        "navigation state",
+        "responsive region policy"
+      ],
+      "tokens_needed": [
+        "surface",
+        "border",
+        "spacing",
+        "density"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "NumberInput",
+      "astryx_group": "NumberInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/NumberInput",
+      "our_component": "NumberInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Outline",
+      "astryx_group": "Outline",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Outline",
+      "our_component": "Outline",
+      "our_family": "content",
+      "mapping_type": "defer",
+      "adoption_priority": "P3",
+      "implementation_strategy": "defer_until_project_need",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "OverflowList",
+      "astryx_group": "OverflowList",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/OverflowList",
+      "our_component": "OverflowList",
+      "our_family": "list",
+      "mapping_type": "defer",
+      "adoption_priority": "P1",
+      "implementation_strategy": "defer_until_project_need",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "Overlay",
+      "astryx_group": "Overlay",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Overlay",
+      "our_component": "Overlay",
+      "our_family": "overlay",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_overlay_library",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Pagination",
+      "astryx_group": "Pagination",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Pagination",
+      "our_component": "TablePagination",
+      "our_family": "resource-state",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_resource_state_component",
+      "capabilities_to_absorb": [
+        "nearby feedback",
+        "empty explanation",
+        "recoverable error copy"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "text-muted",
+        "status-color",
+        "skeleton-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Popover",
+      "astryx_group": "Popover",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Popover",
+      "our_component": "Popover",
+      "our_family": "overlay",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_overlay_library",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "PowerSearch",
+      "astryx_group": "PowerSearch",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/PowerSearch",
+      "our_component": "PowerSearch",
+      "our_family": "command-palette",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_command_palette_library",
+      "capabilities_to_absorb": [
+        "global command search",
+        "grouped results",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "focus-ring",
+        "spacing"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "searching",
+        "empty",
+        "keyboard navigation"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "ProgressBar",
+      "astryx_group": "ProgressBar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/ProgressBar",
+      "our_component": "ProgressBar",
+      "our_family": "resource-state",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_resource_state_component",
+      "capabilities_to_absorb": [
+        "nearby feedback",
+        "empty explanation",
+        "recoverable error copy"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "text-muted",
+        "status-color",
+        "skeleton-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "RadioList",
+      "astryx_group": "Radio",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/RadioList",
+      "our_component": "RadioList",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "RadioListItem",
+      "astryx_group": "Radio",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/RadioList",
+      "our_component": "RadioListItem",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_field",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SegmentedControl",
+      "astryx_group": "SegmentedControl",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SegmentedControl",
+      "our_component": "SegmentedControl",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SegmentedControlItem",
+      "astryx_group": "SegmentedControl",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/SegmentedControl",
+      "our_component": "SegmentedControlItem",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "part_of_list",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "MultiSelector",
+      "astryx_group": "Selector",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/MultiSelector",
+      "our_component": "MultiSelectField",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Selector",
+      "astryx_group": "Selector",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Selector",
+      "our_component": "SelectField",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "SelectorOption",
+      "astryx_group": "Selector",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Selector",
+      "our_component": "SelectOption",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Skeleton",
+      "astryx_group": "Skeleton",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Skeleton",
+      "our_component": "Skeleton",
+      "our_family": "resource-state",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_resource_state_component",
+      "capabilities_to_absorb": [
+        "nearby feedback",
+        "empty explanation",
+        "recoverable error copy"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "text-muted",
+        "status-color",
+        "skeleton-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Slider",
+      "astryx_group": "Slider",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Slider",
+      "our_component": "Slider",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Spinner",
+      "astryx_group": "Spinner",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Spinner",
+      "our_component": "Spinner",
+      "our_family": "resource-state",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_resource_state_component",
+      "capabilities_to_absorb": [
+        "nearby feedback",
+        "empty explanation",
+        "recoverable error copy"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "text-muted",
+        "status-color",
+        "skeleton-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "StatusDot",
+      "astryx_group": "StatusDot",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/StatusDot",
+      "our_component": "StatusDot",
+      "our_family": "status",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_status_primitives",
+      "capabilities_to_absorb": [
+        "stable semantic status",
+        "compact metadata",
+        "count and filter chips"
+      ],
+      "tokens_needed": [
+        "status-success",
+        "status-warning",
+        "status-danger",
+        "status-info"
+      ],
+      "must_have_states": [
+        "success",
+        "warning",
+        "danger",
+        "info",
+        "neutral"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Switch",
+      "astryx_group": "Switch",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Switch",
+      "our_component": "Switch",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Table",
+      "astryx_group": "Table",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Table",
+      "our_component": "DataTable",
+      "our_family": "data-table",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_component_with_astryx_capability_reference",
+      "capabilities_to_absorb": [
+        "column definitions",
+        "sorting",
+        "filtering",
+        "pagination",
+        "selection",
+        "sticky columns",
+        "column resize",
+        "row expansion"
+      ],
+      "tokens_needed": [
+        "density",
+        "row-height",
+        "border",
+        "surface",
+        "data-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TableCell",
+      "astryx_group": "Table",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Table",
+      "our_component": "DataTableCell",
+      "our_family": "data-table",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "part_of_data_table",
+      "capabilities_to_absorb": [
+        "column definitions",
+        "sorting",
+        "filtering",
+        "pagination",
+        "selection",
+        "sticky columns",
+        "column resize",
+        "row expansion"
+      ],
+      "tokens_needed": [
+        "density",
+        "row-height",
+        "border",
+        "surface",
+        "data-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TableHeaderCell",
+      "astryx_group": "Table",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Table",
+      "our_component": "DataTableHeaderCell",
+      "our_family": "data-table",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "part_of_data_table",
+      "capabilities_to_absorb": [
+        "column definitions",
+        "sorting",
+        "filtering",
+        "pagination",
+        "selection",
+        "sticky columns",
+        "column resize",
+        "row expansion"
+      ],
+      "tokens_needed": [
+        "density",
+        "row-height",
+        "border",
+        "surface",
+        "data-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TableRow",
+      "astryx_group": "Table",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Table",
+      "our_component": "DataTableRow",
+      "our_family": "data-table",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "part_of_data_table",
+      "capabilities_to_absorb": [
+        "column definitions",
+        "sorting",
+        "filtering",
+        "pagination",
+        "selection",
+        "sticky columns",
+        "column resize",
+        "row expansion"
+      ],
+      "tokens_needed": [
+        "density",
+        "row-height",
+        "border",
+        "surface",
+        "data-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Tab",
+      "astryx_group": "Tabs",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TabList",
+      "our_component": "Tab",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TabList",
+      "astryx_group": "Tabs",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TabList",
+      "our_component": "TabList",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_list_component",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TabMenu",
+      "astryx_group": "Tabs",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TabList",
+      "our_component": "TabMenu",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P3",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Text",
+      "astryx_group": "Text",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Text",
+      "our_component": "Text",
+      "our_family": "content",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_content_renderer",
+      "capabilities_to_absorb": [
+        "typography semantics",
+        "copy action where relevant"
+      ],
+      "tokens_needed": [
+        "font-family",
+        "font-size",
+        "line-height",
+        "text-color",
+        "text-muted"
+      ],
+      "must_have_states": [
+        "default",
+        "overflow"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TextArea",
+      "astryx_group": "TextArea",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TextArea",
+      "our_component": "TextAreaField",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TextInput",
+      "astryx_group": "TextInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TextInput",
+      "our_component": "TextField",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Thumbnail",
+      "astryx_group": "Thumbnail",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Thumbnail",
+      "our_component": "Thumbnail",
+      "our_family": "media",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P3",
+      "implementation_strategy": "defer_until_media_or_gallery_need",
+      "capabilities_to_absorb": [
+        "media ratio",
+        "thumbnail state",
+        "gallery pattern"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "radius-card",
+        "spacing"
+      ],
+      "must_have_states": [
+        "loaded",
+        "loading",
+        "error"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "TimeInput",
+      "astryx_group": "TimeInput",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TimeInput",
+      "our_component": "TimeInput",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Timestamp",
+      "astryx_group": "Timestamp",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Timestamp",
+      "our_component": "Timestamp",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Toast",
+      "astryx_group": "Toast",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Toast",
+      "our_component": "Toast",
+      "our_family": "resource-state",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_resource_state_component",
+      "capabilities_to_absorb": [
+        "nearby feedback",
+        "empty explanation",
+        "recoverable error copy"
+      ],
+      "tokens_needed": [
+        "surface-muted",
+        "text-muted",
+        "status-color",
+        "skeleton-color"
+      ],
+      "must_have_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission denied",
+        "partial data"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Token",
+      "astryx_group": "Token",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Token",
+      "our_component": "CodeToken",
+      "our_family": "status",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_status_primitives",
+      "capabilities_to_absorb": [
+        "stable semantic status",
+        "compact metadata",
+        "count and filter chips"
+      ],
+      "tokens_needed": [
+        "status-success",
+        "status-warning",
+        "status-danger",
+        "status-info"
+      ],
+      "must_have_states": [
+        "success",
+        "warning",
+        "danger",
+        "info",
+        "neutral"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Tokenizer",
+      "astryx_group": "Tokenizer",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Tokenizer",
+      "our_component": "Tokenizer",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Toolbar",
+      "astryx_group": "Toolbar",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Toolbar",
+      "our_component": "Toolbar",
+      "our_family": "layout",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_layout_primitive",
+      "capabilities_to_absorb": [
+        "region slots",
+        "spacing rhythm",
+        "responsive contract"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "surface",
+        "border"
+      ],
+      "must_have_states": [
+        "desktop",
+        "narrow",
+        "mobile"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Tooltip",
+      "astryx_group": "Tooltip",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Tooltip",
+      "our_component": "Tooltip",
+      "our_family": "overlay",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_overlay_library",
+      "capabilities_to_absorb": [
+        "layering",
+        "dismiss behavior",
+        "keyboard navigation"
+      ],
+      "tokens_needed": [
+        "overlay",
+        "surface",
+        "shadow",
+        "radius-panel",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "closed",
+        "open",
+        "active",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "TreeList",
+      "astryx_group": "TreeList",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/TreeList",
+      "our_component": "TreeList",
+      "our_family": "list",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_list_component",
+      "capabilities_to_absorb": [
+        "edge-to-edge rows",
+        "dividers",
+        "interactive item slots"
+      ],
+      "tokens_needed": [
+        "spacing",
+        "border",
+        "density",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "hover",
+        "selected",
+        "empty",
+        "disabled"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "BaseTypeahead",
+      "astryx_group": "Typeahead",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Typeahead",
+      "our_component": "BaseCombobox",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P2",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "Typeahead",
+      "astryx_group": "Typeahead",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Typeahead",
+      "our_component": "Combobox",
+      "our_family": "field",
+      "mapping_type": "semantic_map",
+      "adoption_priority": "P1",
+      "implementation_strategy": "own_or_wrap_accessible_field_component",
+      "capabilities_to_absorb": [
+        "label",
+        "helper",
+        "error",
+        "keyboard behavior",
+        "aria-describedby"
+      ],
+      "tokens_needed": [
+        "height-control",
+        "border",
+        "radius-control",
+        "text-muted",
+        "focus-ring"
+      ],
+      "must_have_states": [
+        "default",
+        "focus",
+        "disabled",
+        "loading",
+        "error",
+        "helper"
+      ],
+      "notes": "吸收组件能力和状态模型，命名、API、token、实现按部门技术方案设计。"
+    },
+    {
+      "astryx_component": "LinkProvider",
+      "astryx_group": "Utilities",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/Link",
+      "our_component": "LinkAdapter",
+      "our_family": "theme",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P1",
+      "implementation_strategy": "token_and_theme_bridge_not_runtime_dependency",
+      "capabilities_to_absorb": [
+        "token bridge",
+        "theme provider pattern",
+        "component variant strategy"
+      ],
+      "tokens_needed": [
+        "color",
+        "typography",
+        "radius",
+        "motion",
+        "spacing"
+      ],
+      "must_have_states": [
+        "light",
+        "dark",
+        "system"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "MediaTheme",
+      "astryx_group": "Utilities",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/theme",
+      "our_component": "MediaTheme",
+      "our_family": "theme",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P3",
+      "implementation_strategy": "token_and_theme_bridge_not_runtime_dependency",
+      "capabilities_to_absorb": [
+        "token bridge",
+        "theme provider pattern",
+        "component variant strategy"
+      ],
+      "tokens_needed": [
+        "color",
+        "typography",
+        "radius",
+        "motion",
+        "spacing"
+      ],
+      "must_have_states": [
+        "light",
+        "dark",
+        "system"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "Theme",
+      "astryx_group": "Utilities",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core",
+      "our_component": "ThemeProvider",
+      "our_family": "theme",
+      "mapping_type": "pattern_only",
+      "adoption_priority": "P1",
+      "implementation_strategy": "token_and_theme_bridge_not_runtime_dependency",
+      "capabilities_to_absorb": [
+        "token bridge",
+        "theme provider pattern",
+        "component variant strategy"
+      ],
+      "tokens_needed": [
+        "color",
+        "typography",
+        "radius",
+        "motion",
+        "spacing"
+      ],
+      "must_have_states": [
+        "light",
+        "dark",
+        "system"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    },
+    {
+      "astryx_component": "VisuallyHidden",
+      "astryx_group": "VisuallyHidden",
+      "astryx_package": "@astryxdesign/core",
+      "astryx_import": "@astryxdesign/core/VisuallyHidden",
+      "our_component": "VisuallyHidden",
+      "our_family": "accessibility",
+      "mapping_type": "direct_map",
+      "adoption_priority": "P0",
+      "implementation_strategy": "own_utility",
+      "capabilities_to_absorb": [
+        "screen-reader-only content"
+      ],
+      "tokens_needed": [],
+      "must_have_states": [
+        "default"
+      ],
+      "notes": "按映射类型处理，不照搬 Astryx 源码或 props。"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "tokens": {
+    "color.primary": ["--color-primary", "--brand-primary", "--harbor-primary", "--primary", "--mui-palette-primary-main", "--accent-9"],
+    "color.secondary": ["--color-secondary", "--brand-secondary", "--harbor-secondary"],
+    "color.bg": ["--color-bg", "--background", "--harbor-bg", "--mui-palette-background-default", "--color-background"],
+    "color.surface": ["--color-surface", "--surface", "--harbor-surface", "--card", "--mui-palette-background-paper"],
+    "color.surfaceElevated": ["--color-surface-elevated", "--surface-elevated", "--card-bg"],
+    "color.text": ["--color-text", "--text", "--harbor-text", "--foreground", "--primary-foreground", "--card-foreground", "--mui-palette-text-primary", "--gray-12"],
+    "color.textMuted": ["--color-text-muted", "--text-muted", "--muted-foreground"],
+    "color.border": ["--color-border", "--border", "--harbor-border", "--mui-palette-divider"],
+    "color.focus": ["--color-focus", "--focus-ring", "--ring", "--mui-palette-action-focus"],
+    "color.success": ["--color-success", "--success"],
+    "color.warning": ["--color-warning", "--warning"],
+    "color.danger": ["--color-danger", "--danger", "--destructive"],
+    "color.info": ["--color-info", "--info"],
+    "font.family": ["--font-family", "--font-sans", "--font-body"],
+    "font.size.sm": ["--font-size-sm", "--text-sm"],
+    "font.size.md": ["--font-size-md", "--text-base"],
+    "font.size.lg": ["--font-size-lg", "--text-lg"],
+    "font.weight.regular": ["--font-weight-regular", "--font-regular"],
+    "font.weight.medium": ["--font-weight-medium", "--font-medium"],
+    "font.weight.bold": ["--font-weight-bold", "--font-bold"],
+    "lineHeight.body": ["--line-height-body", "--leading-normal"],
+    "space.1": ["--space-1", "--spacing-1"],
+    "space.2": ["--space-2", "--spacing-2"],
+    "space.3": ["--space-3", "--spacing-3"],
+    "space.4": ["--space-4", "--spacing-4"],
+    "radius.sm": ["--radius-sm", "--border-radius-sm"],
+    "radius.md": ["--radius-md", "--border-radius", "--harbor-radius"],
+    "radius.lg": ["--radius-lg", "--border-radius-lg"]
+  },
+  "components": {
+    "button": ["Button", "PrimaryButton"],
+    "icon-button": ["IconButton", "ActionButton"],
+    "field": ["FieldShell", "FormField", "Field"],
+    "choice-field": ["SelectField", "Select", "ChoiceField"],
+    "dialog": ["Dialog", "Modal"],
+    "resource-state": ["ResourcePanel", "EmptyState", "StatePanel"],
+    "status": ["StatusBadge", "Badge", "Tag"],
+    "data-table": ["DataTable", "Table"]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "kind": "project-component-kit",
+  "profile": "full",
+  "selectionSource": "legacy-full",
+  "requestedComponentIds": [],
+  "dependencyAddedComponentIds": [],
+  "componentIds": [],
+  "runtimeComponentIds": [],
+  "library": {
+    "scope": "design-consultant-skill",
+    "manifest": "templates/component-manifest.json",
+    "preview": "templates/component-library.html"
+  },
+  "generatedBy": {
+    "skill": "design-consultant",
+    "version": "0.10.0"
+  }
+}

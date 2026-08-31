@@ -34,7 +34,7 @@ description: 设计数据库 Schema、API 接口和术语表。page-explainer �
 |------|------|------|---------|
 | brd-writer | `BRD-<slug>-*.md` | 是 | 项目类型、核心业务模型 |
 | page-designer | `page-delivery-<slug>.md` | 是 | 页面路由表、文件路径、架构信息 |
-| page-designer | 实际页面代码文件（Vue 3 组件） | 是 | 从 delivery 中的文件路径读取，分析页面渲染/提交的数据结构 |
+| page-designer | 实际页面代码文件（技术栈以 page-delivery 声明为准） | 是 | 从 delivery 中的文件路径读取，按其技术栈分析页面渲染/提交的数据结构 |
 | page-explainer | `explainer-flow-<slug>.md` | 是 | 用户流程全貌，辅助理解数据流向 |
 | page-explainer | `explainer-b-interaction-<slug>.md` | 是 | 结构化交互语义（仅消费 locked 条目），辅助 API 设计 |
 | page-explainer | `explainer-delivery-<slug>.md` | 是 | 入口索引：按流程 → 产物映射快速定位本次 Schema/API 涉及的语义条目 |
@@ -121,7 +121,7 @@ Phase 1 逻辑简单，直接在此定义：
 3. 在 `src/frontend/page-preview/` 搜索 `explainer-flow-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer
 4. 在 `src/frontend/page-preview/` 搜索 `explainer-b-interaction-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer
 5. 在 `src/frontend/page-preview/` 搜索 `explainer-delivery-<slug>.md`；仍不存在则**中止**，提示用户先完成 page-explainer 的最终 Phase
-6. 从 delivery 中提取页面文件路径列表，逐个读取 Vue 3 页面代码
+6. 从 delivery 中提取页面文件路径列表，逐个读取技术栈以 page-delivery 声明为准的页面代码
 7. 从 BRD 读取：项目类型、核心业务模型
 8. 在 `docs/prd/foundation/` 检测 `foundation-{glossary,schema,api}-<slug>.md` 是否存在
    - 存在 → 增量模式，加载 `references/incremental-update.md`

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "",
+    "status": "draft"
+  },
+  "mode": "default",
+  "componentKit": {
+    "profile": "full",
+    "selectionSource": "legacy-full",
+    "requestedComponentIds": [],
+    "dependencyAddedComponentIds": [],
+    "componentIds": []
+  },
+  "visualBaseline": {
+    "direction": "editorial-utility",
+    "palette": "harbor-blue",
+    "paletteOptions": ["harbor-blue", "coral-office"],
+    "colorMode": "light",
+    "colorModes": ["light", "dark"],
+    "navigationTone": "light",
+    "navigationVariants": ["light", "inverse"]
+  },
+  "brandAttribution": {
+    "enabled": true,
+    "status": "deferred",
+    "style": {
+      "status": "pending-visual-system",
+      "tone": null,
+      "material": null,
+      "accentScope": null,
+      "accentToken": "--brand-attribution-accent",
+      "aiToken": "--brand-attribution-ai",
+      "rationale": null,
+      "fallback": null
+    },
+    "placement": {
+      "status": "pending-product-structure",
+      "desktop": null,
+      "mobile": null,
+      "authentication": null,
+      "authorization": null,
+      "responsiveMigration": null,
+      "maxVisiblePerViewport": 1,
+      "recheckOnProductStructureChange": true
+    }
+  },
+  "generatedBy": {
+    "skill": "design-consultant",
+    "version": "0.10.0"
+  },
+  "sourceOfTruth": {
+    "designDecisions": "DESIGN.md",
+    "tokens": "tokens/tokens.json",
+    "runtimeTokens": "tokens/tokens.css",
+    "tokenTypes": "tokens/tokens.ts",
+    "tokenSchema": "tokens/tokens.schema.json",
+    "visualizationManifest": "visualizations/manifest.json",
+    "visualizationTheme": "visualizations/lieflat/lieflat-theme.js",
+    "visualizationTokenRuntime": "visualizations/lieflat/mono-tokens.js",
+    "visualizationDependencies": "visualizations/lieflat/runtime/RUNTIME.json",
+    "visualizationUpstream": "visualizations/lieflat/UPSTREAM.json",
+    "componentManifest": "components/manifest.json",
+    "componentKit": "components/kit.json",
+    "componentDecisions": "components/decisions.json",
+    "catalogFoundation": "catalog/catalog-foundation.css",
+    "componentCatalogStyles": "catalog/component-library.css",
+    "componentPreviewStyles": "catalog/component-preview.css",
+    "catalog": "catalog/component-library.html",
+    "catalogSource": null,
+    "catalogBundle": "catalog/component-library.js",
+    "visualizationCatalog": "catalog/component-library.html#visualization/lupi",
+    "agentRules": "agent-rules.md"
+  },
+  "integration": {
+    "adoptionStrategy": null,
+    "tokenOwnership": "design-consultant",
+    "tokenBridge": null,
+    "componentAdapterMap": null,
+    "legacyBaseline": null,
+    "framework": null,
+    "runtimeTokenImport": null,
+    "sharedComponentRoot": null,
+    "sharedComponentExport": null,
+    "iconEntry": null
+  },
+  "customization": {
+    "allowedLevers": [
+      "primaryColor",
+      "palette",
+      "colorMode",
+      "density",
+      "radius",
+      "fontStrategy",
+      "navigationTone",
+      "visualIntensity",
+      "pageTemplate"
+    ],
+    "pendingDecisions": []
+  },
+  "checks": {
+    "cssVariables": "checks/check-css-vars.ps1",
+    "tokenContract": "checks/sync-tokens.mjs",
+    "designContract": "checks/check-design-system-contract.ps1",
+    "visualizationModule": "checks/check-visualization-module.mjs",
+    "componentRuntime": "checks/check-component-runtime.mjs",
+    "uiContract": "checks/check-ui-contract.mjs",
+    "catalogBuild": null,
+    "visualRegression": null,
+    "productAcceptance": "checks/product-acceptance.config.mjs",
+    "productCommitments": "checks/product-commitments.json",
+    "finalVerification": "checks/verify-project.mjs"
+  }
+}

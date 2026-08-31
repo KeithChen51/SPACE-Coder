@@ -82,6 +82,51 @@ S7 ─────────────────────────�
 
 调度层不向子 skill 传递指令，子 skill 不感知调度层存在。调度层只通过观察产物文件是否存在、内容是否合格来判断子 skill 是否完成。
 
+### S2 设计顾问接入边界（v0.11）
+
+设计顾问定义并维护项目设计事实；套包决定其何时介入以及由谁交付阶段产物。S2 的正式负责人仍是 `page-designer`，`design-consultant v0.11` 作为其内部设计治理与页面生产核心，不是第二个项目调度器。
+
+本次接入保留 S2 的阶段、owner 和全部既有门禁：
+
+- `page-designer` 仍负责读取 BRD 与宿主技术栈、维护唯一 `page-ledger-<slug>.json`、询问并记录截图、启动或记录预览证据、取得用户逐页确认、生成兼容交付物，并把页面环节交给 `page-explainer`。
+- `page-chief` 仍是只读观察与回环裁判；它只观察 `page-designer` 和 `page-explainer` 的文件事实，不生成或修复 adapter 交付，也不替代任何子 skill。
+- 用户确认页面方向后，仍必须由 `page-explainer` 冻结流程与交互语义、收口 `design_gap` / `logic_conflict`；只有 `page-chief` 判定页面环节 DONE，才可进入 `prd-chief` 的 `foundation-builder` / `prd-writer` 下游。
+- 台账仍由既有 page-ledger 命令写入。adapter 只接受 phase 3 的已确认输入，生成交付后仍由 `page-ledger-mutate.mjs advance --to 4` 推进到 phase 4；adapter 不写台账、不写全局套包状态、不调用 `page-chief`。
+
+新项目的项目设计事实源是 canonical `design-system/`：`DESIGN.md`、`tokens/`、`components/manifest.json`、`system.config.json` 和 `page-delivery.json`。已有项目的 `design-system/<slug>/MASTER.md` 仅作为旧项目 fallback 输入读取，不得与 canonical design-system 并行成为第二套事实源。
+
+标准 artifact flow：
+
+```text
+BRD + tech stack
+-> canonical design-system + real pages + generic page-delivery.json
+-> S2 adapter
+-> page-delivery-<slug>.md + ledger phase 4
+-> page-explainer
+-> foundation-builder / prd-writer
+```
+
+通用 manifest 先保持 `draft`，在真实页面、预览与浏览器证据齐备且用户明确确认页面方向后才标记 `confirmed`；S2 adapter 将 confirmed 的 `design-system/page-delivery.json` 转换为下游兼容的 legacy `src/frontend/page-preview/page-delivery-<slug>.md`。`preview.startCommand` 只记录、不执行。下游仍以 legacy delivery 为页面索引入口，并按其中声明的真实页面路径、技术栈、设计系统和确认/证据字段继续工作。
+
+评测证据、source tests、维护产物和 planning workspace 均遵循 `source-only` 政策：评测证据只保留在 design-consultant source，不进入本套件导入的 `skills/design-consultant/` package；导入包也不包含 eval、review、benchmark 或 grading 产物。
+
+S2 页面接入之外，套件还通过 `companionActions` 按需加载设计顾问的非 S2 子能力；这些动作不构成新的路由目标或第二个调度器。评测证据、source tests、维护产物和 planning workspace 仍遵循 `source-only` 政策，不进入导入的 `skills/design-consultant/` package。
+
+### 非 S2 设计顾问伴随接入
+
+`ai-project-manager` 先完成阶段判断和 UI/设计适用性判断，再按 `companionActions` 的稳定顺序执行所有 `required: true` 设计动作，最后调用正式阶段 owner。设计结果只是输入，不能改写阶段 owner、正式产物或状态回写；`project-link-indexer` 与设计顾问动作可以在同一轮共存，且保持 indexer-first。
+
+| 阶段 | trigger / capability | consumer | mode | 适用边界 |
+|---|---|---|---|---|
+| S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only` | 启动最小字段完成且有页面/UI 意图 |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `read-only` | 有既有前端或设计系统证据；读取声明的 references，用宿主正常只读文件/搜索工具形成事实报告和 `preserve` / `augment` / `migrate` 建议 |
+| S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only` | 有项目 `design-system/` 证据 |
+| S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only` | 有项目 `design-system/` 证据且当前任务是 UI/前端任务 |
+| S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only` | 有 `product-commitments.json` |
+| S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only` | 同时有 commitments 与 `product-acceptance.config.mjs` |
+
+S0/S1/S0.5/S3 的设计顾问动作只读；S0.5 不初始化或写入 `design-system/`，不执行 `extract`、adopt、migrate、baseline update、`startCommand`、write 或 prune；S4 不写、删除或更新 baseline；S5 commitments 不是第二个测试 Oracle；S6 不替代可见浏览器执行、runner 报告、`startCommand` 或 baseline 更新。与设计顾问共存时，`project-link-indexer` 仍可自行 build / refresh / write 索引。后端/非 UI 任务和 S7 不路由设计顾问。
+
 ---
 
 ## 宿主项目目录约定
@@ -128,16 +173,19 @@ S7 ─────────────────────────�
 │   └── frontend/
 │       └── page-preview/                     # 页面元数据与页面语义描述层
 │           ├── page-ledger-<slug>.json       # page-designer 台账（phase、回环轮次）
-│           ├── page-delivery-<slug>.md       # page-designer 交付清单（页面索引入口）
+│           ├── page-delivery-<slug>.md       # adapter 生成的 legacy 交付清单（下游页面索引入口）
 │           ├── explainer-flow-<slug>.md      # page-explainer 用户流程图
 │           ├── explainer-b-interaction-<slug>.md     # page-explainer 交互语义
 │           ├── explainer-b-gap-<slug>.md     # page-explainer 差异（可选，有差异时产出）
 │           └── explainer-delivery-<slug>.md  # page-explainer 交付清单（入口索引 + 一致性自查）
 ├── <工程名>/                                  # page-designer 产出的可运行前端工程（src/、package.json 等；技术栈以 page-delivery 交付清单声明为准）
-├── design-system/                             # page-designer 设计系统落点
-│   └── <slug>/                                # 与项目 slug 同名
-│       ├── MASTER.md                          # 全局设计规范
-│       └── pages/<page>.md                    # 页面级覆盖（可选）
+├── design-system/                             # canonical 项目设计事实源（design-consultant v0.11 维护）
+│   ├── DESIGN.md                              # 设计判断与已确认事实
+│   ├── tokens/                                # Token 源
+│   ├── components/manifest.json               # 组件索引
+│   ├── system.config.json                     # 真实运行时入口与配置
+│   ├── page-delivery.json                     # 通用 Page Delivery Manifest（draft/confirmed）
+│   └── <slug>/MASTER.md                       # 旧项目 fallback 输入，不是第二事实源
 ├── docs/test-case/                            # 测试用例层（S5 产物）+ 测试报告层（S6 产物）
 │   ├── acceptance-<slug>.md                  # prd-acceptance-reviewer 验收文档主索引
 │   ├── acceptance-<slug>/                    # 按 PRD 区块拆的子验收文档
@@ -168,8 +216,8 @@ S7 ─────────────────────────�
 | `<host>/docs/index/` | 文件级引用索引层 | 可重建的文件关系图、坏链诊断和 LLM wiki 导航入口 | project-link-indexer | ai-project-manager、所有下游 skill |
 | `<host>/docs/brd/` | 业务层 | 业务需求最终态与过程台账 | brd-writer | page-designer、page-explainer、foundation-builder、prd-writer、delivery-planner |
 | `<host>/<工程名>/` | 代码层 | page-designer 产出的可运行前端工程 | page-designer | page-explainer、foundation-builder、prd-writer |
-| `<host>/design-system/<slug>/` | 设计规范层 | page-designer 沉淀的全局设计规范与页面级覆盖 | page-designer | page-designer（构建页面时回读） |
-| `<host>/src/frontend/page-preview/` | 页面元数据层 | 页面台账、交付清单、交互语义 | page-designer、page-explainer | foundation-builder、prd-writer |
+| `<host>/design-system/` | canonical 设计事实层 | `DESIGN.md`、Token、组件索引、运行时配置和通用 `page-delivery.json`；旧项目 `design-system/<slug>/MASTER.md` 仅 fallback 读取 | page-designer（内部调用 design-consultant v0.11） | page-designer、page-explainer、foundation-builder、prd-writer |
+| `<host>/src/frontend/page-preview/` | 页面元数据层 | page ledger、adapter 生成的 legacy `page-delivery-<slug>.md`、交互语义与交付清单 | page-designer、page-explainer | foundation-builder、prd-writer |
 | `<host>/docs/prd/` | 规格层 | 技术地基 + AI 可直接编码的 PRD 规格 | foundation-builder、prd-writer | delivery-planner、coding-standards |
 | `<host>/docs/plans/` | 计划层 | 面向 AI 执行的开发执行计划 | delivery-planner | coding-standards |
 | `<host>/docs/plans/foundation-plans/` | 计划层（S4 反哺） | foundation 漂移待改 backlog，只记录需要回改 foundation 的请求 | coding-standards | foundation-builder、ai-project-manager |
@@ -187,7 +235,7 @@ S7 ─────────────────────────�
 | project-baseline-auditor | `<host>/` + `<host>/docs/baseline/` | 受控生成或更新 `project-profile.md`；`baseline-audit-<slug>.json`、`baseline-audit-<slug>.md` 写入 `docs/baseline/` |
 | project-link-indexer | `<host>/docs/index/` | `project-link-graph.json`、`project-link-graph.md`、`project-wiki-schema.json`；均为可重建索引，不替代原始业务文件 |
 | brd-writer | `<host>/docs/brd/` | `BRD-<slug>-*.md`、`ledger-state-<slug>.json`（台账权威状态源，只能经 brd-writer 脚本读写，不得手改或删除）、`brd-ledger-<slug>.md`（由 JSON 渲染的只读展示层）及后续该 skill 新增的业务层文件 |
-| page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（元数据）+ `<host>/design-system/<slug>/`（设计规范） | 前端工程目录写入 `<host>/<工程名>/`（技术栈以 page-delivery 交付清单声明为准）；`page-ledger-<slug>.json`、`page-delivery-<slug>.md` 等元数据文件写入 `<host>/src/frontend/page-preview/`；`MASTER.md`、`pages/<page>.md` 设计规范写入 `<host>/design-system/<slug>/` |
+| page-designer | `<host>/<工程名>/`（代码）+ `<host>/src/frontend/page-preview/`（台账/legacy 元数据）+ `<host>/design-system/`（canonical 设计事实） | S2 正式 owner；通过内部 design-consultant v0.11 维护 `DESIGN.md`、`tokens/`、`components/manifest.json`、`system.config.json` 和通用 `page-delivery.json`，生成真实页面；确认后由 adapter 写入 legacy `page-delivery-<slug>.md`，台账仍由 page-ledger 命令推进；旧项目 `design-system/<slug>/MASTER.md` 仅 fallback |
 | page-explainer | `<host>/src/frontend/page-preview/` | `explainer-*-<slug>.md` 全族（flow / interaction / gap / delivery）及后续新增 |
 | foundation-builder | `<host>/docs/prd/foundation/` | `foundation-*-<slug>.md` 全族（glossary / schema / api / delivery）及后续新增 |
 | prd-writer | `<host>/docs/prd/` + `<host>/docs/prd/subprd/` | `prd-feature-list-<slug>.md`、`mainprd-<slug>.md`、`subprd/0X-subprd-<区块英文短名>.md` 及后续新增 |
@@ -346,22 +394,46 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 
 ## 2. page-designer — 页面设计
 
-**职责**：基于 BRD 产出可交互的前端页面（技术栈从 tech-stack.md 读取，内置设计知识库）。单线 4-Phase 流程。
+**职责**：`page-designer` 是 S2 的正式阶段 owner。它基于 BRD 和宿主技术栈产出可交互的真实页面、维护页面台账、取得用户确认、生成兼容交付并把页面环节交给 `page-explainer`。`design-consultant v0.11` 只作为其内部设计治理与页面生产核心，不改变 `page-chief → page-designer → page-explainer` 的阶段路由，也不成为第二个调度器。
 
 **依赖文件**：
 
 | 文件 | 来源 | 位置 |
 |------|------|------|
 | `BRD-<slug>-*.md` | brd-writer | `<host>/docs/brd/` |
+| 宿主技术栈 | 宿主项目或默认技术栈 | 宿主配置 / `skills/00-01-ai-project-manager/references/defaults/tech-stack.md` |
+| 截图问询结果 | 用户与 page-designer | page ledger 的 `screenshotAsked` |
 
 **产出文件**：
 
 | 产物 | 文件名 | 存放位置 | 说明 |
 |------|--------|---------|------|
-| 页面台账 | `page-ledger-<slug>.json` | `<host>/src/frontend/page-preview/` | phase 状态、回环轮次 |
-| 页面代码 | 前端页面工程 | `<host>/<工程名>/` | 可交互，mock 数据；技术栈以 page-delivery 交付清单声明为准，默认见 tech-stack.md |
-| 设计系统 | `MASTER.md`、`pages/<page>.md` | `<host>/design-system/<slug>/` | 全局设计规范 + 页面级覆盖，构建页面时回读 |
-| 交付清单 | `page-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` | 页面路由表、文件路径、下游索引 |
+| 页面台账 | `page-ledger-<slug>.json` | `<host>/src/frontend/page-preview/` | 唯一状态源；记录 screenshot 问询、phase（0 → 1 → 3 → 4）和回环轮次 |
+| canonical 设计系统 | `DESIGN.md`、`tokens/`、`components/manifest.json`、`system.config.json` | `<host>/design-system/` | design-consultant v0.11 维护的项目设计事实源 |
+| 通用页面清单 | `page-delivery.json` | `<host>/design-system/` | Page Delivery Manifest；先为 `draft`，经预览证据和用户确认后才为 `confirmed` |
+| 页面代码 | 前端页面工程 | `<host>/<工程名>/` | 真实可运行页面；技术栈以 manifest / legacy delivery 声明为准，mock 范围必须显式记录 |
+| legacy 交付清单 | `page-delivery-<slug>.md` | `<host>/src/frontend/page-preview/` | 由 S2 adapter 从 confirmed 通用 manifest 确定性生成，供 page-explainer / foundation-builder / prd-writer 消费 |
+
+**S2 交付顺序与门禁**：
+
+```text
+ledger 0
+  -> 询问截图并记录 screenshotAsked
+  -> ledger 1
+  -> design-consultant v0.11 创建/更新 canonical design-system
+  -> 生成真实页面和 design-system/page-delivery.json（draft）
+  -> 用户或 host runner 启动预览，写入 HTTP(S) 地址和浏览器证据
+  -> 用户逐页明确确认页面方向
+  -> 通用 manifest confirmed
+  -> ledger 3
+  -> page-delivery-adapter 生成 legacy page-delivery-<slug>.md
+  -> ledger 4
+  -> page-explainer 冻结流程、交互语义并收口 gap
+```
+
+adapter 只消费 confirmed manifest、phase 3 台账、匹配 BRD slug、`screenshotAsked: true` 和非空确认证据；它不执行 `preview.startCommand`，不写台账或全局套包状态，不调用 `page-chief`，也不把 draft 变成 confirmed。legacy delivery 中的机器记录使用 `page-delivery-adapter:v0.11` Base64 注释，页面路径来自上游校验器的 `resolvedFiles`。
+
+新项目不再以 `MASTER.md` 作为设计权威；旧项目只有在尚未迁移时才可把 `design-system/<slug>/MASTER.md` 当作 fallback 输入。评测证据与 source tests 仅存在于 design-consultant source，导入套件的 package 不包含这些评测产物。非 S2 companion 接口按上方矩阵生效，仍不改变现有阶段 owner、正式产物或 S2 页面门禁。
 
 ---
 
@@ -638,6 +710,7 @@ baseline-audit 是可反复刷新的当前缺口状态，不是一次性报告�
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | project-profile | 产出 | ✓（硬依赖） | | | | | | | ✓ | | | ✓ | | | | |
 | BRD | | 产出 | 👁 | ✓ | ✓ | 👁 | ✓ | ✓ | ✓ | | | ✓ | ✓ | | | |
+| canonical design-system + generic page-delivery | | | 👁 | 产出（内部 design-consultant v0.11） | 👁 | 👁 | ✓ | ✓ | | | | | | | | |
 | 页面代码 | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | | | |
 | page-delivery | | | 👁 | 产出 | ✓ | 👁 | ✓ | ✓ | | | | | | | | |
 | explainer-flow | | | 👁 | | 产出 | 👁 | ✓ | ✓ | | | | | | | | |

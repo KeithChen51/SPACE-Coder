@@ -1,0 +1,43 @@
+{
+  "name": "design-consultant-system",
+  "version": "0.10.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tokens:build": "node checks/sync-tokens.mjs build",
+    "tokens:check": "node checks/sync-tokens.mjs check",
+    "catalog:build": "node checks/build-component-catalog.mjs build",
+    "catalog:check": "node checks/build-component-catalog.mjs check",
+    "components:typecheck": "tsc -p runtime/react/tsconfig.json",
+    "components:test": "vitest run --config runtime/react/vitest.config.mjs",
+    "visualization:check": "node checks/check-visualization-module.mjs",
+    "guard:ui": "node checks/check-ui-contract.mjs",
+    "adoption:check": "node checks/check-adoption-contract.mjs --root .",
+    "ui:baseline": "node checks/check-ui-contract.mjs --root .. --write-baseline --baseline checks/ui-contract-baseline.json",
+    "ui:check": "node checks/check-ui-contract.mjs --root .. --baseline checks/ui-contract-baseline.json",
+    "visual:test": "node checks/visual-regression.mjs test",
+    "product:acceptance": "node checks/product-acceptance.mjs test --config checks/product-acceptance.config.mjs --project-root ..",
+    "verify:system": "node checks/verify-project.mjs system",
+    "verify:product": "node checks/verify-project.mjs product",
+    "verify": "node checks/verify-project.mjs final"
+  },
+  "dependencies": {
+    "lucide-react": "1.27.0",
+    "react": "19.2.8",
+    "react-aria-components": "1.19.0",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.1",
+    "jsdom": "29.1.1",
+    "pixelmatch": "7.2.0",
+    "playwright": "1.62.0",
+    "pngjs": "7.0.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

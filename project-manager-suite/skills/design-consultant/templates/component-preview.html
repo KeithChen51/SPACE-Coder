@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>设计顾问 · 通用产品界面预览</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="catalog-foundation.css">
+  <link rel="stylesheet" href="component-preview.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>通用产品界面基线</h1>
+        <p>用于内部工具、业务后台、数据产品和 Agent 工作台的 Editorial Utility 基础样式。</p>
+      </div>
+      <button class="button primary">保存配置</button>
+    </header>
+
+    <section class="grid metric-grid">
+      <div class="panel">
+        <strong>本月订单</strong>
+        <p class="num">12,480</p>
+      </div>
+      <div class="panel">
+        <strong>结算金额</strong>
+        <p class="num">¥839,240.00</p>
+      </div>
+      <div class="panel">
+        <strong>待处理</strong>
+        <p><span class="badge warn">需要确认</span></p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="field">
+          <label for="store">门店名称</label>
+          <input id="store" name="store" placeholder="输入门店名称...">
+        </div>
+        <div class="field">
+          <label for="status">状态</label>
+          <input id="status" name="status" placeholder="例如：待结算">
+        </div>
+        <div class="field field-action">
+          <button class="button secondary">筛选数据</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>门店</th>
+            <th>状态</th>
+            <th class="num">订单数</th>
+            <th class="num">金额</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>南山中心店</td>
+            <td><span class="badge ok">已完成</span></td>
+            <td class="num">328</td>
+            <td class="num">¥24,680.00</td>
+          </tr>
+          <tr>
+            <td>福田旗舰店</td>
+            <td><span class="badge warn">待确认</span></td>
+            <td class="num">192</td>
+            <td class="num">¥18,420.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

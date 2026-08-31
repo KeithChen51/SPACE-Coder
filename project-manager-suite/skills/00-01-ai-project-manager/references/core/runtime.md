@@ -192,6 +192,12 @@ node <suite-path>/tools/route-check.mjs <host-project-root> [--target-stage S0.5
 
 若工具可用，本步骤应优先读取 `route-check.mjs` 的阶段判断、门禁结果、阻断原因与下一步建议；主入口负责解释结果、补齐脚本尚未覆盖的业务判断，并决定如何与用户沟通。
 
+**门禁结果就是执行授权：**
+
+- 每次拿到 `route-check.mjs` 结果后，先判断 `canEnter`，再决定是否加载或执行任何阶段能力。
+- `canEnter = false` 是硬停止：不得执行请求中的目标阶段交付，也不得执行任何设计顾问伴随动作。此时 `targetStage`、`recommendedStage`、`routeTarget` 和 `companionActions` 只能作为诊断信息，不能覆盖失败门禁。
+- 阻断时只按 `nextAction` 恢复；若 `nextAction` 指向某个恢复负责人，只允许该负责人修复当前阻断，并在修复后重新运行门禁。门禁重新通过前，不得提前进入目标阶段或继续伴随能力。
+
 进入子能力的必要条件（**全部满足**才进入）：
 1. 当前阶段足够明确
 2. 主入口已建立最小统一上下文
@@ -432,6 +438,35 @@ S2 不是单纯“写方案文档”的阶段，而是 **页面环节收口 → 
 - 信息不足时不承诺具体实现方案
 
 ---
+
+## Companion action execution contract
+
+The primary entrypoint must read the complete `companionActions` array and process every item in array order after `canEnter` is true; it must not inspect only `project-link-indexer` or only the first action. When `canEnter` is false, the array is diagnostic only and no companion action may be loaded or executed.
+
+For each `required: true` action, load the declared `references` and execute it using its `capability` and `mode` before invoking its formal `consumer`, but only after `canEnter` is true. The design-consultant result is non-authoritative input passed to that consumer.
+
+The formal consumer remains the sole owner of the formal stage artifact and status writeback. In particular, `test-case-chief` remains the sole owner of S5 acceptance and `test-case-runner` remains the sole owner of S6 test reports.
+
+Allowed modes: `dry-run`, `check-only`, `read-only`, `evidence-only`. Design-consultant actions must not automatically execute `adopt`, `migrate`, `startCommand`, `baseline update`, `write`, or `prune`.
+
+Existing `project-link-indexer` companion rules remain in force; it is the indexer-first action when coexisting with design-consultant and may build / refresh / write its own rebuildable index. This contract adds no second route target or action channel.
+
+For `audit_existing_visual_system`, `ai-project-manager` must pass the declared design-consultant references to `project-baseline-auditor`, use the host's normal read-only file/search tools, and return a fact report plus a `preserve` / `augment` / `migrate` recommendation to that formal consumer.
+
+### Design-consultant companion matrix
+
+`design-consultant` is loaded only as a required companion action when the matching UI/design evidence is present. It never becomes a stage route target, follow-up target, dispatcher, formal artifact owner, or status writer.
+
+| Stage | Trigger / capability | Consumer | Mode and applicability |
+|---|---|---|---|
+| S0/S1 | `before_brd_design_decision` / `design-decision` | `brd-writer` | `read-only`; only after startup minimum is complete and page/UI intent is present |
+| S0.5 | `audit_existing_visual_system` / `existing-system-audit` | `project-baseline-auditor` | `read-only`; read declared references and inspect the host with normal read-only file/search tools, then report facts and a `preserve` / `augment` / `migrate` recommendation |
+| S3 | `plan_design_constraints` / `planning-constraints` | `delivery-planner` | `read-only`; requires project `design-system/` evidence |
+| S4 | `guard_ui_implementation` / `implementation-enforcement` | `coding-standards` | `check-only`; requires project `design-system/` evidence and current UI/frontend task text |
+| S5 | `derive_ui_acceptance` / `ui-acceptance-input` | `test-case-chief` | `read-only`; requires the design commitment input |
+| S6 | `collect_ui_acceptance_evidence` / `ui-acceptance-evidence` | `test-case-runner` | `evidence-only`; requires both the design commitment and UI acceptance configuration |
+
+The S0/S1/S0.5/S3 actions are read-only design-consultant actions. The S0.5 action reports facts and recommendations only: it must not initialize or write `design-system/`, execute `extract`, `adopt`, `migrate`, baseline updates, `startCommand`, `write`, or `prune`. S4 does not write, prune, or update a baseline; S5 commitments are context rather than a second test oracle; S6 supplies evidence only and does not replace visible-browser execution, the runner-owned report, `startCommand`, or baseline updates. Backend/non-UI tasks and S7 do not route these actions.
 
 ## 4. 协作模式判断
 
