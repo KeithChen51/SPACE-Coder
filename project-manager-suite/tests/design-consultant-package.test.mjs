@@ -9,7 +9,9 @@ import { fileURLToPath } from 'node:url';
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
 const REPO_ROOT = path.resolve(SUITE_ROOT, '..');
-const PACKAGE_ROOT = path.join(SUITE_ROOT, 'skills', 'design-consultant');
+const PACKAGE_DIR_NAME = '00-05-design-consultant';
+const PACKAGE_ROOT = path.join(SUITE_ROOT, 'skills', PACKAGE_DIR_NAME);
+const EXPECTED_IMPORTED_PATH = `project-manager-suite/skills/${PACKAGE_DIR_NAME}`;
 const LOCK_PATH = path.join(
     SUITE_ROOT,
     'skills',
@@ -53,11 +55,36 @@ function listFiles(root) {
     return files;
 }
 
-test('v0.11.2 suite package is locked to the finalized upstream release', () => {
+function countOccurrences(value, token) {
+    return value.split(token).length - 1;
+}
+
+function restoreSourceBytes(relativePath, importedBytes, relocation) {
+    const transforms = relocation.transforms.filter((entry) => entry.path === relativePath);
+    if (transforms.length === 0) return importedBytes;
+
+    let content = importedBytes.toString('utf8');
+    for (const transform of transforms) {
+        if (transform.type === 'replace-all-for-source-verification') {
+            assert.equal(
+                countOccurrences(content, transform.imported),
+                transform.occurrences,
+                `${relativePath} relocation occurrence count drifted`
+            );
+            content = content.replaceAll(transform.imported, transform.source);
+            continue;
+        }
+
+        assert.fail(`unsupported relocation transform: ${transform.type}`);
+    }
+    return Buffer.from(content, 'utf8');
+}
+
+test('v0.11.2 suite package preserves upstream provenance through declared relocation overlays', () => {
     assert.ok(fs.existsSync(LOCK_PATH), `missing package lock: ${LOCK_PATH}`);
     const lock = readJson(LOCK_PATH);
 
-    assert.equal(lock.schemaVersion, 1);
+    assert.equal(lock.schemaVersion, 2);
     assert.equal(lock.skill, 'design-consultant');
     assert.equal(lock.version, '0.11.2');
     assert.equal(lock.sourceRepository, 'KeithChen51/universal-design-components-and-skills');
@@ -65,7 +92,7 @@ test('v0.11.2 suite package is locked to the finalized upstream release', () => 
     assert.equal(lock.sourceCommit, EXPECTED_SOURCE_COMMIT);
     assert.ok(/^[0-9a-f]{64}$/.test(lock.releaseManifestSha256));
     assert.equal(lock.releaseManifestSha256, EXPECTED_RELEASE_MANIFEST_SHA256);
-    assert.equal(lock.importedPath, 'project-manager-suite/skills/design-consultant');
+    assert.equal(lock.importedPath, EXPECTED_IMPORTED_PATH);
     assert.equal(lock.fileCount, EXPECTED_RELEASE_FILE_COUNT);
     assert.ok(Array.isArray(lock.files), 'lock must include the release digest map');
     assert.equal(lock.files.length, lock.fileCount);
@@ -77,6 +104,19 @@ test('v0.11.2 suite package is locked to the finalized upstream release', () => 
 
     const manifestMetadata = lock.releaseManifest;
     assert.ok(manifestMetadata && typeof manifestMetadata === 'object');
+    const relocation = lock.relocation;
+    assert.ok(relocation && typeof relocation === 'object');
+    assert.equal(relocation.sourcePath, manifestMetadata.source);
+    assert.equal(relocation.importedPath, lock.importedPath);
+    assert.ok(Array.isArray(relocation.transforms) && relocation.transforms.length > 0);
+    assert.equal(
+        new Set(relocation.transforms.map((entry) => entry.path)).size,
+        relocation.transforms.length,
+        'each relocated file must have one explicit transform declaration'
+    );
+    for (const transform of relocation.transforms) {
+        assert.ok(lock.files.some((entry) => entry.path === transform.path));
+    }
     const embeddedManifest = {
         schemaVersion: manifestMetadata.schemaVersion,
         skill: manifestMetadata.skill,
@@ -117,9 +157,10 @@ test('v0.11.2 suite package is locked to the finalized upstream release', () => 
     for (const entry of lock.files) {
         const relativePath = entry.path.replaceAll('/', path.sep);
         const filePath = path.join(PACKAGE_ROOT, relativePath);
-        const bytes = fs.readFileSync(filePath);
-        assert.equal(bytes.byteLength, entry.bytes, `${entry.path} byte length drifted`);
-        assert.equal(sha256(bytes), entry.sha256, `${entry.path} SHA-256 drifted`);
+        const importedBytes = fs.readFileSync(filePath);
+        const sourceBytes = restoreSourceBytes(entry.path, importedBytes, relocation);
+        assert.equal(sourceBytes.byteLength, entry.bytes, `${entry.path} source byte length drifted`);
+        assert.equal(sha256(sourceBytes), entry.sha256, `${entry.path} source SHA-256 drifted`);
     }
 
     const forbiddenPath = /(^|[\\/])evals?([\\/]|$)|(^|[\\/])review\.html$|benchmark|grading\.json|(^|[\\/])raw([\\/]|$)|design-consultant-s2-upgrade|page-ledger|page-chief|route[-_]?target|route[-_]?state|ai-project-manager/i;
@@ -161,22 +202,31 @@ test('v0.11.2 suite package is locked to the finalized upstream release', () => 
     assert.match(enforcement, /user-facing-content-boundary\.md/);
 });
 
-test('Git attributes waive whitespace only for the locked design-consultant package', () => {
+test('Git attributes keep imported text at LF and preserve binary assets', () => {
     const output = execFileSync(
         'git',
         [
             'check-attr',
+            'text',
+            'eol',
             'whitespace',
             '--',
-            'project-manager-suite/skills/design-consultant/SKILL.md',
+            'project-manager-suite/skills/00-05-design-consultant/SKILL.md',
+            'project-manager-suite/skills/00-05-design-consultant/templates/react-runtime/src/ethnocentric-regular.otf',
             'project-manager-suite/tools/route-check.mjs'
         ],
         { cwd: REPO_ROOT, encoding: 'utf8' }
     );
 
+    assert.match(output, /project-manager-suite\/skills\/00-05-design-consultant\/SKILL\.md: text: set/);
+    assert.match(output, /project-manager-suite\/skills\/00-05-design-consultant\/SKILL\.md: eol: lf/);
     assert.match(
         output,
-        /project-manager-suite\/skills\/design-consultant\/SKILL\.md: whitespace: unset/
+        /project-manager-suite\/skills\/00-05-design-consultant\/SKILL\.md: whitespace: unset/
+    );
+    assert.match(
+        output,
+        /project-manager-suite\/skills\/00-05-design-consultant\/templates\/react-runtime\/src\/ethnocentric-regular\.otf: text: unset/
     );
     assert.match(output, /project-manager-suite\/tools\/route-check\.mjs: whitespace: unspecified/);
 });

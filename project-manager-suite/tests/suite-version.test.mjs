@@ -5,7 +5,12 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
 
-import { syncSuiteVersion, parseChangelog, majorMinor } from '../tools/sync-suite-version.mjs';
+import {
+    syncSuiteVersion,
+    parseChangelog,
+    majorMinor,
+    normalizePackageVersion
+} from '../tools/sync-suite-version.mjs';
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const SUITE_ROOT = path.resolve(path.dirname(TEST_FILE_PATH), '..');
@@ -80,6 +85,13 @@ test('check mode fails when package.json version drifts', () => {
     assert.match(result.errors.join(' '), /package\.json/);
 });
 
+test('check mode fails when only the package patch version drifts', () => {
+    const suiteRoot = makeFixtureSuite({ packageVersion: '2.0.1' });
+    const result = syncSuiteVersion({ suiteRoot, check: true });
+    assert.equal(result.passed, false);
+    assert.match(result.errors.join(' '), /应同步为 2\.0\.0/);
+});
+
 test('sync mode rewrites README and package.json from CHANGELOG', () => {
     const suiteRoot = makeFixtureSuite({ readmeVersion: '1.9', packageVersion: '1.0.0' });
     const result = syncSuiteVersion({ suiteRoot });
@@ -111,6 +123,27 @@ test('release mode freezes Unreleased into a dated version entry and syncs every
 
     const recheck = syncSuiteVersion({ suiteRoot, check: true });
     assert.equal(recheck.passed, true, recheck.errors.join('; '));
+});
+
+test('release mode preserves an explicit patch version across CHANGELOG, README, and package.json', () => {
+    const suiteRoot = makeFixtureSuite();
+    const result = syncSuiteVersion({ suiteRoot, release: '2.0.1' });
+    assert.equal(result.latest.version, '2.0.1');
+
+    const readme = fs.readFileSync(path.join(suiteRoot, 'README.md'), 'utf8');
+    assert.match(readme, /当前版本：2\.0\.1/);
+    const pkg = JSON.parse(fs.readFileSync(path.join(suiteRoot, 'package.json'), 'utf8'));
+    assert.equal(pkg.version, '2.0.1');
+
+    const recheck = syncSuiteVersion({ suiteRoot, check: true });
+    assert.equal(recheck.passed, true, recheck.errors.join('; '));
+});
+
+test('version normalization supports X.Y and X.Y.Z while rejecting ambiguous formats', () => {
+    assert.equal(normalizePackageVersion('2.2'), '2.2.0');
+    assert.equal(normalizePackageVersion('2.2.3'), '2.2.3');
+    assert.throws(() => normalizePackageVersion('v2.2'), /X\.Y/);
+    assert.throws(() => normalizePackageVersion('2'), /X\.Y/);
 });
 
 test('release mode refuses to release an empty Unreleased section', () => {

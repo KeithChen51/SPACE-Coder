@@ -1,12 +1,25 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "skill": "design-consultant",
   "version": "0.11.2",
   "sourceRepository": "KeithChen51/universal-design-components-and-skills",
   "sourceCommit": "211858fd57cf3a89f0be536045ee69b469fe55a7",
   "releaseManifestSha256": "ae2cbc0c37d67c28a8a6ccbab5c73a83ba44be51d459cfadb7e07b292ab4feef",
   "fileCount": 168,
-  "importedPath": "project-manager-suite/skills/design-consultant",
+  "importedPath": "project-manager-suite/skills/00-05-design-consultant",
+  "relocation": {
+    "sourcePath": "skills/design-consultant",
+    "importedPath": "project-manager-suite/skills/00-05-design-consultant",
+    "transforms": [
+      {
+        "path": "references/project-visual-system-workflow.md",
+        "type": "replace-all-for-source-verification",
+        "source": "skills/design-consultant/",
+        "imported": "skills/00-05-design-consultant/",
+        "occurrences": 5
+      }
+    ]
+  },
   "releaseManifest": {
     "schemaVersion": 1,
     "skill": "design-consultant",

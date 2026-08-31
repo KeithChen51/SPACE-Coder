@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
     loadPageDeliveryManifest,
     validatePageDeliveryManifest
-} from '../../design-consultant/scripts/page-delivery-contract.mjs';
+} from '../../00-05-design-consultant/scripts/page-delivery-contract.mjs';
 import {
     deriveSlugFromBrd,
     findBrd,

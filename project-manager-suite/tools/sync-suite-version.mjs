@@ -91,6 +91,13 @@ function majorMinor(version) {
     return match ? `${match[1]}.${match[2]}` : String(version || '');
 }
 
+function normalizePackageVersion(version) {
+    const normalized = String(version || '').trim();
+    if (/^\d+\.\d+$/.test(normalized)) return `${normalized}.0`;
+    if (/^\d+\.\d+\.\d+$/.test(normalized)) return normalized;
+    throw new Error(`版本号必须使用 X.Y 或 X.Y.Z 格式：${normalized || '空值'}`);
+}
+
 function renderHistoryTable(released) {
     const rows = released.map((entry, index) => {
         const versionCell = index === 0 ? `**${entry.version}**` : entry.version;
@@ -234,6 +241,7 @@ function syncSuiteVersion({ suiteRoot = DEFAULT_SUITE_ROOT, check = false, relea
     const files = loadFiles(suiteRoot);
 
     if (release) {
+        normalizePackageVersion(release);
         const pad = (n) => String(n).padStart(2, '0');
         const now = new Date();
         const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -248,9 +256,7 @@ function syncSuiteVersion({ suiteRoot = DEFAULT_SUITE_ROOT, check = false, relea
     }
     result.latest = { version: parsed.latest.version, date: parsed.latest.date };
 
-    const expectedPackageVersion = /^\d+\.\d+$/.test(parsed.latest.version)
-        ? `${parsed.latest.version}.0`
-        : files.packageJson.version || '0.0.0';
+    const expectedPackageVersion = normalizePackageVersion(parsed.latest.version);
     const readmeInSync = readmeMatchesChangelog(files.readme, parsed);
 
     if (check) {
@@ -258,10 +264,10 @@ function syncSuiteVersion({ suiteRoot = DEFAULT_SUITE_ROOT, check = false, relea
             result.passed = false;
             result.errors.push('README 与 CHANGELOG 不一致（版本行或版本历史表需要重新渲染）');
         }
-        if (majorMinor(files.packageJson.version) !== majorMinor(parsed.latest.version)) {
+        if (files.packageJson.version !== expectedPackageVersion) {
             result.passed = false;
             result.errors.push(
-                `package.json version（${files.packageJson.version || '缺失'}）与 CHANGELOG 最新版本（${parsed.latest.version}）不一致`
+                `package.json version（${files.packageJson.version || '缺失'}）与 CHANGELOG 最新版本（${parsed.latest.version}，应同步为 ${expectedPackageVersion}）不一致`
             );
         }
         return result;
@@ -271,7 +277,7 @@ function syncSuiteVersion({ suiteRoot = DEFAULT_SUITE_ROOT, check = false, relea
         fs.writeFileSync(files.readmePath, applyToReadme(files.readme, parsed), 'utf8');
         result.actions.push('README 已按 CHANGELOG 重新渲染');
     }
-    if (majorMinor(files.packageJson.version) !== majorMinor(parsed.latest.version)) {
+    if (files.packageJson.version !== expectedPackageVersion) {
         const updatedPackage = { ...files.packageJson };
         const keys = Object.keys(updatedPackage);
         const ordered = {};
@@ -317,4 +323,4 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     }
 }
 
-export { syncSuiteVersion, parseChangelog, renderHistoryTable, majorMinor };
+export { syncSuiteVersion, parseChangelog, renderHistoryTable, majorMinor, normalizePackageVersion };

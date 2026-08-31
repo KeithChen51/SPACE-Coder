@@ -85,7 +85,7 @@
 | `coding-standards` (涉及代码/结构/SQL/测试时加载) | `skills/06-01-coding-standards/` |
 | `project-devlog` (每轮有实质产出、阶段切换、需要收口时加载) | `skills/00-02-project-devlog/` |
 | `project-link-indexer` (阶段产物形成/拆分后，或需要文件关系、坏链、回链、孤立文件、影响范围诊断时加载) | `skills/00-03-project-link-indexer/` |
-| `design-consultant` (仅在 UI/设计信号命中时作为伴随能力加载，不改变阶段归属) | `skills/design-consultant/` |
+| `design-consultant` (仅在 UI/设计信号命中时作为伴随能力加载，不改变阶段归属) | `skills/00-05-design-consultant/` |
 
 ### design-consultant 伴随路由
 

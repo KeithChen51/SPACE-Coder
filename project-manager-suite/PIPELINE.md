@@ -108,9 +108,9 @@ BRD + tech stack
 
 通用 manifest 先保持 `draft`，在真实页面、预览与浏览器证据齐备且用户明确确认页面方向后才标记 `confirmed`；S2 adapter 将 confirmed 的 `design-system/page-delivery.json` 转换为下游兼容的 legacy `src/frontend/page-preview/page-delivery-<slug>.md`。`preview.startCommand` 只记录、不执行。下游仍以 legacy delivery 为页面索引入口，并按其中声明的真实页面路径、技术栈、设计系统和确认/证据字段继续工作。
 
-评测证据、source tests、维护产物和 planning workspace 均遵循 `source-only` 政策：评测证据只保留在 design-consultant source，不进入本套件导入的 `skills/design-consultant/` package；导入包也不包含 eval、review、benchmark 或 grading 产物。
+评测证据、source tests、维护产物和 planning workspace 均遵循 `source-only` 政策：评测证据只保留在 design-consultant source，不进入本套件导入的 `skills/00-05-design-consultant/` package；导入包也不包含 eval、review、benchmark 或 grading 产物。
 
-S2 页面接入之外，套件还通过 `companionActions` 按需加载设计顾问的非 S2 子能力；这些动作不构成新的路由目标或第二个调度器。评测证据、source tests、维护产物和 planning workspace 仍遵循 `source-only` 政策，不进入导入的 `skills/design-consultant/` package。
+S2 页面接入之外，套件还通过 `companionActions` 按需加载设计顾问的非 S2 子能力；这些动作不构成新的路由目标或第二个调度器。评测证据、source tests、维护产物和 planning workspace 仍遵循 `source-only` 政策，不进入导入的 `skills/00-05-design-consultant/` package。
 
 ### 非 S2 设计顾问伴随接入
 

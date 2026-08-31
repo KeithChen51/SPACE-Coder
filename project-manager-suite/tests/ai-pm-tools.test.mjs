@@ -18,6 +18,7 @@ import { collectProjectLinks } from '../skills/00-03-project-link-indexer/script
 import { runProjectLinkIndexer } from '../skills/00-03-project-link-indexer/scripts/run-project-link-indexer.mjs';
 import { validateProjectLinks } from '../skills/00-03-project-link-indexer/scripts/validate-project-links.mjs';
 import { buildClaudeHookBootstrap, buildOpenCodeBootstrap } from '../lib/bootstrap/index.js';
+import { resolveSkillPath } from '../lib/skills-core.js';
 import { verifyTask } from '../skills/06-01-coding-standards/scripts/verify-task-context.mjs';
 import { createEmptyLedger, writeLedger } from '../skills/02-01-brd-writer/scripts/ledger-io.mjs';
 import { fileRoles, globalCompanionAbilities } from '../lib/ai-pm-protocol/index.js';
@@ -3070,6 +3071,52 @@ test('install-suite-into-host upgrades an existing host-installed suite in place
     assert.equal(secondResult.installMode, 'upgrade');
     assert.equal(JSON.parse(readFile(manifestPath)).install_mode, 'upgrade');
     assert.ok(secondResult.files.overwritten.length > 0);
+});
+
+test('install-suite-into-host reports the pre-numbered design-consultant as stale and force install removes it', () => {
+    const hostRoot = makeTempDir('pm-suite-install-design-consultant-relocation-');
+    installSuiteIntoHost({
+        hostRoot,
+        force: false,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    const targetSuiteRoot = path.join(hostRoot, '.agent', 'project-manager-suite');
+    const legacySkillFile = path.join(targetSuiteRoot, 'skills', 'design-consultant', 'SKILL.md');
+    const numberedSkillFile = path.join(targetSuiteRoot, 'skills', '00-05-design-consultant', 'SKILL.md');
+    writeFile(legacySkillFile, 'legacy unreleased main install');
+
+    const upgradeResult = installSuiteIntoHost({
+        hostRoot,
+        force: false,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    assert.equal(upgradeResult.installMode, 'upgrade');
+    assert.ok(upgradeResult.files.stale.includes(legacySkillFile));
+    assert.ok(fs.existsSync(legacySkillFile), 'incremental upgrade must not silently delete stale host files');
+    assert.ok(fs.existsSync(numberedSkillFile), 'numbered design-consultant must be installed');
+    assert.equal(
+        resolveSkillPath('design-consultant', path.join(targetSuiteRoot, 'skills'), null)?.skillPath,
+        '00-05-design-consultant',
+        'incremental upgrade must resolve the numbered skill instead of the stale legacy directory'
+    );
+
+    const forceResult = installSuiteIntoHost({
+        hostRoot,
+        force: true,
+        move: false,
+        dryRun: false,
+        json: false
+    });
+
+    assert.equal(forceResult.target.cleaned, true);
+    assert.equal(fs.existsSync(legacySkillFile), false);
+    assert.ok(fs.existsSync(numberedSkillFile));
 });
 
 test('bootstrap-host initializes container root and creates safe scaffold', () => {

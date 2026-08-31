@@ -98,17 +98,17 @@ design-system/
 
 ```powershell
 # 查看将创建什么，不写文件
-node skills/design-consultant/scripts/manage-visual-system.mjs init --target <项目目录> --dry-run
+node skills/00-05-design-consultant/scripts/manage-visual-system.mjs init --target <项目目录> --dry-run
 
 # 使用通用视觉基线与精确组件 Kit 初始化
-node skills/design-consultant/scripts/manage-visual-system.mjs init --target <项目目录> --mode default --components <逗号分隔的 family id>
+node skills/00-05-design-consultant/scripts/manage-visual-system.mjs init --target <项目目录> --mode default --components <逗号分隔的 family id>
 
 # 提取现有技术栈、CSS 变量和共享组件目录线索
-node skills/design-consultant/scripts/manage-visual-system.mjs extract --target <项目目录> --mode customize
+node skills/00-05-design-consultant/scripts/manage-visual-system.mjs extract --target <项目目录> --mode customize
 
 # 先检查更新，再安全更新仍保持生成态的文件
-node skills/design-consultant/scripts/manage-visual-system.mjs update --target <项目目录> --dry-run
-node skills/design-consultant/scripts/manage-visual-system.mjs update --target <项目目录>
+node skills/00-05-design-consultant/scripts/manage-visual-system.mjs update --target <项目目录> --dry-run
+node skills/00-05-design-consultant/scripts/manage-visual-system.mjs update --target <项目目录>
 
 # 在生成的 design-system 目录中编译、检查或查看 Token 漂移
 node .\checks\sync-tokens.mjs build

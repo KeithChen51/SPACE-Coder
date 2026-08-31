@@ -1,6 +1,6 @@
 # AI PM Tool Tests
 
-本目录存放 `npm run test:ai-pm` 实际运行的 Node 原生测试，共 8 个测试文件；测试命令以 `project-manager-suite/package.json` 为准。
+本目录存放 `npm run test:ai-pm` 实际运行的 Node 原生测试，共 9 个测试文件；测试命令以 `project-manager-suite/package.json` 为准。
 
 当前覆盖范围（按测试文件）：
 
@@ -14,7 +14,8 @@
 - `prd-check.test.mjs` —— `prd-writer/scripts/prd-check.mjs`：structure / crosscheck / set-status / sync-index 各命令，另含 PRD 自查表与 `route-check` 互不污染的回归
 - `progress-dashboard.test.mjs` —— 进度页数据归一化、白话提示和可重建渲染产物
 - `suite-version.test.mjs` —— `CHANGELOG.md`、README 版本历史与 `package.json` 版本字段的一致性门禁
-- `design-consultant-package.test.mjs` —— v0.11 release manifest 的路径集合、SHA-256、字节数、版本锁和导入包禁止目录校验
+- `design-consultant-package.test.mjs` —— v0.11 上游 release manifest 的路径集合、SHA-256、字节数、编号化 relocation overlay、版本锁和导入包禁止目录校验
+- `skill-directory-naming.test.mjs` —— 顶层 skill 目录 `NN-NN-*` 命名、编号唯一性、`SKILL.md` 存在性、frontmatter `name` 与目录后缀一致性及裸调用名解析门禁
 
 运行方式：
 

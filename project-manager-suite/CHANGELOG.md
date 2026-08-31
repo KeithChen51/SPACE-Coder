@@ -10,10 +10,19 @@
 
 ## [Unreleased]
 
-- 将 `design-consultant` 导入包更新到 v0.11.2：补齐外部路由硬停止、既有系统建议确认契约、internal/admin 设计系统继承规则，以及混合和嵌套 JSX 中内部数据值与工程文案的检查；评测与过程产物仍仅保留在 source。
-- 导入 `design-consultant` v0.11 并由 `page-designer` 作为 S2 内部设计治理与页面生产核心接入：canonical `design-system` 成为项目设计事实源，confirmed 通用 `page-delivery.json` 经 S2 adapter 生成 legacy `page-delivery-<slug>.md`；强化用户确认、台账 phase 4 与 `page-explainer` 页面收口门禁，评测证据继续仅保留在 source。
-- 通过有序 `companionActions` 接入 design-consultant 的 S0/S1 设计决策、S0.5 既有系统审计、S3 设计约束、S4 UI 实现检查及 S5/S6 UI 验收输入/证据，不改变原阶段 owner 或正式产物。
-- 进度页逐帧仿真评审修复：计划就绪待开工不再误报"受阻/状态对不上"（下一步改为提示「开工」）；全部完成后驾驶舱指针置空（missing_cockpit_active_task）纳入良性码；"等你拍板"过滤"无/暂无"伪空项；S2 页面子环节新增"草稿待确认"中间态；收尾态遇安全 WAIVER 时标题行提示有条件放行与豁免时限；警示横幅去 skill 黑话；runtime.md 增补"用户可见字段用业务白话回写"指引
+（暂无未发布变更）
+
+## [2.2] - 2026-08-31
+套件新增贯穿需求、设计、开发和验收的内建设计治理能力：从早期设计判断、既有系统继承，到页面交付、实现约束和 UI 验收，统一在原有 S0–S6 流水线内完成，不增加新的主入口或阶段负责人。
+
+- S0/S1 的设计决策、S0.5 的既有系统审计、S3 的设计约束、S4 的 UI 实现检查，以及 S5/S6 的 UI 验收输入与证据，均作为原阶段的内建伴随能力按信号启用，不改变既有阶段负责人和正式产物。
+- S2 页面生产原生包含设计治理：`page-designer` 统一维护项目 `design-system/` 事实源，用户确认后的通用 `page-delivery.json` 经 S2 adapter 生成下游兼容的 `page-delivery-<slug>.md`；同时强化用户确认、台账 phase 4 与 `page-explainer` 的页面收口门禁。
+- “SPACE AI Native”品牌署名纳入套包内建设计系统：视觉系统确认前保持 `deferred`，不展示、不提问，也不参与色板决策；确认后根据背景、重点色、明暗模式和界面密度给出一个首选样式与安全 fallback，待产品结构基本确认后再推荐桌面、移动及认证 / 授权场景的落位。用户确认结果统一写入 `system.config.json`、`DESIGN.md` 与 token；组件同时约束响应式迁移、单视口仅一个实例、无障碍与正式字形蒙版，业务页面不得散传配置、使用 UI 字体替代或自行重绘。
+- 内建设计规则基线升级至 v0.11.2：补齐外部路由硬停止、既有系统建议确认契约、internal/admin 设计系统继承规则，以及混合和嵌套 JSX 中内部数据值与工程文案的检查；评测、source tests 和维护过程产物仍只保留在 source，不进入发布套包。
+- 套件内建设计能力的物理实现统一收口到 `skills/00-05-design-consultant/`：同步路由、adapter、文档、导入锁和测试路径；导入锁升级为可验证的 relocation overlay，既保留上游 v0.11.2 原始摘要，又校验套件内编号化路径替换；固定包内文本为 LF，避免 Windows checkout 误触发字节锁；新增顶层 skill 目录 `NN-NN-*` 命名门禁。
+- 升级提醒：正式 2.1 尚未包含这套设计治理能力，直接升级不会产生旧目录；若宿主曾安装 2.1 之后的未发布 `main` 构建，增量同步会将原 `skills/design-consultant/` 列入 `Stale files`，但不会自动删除。确认旧目录没有宿主手工改动后再删除，或在确认整套安装目录可覆盖时使用 `install-suite-into-host.mjs --force` 做干净安装。
+- 版本同步门禁改为精确支持 `X.Y` 与 `X.Y.Z`：发布补丁版本时同步更新 README 与 `package.json` 的完整版本号，并拒绝只在 patch 位发生的版本漂移及含糊格式。
+- 进度页逐帧仿真评审修复：计划就绪待开工不再误报“受阻/状态对不上”（下一步改为提示“开工”）；全部完成后驾驶舱指针置空（`missing_cockpit_active_task`）纳入良性码；“等你拍板”过滤“无/暂无”伪空项；S2 页面子环节新增“草稿待确认”中间态；收尾态遇安全 WAIVER 时标题行提示有条件放行与豁免时限；警示横幅去除 skill 黑话；`runtime.md` 增补“用户可见字段用业务白话回写”指引。
 
 ## [2.1] - 2026-07-16
 - 新增进度可视化：宿主根目录 `项目进度.html`（可重建编译产物），聚合阶段轨道、当前开发功能点、门禁卡点、质量与安全指标；bootstrap 初始化、主入口每轮回写、devlog 收口、会话启动四个时机自动刷新（`lib/progress-dashboard/` + `tools/render-progress-dashboard.mjs`）

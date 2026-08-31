@@ -1,1 +1,2 @@
-project-manager-suite/skills/design-consultant/** -whitespace
+project-manager-suite/skills/00-05-design-consultant/** text eol=lf -whitespace
+project-manager-suite/skills/00-05-design-consultant/**/*.otf -text -whitespace

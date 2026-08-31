@@ -1,6 +1,6 @@
 # Project Manager Suite
 
-> **当前版本：2.1**（2026-07-16）。
+> **当前版本：2.2**（2026-08-31）。
 
 ## 快速概览
 
@@ -230,7 +230,7 @@ BRD + tech stack
 
 新项目的 canonical `design-system/`（`DESIGN.md`、`tokens/`、`components/manifest.json`、`system.config.json`、`page-delivery.json`）是项目设计事实源。旧项目的 `design-system/<slug>/MASTER.md` 仅作为 legacy fallback 输入读取，不能与 canonical system 并列维护。通用 manifest 必须在真实页面、HTTP(S) 预览/浏览器证据和用户明确确认后才从 `draft` 变为 `confirmed`；S2 adapter 再将它确定性转换为下游消费的 legacy `src/frontend/page-preview/page-delivery-<slug>.md`。adapter 只记录 `preview.startCommand`，不执行命令、不写台账或全局套包状态、不调用 `page-chief`。
 
-评测证据、source tests、维护产物和 planning workspace 遵循 `source-only` 政策：评测证据只在 design-consultant source，不在导入的 `skills/design-consultant/` package。除 S2 内部接入外，套件现通过 `companionActions` 按需加载 S0/S1 的设计决策、S0.5 的既有系统只读审计、S3 的设计约束、S4 的 UI 实现检查，以及 S5/S6 的 UI 验收输入与证据；这些动作只向原阶段 owner 提供非权威输入，不改变阶段路由或正式产物。
+评测证据、source tests、维护产物和 planning workspace 遵循 `source-only` 政策：评测证据只在 design-consultant source，不在导入的 `skills/00-05-design-consultant/` package。除 S2 内部接入外，套件现通过 `companionActions` 按需加载 S0/S1 的设计决策、S0.5 的既有系统只读审计、S3 的设计约束、S4 的 UI 实现检查，以及 S5/S6 的 UI 验收输入与证据；这些动作只向原阶段 owner 提供非权威输入，不改变阶段路由或正式产物。
 
 非 S2 companion 只在对应 UI/设计证据存在时触发：后端/非 UI 任务和 S7 不加载设计顾问。S0.5 读取声明的 references 并使用宿主正常只读文件/搜索工具形成事实报告和 `preserve` / `augment` / `migrate` 建议，不初始化或写入 `design-system/`，也不执行 `extract`、adopt 或 migrate；S4 只检查不写 baseline，S5 不建立第二个测试 Oracle，S6 不替代可见浏览器执行和 runner 报告。与设计顾问共存时，`project-link-indexer` 保持 indexer-first，并可自行 build / refresh / write 索引。
 
@@ -249,7 +249,7 @@ BRD + tech stack
 
 - **流程调度型**：`ai-project-manager`、`page-chief`、`prd-chief`、`test-case-chief`，负责识别上下文、判断阶段、控制页面环节、PRD 环节与测试用例环节的正式接管顺序
 - **阶段交付型**：`project-baseline-auditor`、`brd-writer`、`page-designer`、`page-explainer`、`foundation-builder`、`prd-writer`、`delivery-planner`、`prd-acceptance-reviewer`、`test-case-writer`、`test-case-reviewer`、`test-case-runner`、`security-scan`，负责承接某一阶段或接入旁路的正式交付物
-- **专项执行型**：`coding-standards`、`project-devlog`、`project-link-indexer`、`doc-governance`、`test-and-acceptance`，负责研发执行规范、状态回写、文件级索引等专项工作，不承担主流程调度
+- **专项执行型**：`coding-standards`、`project-devlog`、`project-link-indexer`、`doc-governance`、`design-consultant`、`test-and-acceptance`，负责研发执行规范、状态回写、文件级索引和设计治理等专项工作，不承担主流程调度
 
 为了让人一眼看懂调用顺序，每个 skill 目录名带一个「系列-序号」编号前缀（如 `skills/04-03-prd-writer/`），文件管理器和 IDE 里按目录名排序即是调用顺序：
 
@@ -263,6 +263,7 @@ BRD + tech stack
 | 00-02 | `project-devlog`           | 回写每轮推进状态和日志                                                                                 | 全阶段伴随           |
 | 00-03 | `project-link-indexer`     | 编译宿主文件级引用关系图，诊断坏链、缺回链和孤立交付物                                                 | 全阶段伴随           |
 | 00-04 | `doc-governance`           | 文档治理 advisory（不强制载入流水线）                                                                  | 按需                 |
+| 00-05 | `design-consultant`        | UI/设计信号命中时提供设计决策、既有系统审计、设计约束和 UI 验收输入；不改变阶段 owner                  | S0–S6 按信号伴随     |
 | 01-01 | `project-baseline-auditor` | 基于已有代码生成或更新项目画像，并输出关键维护文件缺口清单                                             | S0.5                 |
 | 02-01 | `brd-writer`               | 将业务想法收敛成可评审的业务需求文档 / BRD，并锁定关键决策                                             | S1                   |
 | 03-01 | `page-chief`               | 观察页面环节文件状态，调度`page-designer -> page-explainer` 并控制是否回环                           | S2 页面环节          |
@@ -306,11 +307,11 @@ project-manager-suite/
 │   ├── 00-02-project-devlog/          # 日志与状态回写（全阶段伴随）
 │   ├── 00-03-project-link-indexer/    # 文件级引用索引与 LLM wiki 导航（全阶段伴随）
 │   ├── 00-04-doc-governance/          # 文档治理 advisory（按需）
+│   ├── 00-05-design-consultant/       # v0.11.2 导入能力（S0–S6 按信号伴随，不是独立路由目标）
 │   ├── 01-01-project-baseline-auditor/ # 既有项目画像与关键文件缺口诊断（S0.5）
 │   ├── 02-01-brd-writer/              # 业务需求文档 / BRD 收敛（S1）
 │   ├── 03-01-page-chief/              # S2 页面环节调度
 │   ├── 03-02-page-designer/           # S2 页面 owner（内部调用 design-consultant v0.11.2 + adapter）
-│   ├── design-consultant/             # v0.11.2 导入包（内部能力，不是独立路由目标）
 │   ├── 03-03-page-explainer/          # 页面交互语义与 gap 收口
 │   ├── 04-01-prd-chief/               # S2 PRD 环节调度
 │   ├── 04-02-foundation-builder/      # 术语表 / Schema / API 技术地基设计
@@ -415,7 +416,8 @@ project-manager-suite/
 <!-- version-history:begin -->
 | 版本 | 日期 | 变更摘要 |
 |------|------|---------|
-| **2.1** | 2026-07-16 | 新增进度可视化：宿主根目录 `项目进度.html`（可重建编译产物），聚合阶段轨道、当前开发功能点、门禁卡点、质量与安全指标；bootstrap 初始化、主入口每轮回写、devlog 收口、会话启动四个时机自动刷新（`lib/progress-dashboard/` + `tools/render-progress-dashboard.mjs`）；route-check 的 `context` 增补 `profileSummary`（项目名/一句话目标，additive）；新增版本 changelog 同步链：`CHANGELOG.md` 权威源 + `tools/sync-suite-version.mjs`（--check / --release）+ 版本一致性测试门禁 |
+| **2.2** | 2026-08-31 | 套件新增贯穿需求、设计、开发和验收的内建设计治理能力：从早期设计判断、既有系统继承，到页面交付、实现约束和 UI 验收，统一在原有 S0–S6 流水线内完成，不增加新的主入口或阶段负责人。 |
+| 2.1 | 2026-07-16 | 新增进度可视化：宿主根目录 `项目进度.html`（可重建编译产物），聚合阶段轨道、当前开发功能点、门禁卡点、质量与安全指标；bootstrap 初始化、主入口每轮回写、devlog 收口、会话启动四个时机自动刷新（`lib/progress-dashboard/` + `tools/render-progress-dashboard.mjs`）；route-check 的 `context` 增补 `profileSummary`（项目名/一句话目标，additive）；新增版本 changelog 同步链：`CHANGELOG.md` 权威源 + `tools/sync-suite-version.mjs`（--check / --release）+ 版本一致性测试门禁 |
 | 2.0 | 2026-07-10 | 全套件审计修复版。基于 51 项经真实执行核实的审计发现做系统性修复：模板与校验器对齐（S4 一致性门禁、prd-check 拆分模式、feature-list 编号）、脚本命令统一 `<suite-path>` 路径约定、foundation 目录契约统一为 `docs/prd/foundation/`、brd-writer 生命周期护栏（init 重入保护、栈式回滚、DONE 态保护）、baseline 按行合并保留用户确认字段、PIPELINE 补齐 S6/S7 契约、hooks 注入链路修通、清理历史项目泄漏词。测试 112/112 通过，6 个沙箱场景真实复现验证全部通过。 |
 | 1.x | 2026-04 ～ 2026-07 | 初始版本：S0–S5 主流水线、调度层（page-chief / prd-chief / test-case-chief）、协议脚本化（route-check / bootstrap / ledger 工具链）、既有项目接入旁路（S0.5 baseline）逐步成形。 |
 <!-- version-history:end -->

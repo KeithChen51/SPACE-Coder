@@ -90,6 +90,45 @@ function findSkillsInDir(dir, sourceType, maxDepth = 3) {
 }
 
 /**
+ * Locate a skill directory inside `dir` by name.
+ * Suite skill directories carry a mandatory `NN-NN-` reading-order prefix
+ * (e.g. `04-03-prd-writer`), while project-level skill directories may use
+ * the bare name. Callers always use the bare skill name (`prd-writer`). Project
+ * directories prefer the bare form so project overrides remain intuitive;
+ * suite directories prefer the numbered form so an undeleted pre-migration
+ * folder cannot shadow the current bundled skill during an incremental upgrade.
+ *
+ * @param {string} dir - Directory containing skill folders
+ * @param {string} skillName - Bare skill name without number prefix
+ * @param {{preferNumbered?: boolean}} [options] - Resolution preference
+ * @returns {string | null} Matching folder name, or null
+ */
+function findSkillDirName(dir, skillName, { preferNumbered = false } = {}) {
+    const bareMatch = fs.existsSync(path.join(dir, skillName, 'SKILL.md')) ? skillName : null;
+    let numberedMatch = null;
+
+    try {
+        const entries = fs
+            .readdirSync(dir, { withFileTypes: true })
+            .sort((left, right) => left.name.localeCompare(right.name));
+        for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            if (!/^\d{2}-\d{2}-/.test(entry.name)) continue;
+            if (entry.name.replace(/^\d{2}-\d{2}-/, '') !== skillName) continue;
+            if (fs.existsSync(path.join(dir, entry.name, 'SKILL.md'))) {
+                numberedMatch = entry.name;
+                break;
+            }
+        }
+    } catch (error) {
+        return bareMatch;
+    }
+
+    if (preferNumbered && numberedMatch) return numberedMatch;
+    return bareMatch ?? numberedMatch;
+}
+
+/**
  * Resolve a skill name to its file path.
  * Project skills override suite default skills.
  *
@@ -98,36 +137,6 @@ function findSkillsInDir(dir, sourceType, maxDepth = 3) {
  * @param {string} projectSkillsDir - Path to project-level skills directory (optional)
  * @returns {{skillFile: string, sourceType: string, skillPath: string} | null}
  */
-/**
- * Locate a skill directory inside `dir` by name.
- * Suite skill directories carry a `NN-NN-` reading-order prefix (e.g.
- * `04-03-prd-writer`), while callers keep using the bare skill name
- * (`prd-writer`), so an exact match is tried first and the prefixed
- * form second.
- *
- * @param {string} dir - Directory containing skill folders
- * @param {string} skillName - Bare skill name without number prefix
- * @returns {string | null} Matching folder name, or null
- */
-function findSkillDirName(dir, skillName) {
-    if (fs.existsSync(path.join(dir, skillName, 'SKILL.md'))) {
-        return skillName;
-    }
-    try {
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
-        for (const entry of entries) {
-            if (!entry.isDirectory()) continue;
-            if (entry.name.replace(/^\d{2}-\d{2}-/, '') !== skillName) continue;
-            if (fs.existsSync(path.join(dir, entry.name, 'SKILL.md'))) {
-                return entry.name;
-            }
-        }
-    } catch (error) {
-        return null;
-    }
-    return null;
-}
-
 function resolveSkillPath(skillName, suiteSkillsDir, projectSkillsDir) {
     const forceSuite = skillName.startsWith('project-manager-suite:');
     const actualSkillName = forceSuite ? skillName.replace(/^project-manager-suite:/, '') : skillName;
@@ -146,7 +155,7 @@ function resolveSkillPath(skillName, suiteSkillsDir, projectSkillsDir) {
 
     // Try suite skills
     if (suiteSkillsDir) {
-        const suiteDirName = findSkillDirName(suiteSkillsDir, actualSkillName);
+        const suiteDirName = findSkillDirName(suiteSkillsDir, actualSkillName, { preferNumbered: true });
         if (suiteDirName) {
             return {
                 skillFile: path.join(suiteSkillsDir, suiteDirName, 'SKILL.md'),

@@ -1,9 +1,9 @@
 {
   "name": "project-manager-suite",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test:ai-pm": "node --test tests/ai-pm-tools.test.mjs tests/protocol-alignment.test.mjs tests/page-ledger.test.mjs tests/page-delivery-adapter.test.mjs tests/prd-check.test.mjs tests/progress-dashboard.test.mjs tests/suite-version.test.mjs tests/design-consultant-package.test.mjs"
+    "test:ai-pm": "node --test tests/ai-pm-tools.test.mjs tests/protocol-alignment.test.mjs tests/page-ledger.test.mjs tests/page-delivery-adapter.test.mjs tests/prd-check.test.mjs tests/progress-dashboard.test.mjs tests/suite-version.test.mjs tests/design-consultant-package.test.mjs tests/skill-directory-naming.test.mjs"
   }
 }
